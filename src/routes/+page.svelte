@@ -1,6 +1,8 @@
 <section>
+<img src="labial.png" alt="">
     <div>
-    <p>Nuestra Coleccion</p>
-    <p>Rituales de belleza inspirados en la serenidad luminosa. Descubre formulas clinicas envueltas en texturas etereas.</p>
+    <p>MoonBeauty</p>
+    <p>Desde Corea hasta tu hogar</p>
+    <a href="products">Ver Catalogo</a>
     </div>
 </section>

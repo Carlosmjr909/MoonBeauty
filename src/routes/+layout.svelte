@@ -11,8 +11,8 @@
 	<div>
 		<p>MoonBeauty</p>
 		<a href="/">Inicio</a>
-		<a href="products">Productos</a>
-		<a href="contacts">Contactos</a>
+		<a href="/products">Productos</a>
+		<a href="/contacts">Contactos</a>
 	</div>
 
 	<div></div>
