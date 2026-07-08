@@ -142,9 +142,9 @@
             </div>
 <!-- Desktop Links -->
 <div class="hidden md:flex items-center gap-10">
-<a class="font-label-caps text-label-caps text-primary border-b border-primary pb-1 transition-colors duration-300" href="#">Inicio</a>
-<a class="font-label-caps text-label-caps text-on-secondary-container hover:text-primary transition-colors duration-300" href="#">Productos</a>
-<a class="font-label-caps text-label-caps text-on-secondary-container hover:text-primary transition-colors duration-300" href="#">Contacto</a>
+<a class="font-label-caps text-label-caps text-primary border-b border-primary pb-1 transition-colors duration-300" href="/">Inicio</a>
+<a class="font-label-caps text-label-caps text-on-secondary-container hover:text-primary transition-colors duration-300" href="products">Productos</a>
+<a class="font-label-caps text-label-caps text-on-secondary-container hover:text-primary transition-colors duration-300" href="contacts">Contacto</a>
 </div>
 <!-- Actions -->
 <div class="flex items-center gap-6">

@@ -139,9 +139,9 @@
                 MoonBeauty
             </div>
 <div class="hidden md:flex items-center gap-12">
-<a class="font-label-caps text-label-caps text-on-secondary-container hover:text-primary transition-colors duration-300" href="#">Inicio</a>
-<a class="font-label-caps text-label-caps text-on-secondary-container hover:text-primary transition-colors duration-300" href="#">Productos</a>
-<a class="font-label-caps text-label-caps text-primary border-b border-primary pb-1 transition-colors duration-300" href="#">Contacto</a>
+<a class="font-label-caps text-label-caps text-on-secondary-container hover:text-primary transition-colors duration-300" href="/">Inicio</a>
+<a class="font-label-caps text-label-caps text-on-secondary-container hover:text-primary transition-colors duration-300" href="products">Productos</a>
+<a class="font-label-caps text-label-caps text-primary border-b border-primary pb-1 transition-colors duration-300" href="contacts">Contacto</a>
 </div>
 <div class="flex items-center gap-6">
 <button class="transition-opacity duration-200 active:opacity-70 text-primary">
@@ -159,8 +159,8 @@
 </header>
 <main class="pt-32 pb-24 min-h-screen relative overflow-hidden">
 <!-- Atmospheric Background Elements -->
-<div class="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-container/20 rounded-full blur-[120px] -z-10 translate-x-1/2 -translate-y-1/4"></div>
-<div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-ice-blue/30 rounded-full blur-[100px] -z-10 -translate-x-1/4 translate-y-1/4"></div>
+<div class="absolute top-0 right-0 w-150 h-150 bg-primary-container/20 rounded-full blur-[120px] -z-10 translate-x-1/2 -translate-y-1/4"></div>
+<div class="absolute bottom-0 left-0 w-100 h-100 bg-ice-blue/30 rounded-full blur-[100px] -z-10 -translate-x-1/4 translate-y-1/4"></div>
 <section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
 <div class="grid lg:grid-cols-2 gap-20 items-start">
 <!-- Left Column: Content -->
@@ -194,7 +194,8 @@
 </div>
 <!-- Visual Accent Image -->
 <div class="hidden lg:block relative h-64 w-full rounded-2xl overflow-hidden shadow-sm group">
-<img class="w-full h-full object-cover grayscale-[20%] group-hover:scale-105 transition-transform duration-700" data-alt="A serene, high-end close-up shot of translucent skincare serum droplets on a frosted glass surface. The lighting is ethereal and soft, reflecting light-blue and white tones characteristic of a minimalist K-beauty brand aesthetic. The atmosphere is calm, clinical yet luxurious, with expansive negative space." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnZFuzncQKncGJLsjflRDmZjdRfLqfyyVwmuz4GUIlC4CmnqMK6hanJfuhwecGuerUjQ8F4a8Y1LS-RUjskqByb4qZFudchI9_F1MXOXAL9yZMPdRh_zu2tuusK5oI0BmrKIc4WS0R8m_dqWL-2TnbcFUWsHXG_RGwMmt1dCWp8yukDurfOYEZEVU64mOPVyeB9G-NvrKvcvf9mFENcya0nceJ2OgxVgBkp7MMofmD2S3Ffitp2PSsCwkqOIv_lCZs3KhGHai4SSf7"/>
+<!-- svelte-ignore a11y_missing_attribute -->
+<img class="w-full h-full object-cover grayscale-20 group-hover:scale-105 transition-transform duration-700" data-alt="A serene, high-end close-up shot of translucent skincare serum droplets on a frosted glass surface. The lighting is ethereal and soft, reflecting light-blue and white tones characteristic of a minimalist K-beauty brand aesthetic. The atmosphere is calm, clinical yet luxurious, with expansive negative space." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnZFuzncQKncGJLsjflRDmZjdRfLqfyyVwmuz4GUIlC4CmnqMK6hanJfuhwecGuerUjQ8F4a8Y1LS-RUjskqByb4qZFudchI9_F1MXOXAL9yZMPdRh_zu2tuusK5oI0BmrKIc4WS0R8m_dqWL-2TnbcFUWsHXG_RGwMmt1dCWp8yukDurfOYEZEVU64mOPVyeB9G-NvrKvcvf9mFENcya0nceJ2OgxVgBkp7MMofmD2S3Ffitp2PSsCwkqOIv_lCZs3KhGHai4SSf7"/>
 <div class="absolute inset-0 bg-primary/10 mix-blend-overlay"></div>
 </div>
 </div>
@@ -206,18 +207,21 @@
 <h2 class="font-headline-md text-headline-md text-on-surface mb-2">Send a Message</h2>
 <p class="text-cool-slate font-body-md">We usually respond within 24 hours.</p>
 </div>
-<form action="#" class="space-y-6" onsubmit="event.preventDefault(); alert('Message sent with serenity.');">
+<form class="space-y-md relative z-10" onsubmit={(event) => { event.preventDefault(); alert('Message sent with serenity.'); }}>
 <div class="grid md:grid-cols-2 gap-6">
 <div class="space-y-2">
+<!-- svelte-ignore a11y_label_has_associated_control -->
 <label class="font-label-caps text-[10px] text-primary uppercase ml-1">Name</label>
 <input class="w-full bg-porcelain-white/50 border-b border-outline-variant focus:border-primary focus:ring-0 transition-all py-3 px-4 outline-none font-body-md rounded-t-lg" placeholder="Your Name" type="text"/>
 </div>
 <div class="space-y-2">
+<!-- svelte-ignore a11y_label_has_associated_control -->
 <label class="font-label-caps text-[10px] text-primary uppercase ml-1">Email</label>
 <input class="w-full bg-porcelain-white/50 border-b border-outline-variant focus:border-primary focus:ring-0 transition-all py-3 px-4 outline-none font-body-md rounded-t-lg" placeholder="your@email.com" type="email"/>
 </div>
 </div>
 <div class="space-y-2">
+<!-- svelte-ignore a11y_label_has_associated_control -->
 <label class="font-label-caps text-[10px] text-primary uppercase ml-1">Subject</label>
 <select class="w-full bg-porcelain-white/50 border-b border-outline-variant focus:border-primary focus:ring-0 transition-all py-3 px-4 outline-none font-body-md rounded-t-lg appearance-none">
 <option>Product Inquiry</option>
@@ -227,7 +231,9 @@
 </select>
 </div>
 <div class="space-y-2">
-<label class="font-label-caps text-[10px] text-primary uppercase ml-1">Message</label>
+<!-- svelte-ignore a11y_label_has_associated_control -->
+<label class="
+font-label-caps text-[10px] text-primary uppercase ml-1">Message</label>
 <textarea class="w-full bg-porcelain-white/50 border-b border-outline-variant focus:border-primary focus:ring-0 transition-all py-3 px-4 outline-none font-body-md rounded-t-lg resize-none" placeholder="How can we assist your skin journey?" rows="4"></textarea>
 </div>
 <button class="w-full py-5 bg-primary text-white font-label-caps text-label-caps rounded-full shadow-lg hover:bg-on-primary-container transition-all duration-300 transform active:scale-95 flex justify-center items-center gap-3" type="submit">
