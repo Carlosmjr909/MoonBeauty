@@ -6,4 +6,15 @@
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
+
+
+<header>
+    Mi Menu
+</header>
+
 {@render children()}
+
+
+<footer>
+ Mi Footer
+</footer>
