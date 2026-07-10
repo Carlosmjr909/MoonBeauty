@@ -6,7 +6,7 @@
 <section>
     <img src="/labial.png" alt="" />
     <div>
-        <p>MoonBeauty</p>
+        <p class="text-4xl text-cyan-300">MoonBeauty</p>
         <p>Desde Corea hasta tu hogar</p>
         <a href="/products">Ver Catalogo</a>
     </div>
