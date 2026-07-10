@@ -1,5 +1,5 @@
 <div>
-    <img src="" alt="" />
+    <img src="/labial.png" alt="" />
 
     <div>
         <p>Rostro</p>

@@ -1,3 +1,7 @@
+<script>
+    import Tarjeta from "$lib/components/tarjeta.svelte";
+
+</script>
 <section>
     <img src="/labial.png" alt="" />
     <div>
@@ -39,7 +43,7 @@
             </p>
         </div>
         <div>
-            <img src="/agua.png" alt="" />
+            <img src="/Agua.png" alt="" />
             <p>Luminous Serenity</p>
             <p>
                 Descubre el brillo que nace desde adentro con productos
@@ -47,5 +51,18 @@
             </p>
             <button>Saber Mas</button>
         </div>
+    </div>
+</section>
+
+<section>
+    <p>LO NUEVO</p>
+    <div> 
+        <p>Favoritos de Temporada</p>
+        <button>Ver Todos</button>
+    </div>
+    <div>
+        <Tarjeta></Tarjeta>
+        <Tarjeta></Tarjeta>
+        <Tarjeta></Tarjeta>
     </div>
 </section>
