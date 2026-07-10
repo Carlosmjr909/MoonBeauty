@@ -1,5 +1,6 @@
 <script>
     import Tarjeta from "$lib/components/tarjeta.svelte";
+    import Icon from "@iconify/svelte";
 </script>
 
 <section>
@@ -14,7 +15,7 @@
 <section>
     <div>
         <div>
-            <div>estrella</div>
+            <Icon icon="mdi:stars" width="35px" />
             <p>La Ciencia de la Calma</p>
             <p>
                 Seleccionamos cuidadosamente rituales coreanos que combinan la
@@ -24,7 +25,7 @@
             <img src="/planta.png" alt="" />
         </div>
         <div>
-            <div>Medalla</div>
+            <Icon icon="mdi:medal-outline" width="25px" />
             <p>Curaduria Exclusiva</p>
             <p>
                 Solo marcas que cumplen con los estandares mas estrictos de
@@ -35,7 +36,7 @@
 
     <div>
         <div>
-            <div>Camion</div>
+            <Icon icon="mdi:truck-outline" width="25px" />
             <p>Envio Directo</p>
             <p>
                 Logistica optimizada para que tu ritual no se detenga. Directo
@@ -68,7 +69,7 @@
 </section>
 
 <section>
-    <div>99</div>
+    <Icon icon="at-icons:quotation-marks" width="25px" />
     <p>
         "La verdadera belleza no se trata de perfeccion, sino de la luz que
         emanas cuando te sientes en paz con tu ritual".

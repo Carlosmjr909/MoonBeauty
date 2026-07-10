@@ -1,7 +1,7 @@
 <script lang="ts">
 	import "./layout.css";
 	import favicon from "$lib/assets/favicon.svg";
-
+	import Icon from "@iconify/svelte";
 	let { children } = $props();
 </script>
 
@@ -15,7 +15,10 @@
 		<a href="/contacts">Contactos</a>
 	</div>
 
-	<div></div>
+	<div>
+		<Icon icon="material-symbols:search" width="25px" />
+		<Icon icon="ph:bag-thin" width="25px" />
+	</div>
 </header>
 
 {@render children()}
