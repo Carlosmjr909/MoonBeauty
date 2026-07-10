@@ -1,7 +1,7 @@
 <script>
     import Tarjeta from "$lib/components/tarjeta.svelte";
-
 </script>
+
 <section>
     <img src="/labial.png" alt="" />
     <div>
@@ -56,7 +56,7 @@
 
 <section>
     <p>LO NUEVO</p>
-    <div> 
+    <div>
         <p>Favoritos de Temporada</p>
         <button>Ver Todos</button>
     </div>
@@ -65,4 +65,13 @@
         <Tarjeta></Tarjeta>
         <Tarjeta></Tarjeta>
     </div>
+</section>
+
+<section>
+    <div>99</div>
+    <p>
+        "La verdadera belleza no se trata de perfeccion, sino de la luz que
+        emanas cuando te sientes en paz con tu ritual".
+    </p>
+    <p>Filosofia MoonBeauty</p>
 </section>

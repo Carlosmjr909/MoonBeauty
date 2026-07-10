@@ -27,5 +27,12 @@
 		<a href="">Facebook</a>
 		<a href="">Pinterest</a>
 	</div>
-	2024 MoonBeauty.Luminous Serenity for your skin.
+	<p>Suscribete para recibir consejos de J-Beauty y ofertas exclusivas.</p>
+
+	<form action="">
+		<input type="email" name="" id="" placeholder="Tu correo electronico" />
+		<button type="submit">Unirse</button>
+	</form>
+
+	<p>2024 MoonBeauty.Luminous Serenity for your skin.</p>
 </footer>
