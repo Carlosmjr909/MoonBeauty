@@ -1,6 +1,6 @@
 # MoonBeauty
 
-Un emprendimiento de maquillaje
+Un emprendimiento de maquillaje y skincre coreano
 
 Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 
