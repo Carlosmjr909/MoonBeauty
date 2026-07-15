@@ -11,7 +11,7 @@
 
 <p class="text-2xl font-semibold text-cyan-800">MoonBeauty</p>
 
-		<div class="flex gap-6">
+		<div class="flex gap-12">
 		<a href="/">Inicio</a>
 		<a href="/products">Productos</a>
 		<a href="/contacts">Contactos</a>

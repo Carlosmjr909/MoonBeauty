@@ -12,9 +12,9 @@
     </div>
 </section>
 
-<section>
-    <div>
-        <div>
+<section class="p-12 space-y-4 bg-gray-50">
+    <div class="flex">
+        <div class="bg-white">
             <Icon icon="mdi:stars" width="35px" />
             <p>La Ciencia de la Calma</p>
             <p>
@@ -24,7 +24,8 @@
             </p>
             <img src="/planta.png" alt="" />
         </div>
-        <div>
+
+        <div class="p-4 bg-blue-50">
             <Icon icon="mdi:medal-outline" width="25px" />
             <p>Curaduria Exclusiva</p>
             <p>
@@ -34,8 +35,8 @@
         </div>
     </div>
 
-    <div>
-        <div>
+    <div class="flex">
+        <div class="bg-blue-50">
             <Icon icon="mdi:truck-outline" width="25px" />
             <p>Envio Directo</p>
             <p>
@@ -43,8 +44,11 @@
                 desde Seul a tu puerta
             </p>
         </div>
-        <div>
+
+        <div class="p-4 bg-slate-900 ">
             <img src="/Agua.png" alt="" />
+            </div>
+            <div class="p-4 bg-slate-900 flex-col text-white">
             <p>Luminous Serenity</p>
             <p>
                 Descubre el brillo que nace desde adentro con productos
