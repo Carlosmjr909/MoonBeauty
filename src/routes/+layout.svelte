@@ -7,15 +7,17 @@
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
-<header>
-	<div>
-		<p>MoonBeauty</p>
+<header class="flex justify-between items-center px-12 py-4">
+
+<p class="text-2xl font-semibold text-cyan-800">MoonBeauty</p>
+
+		<div class="flex gap-6">
 		<a href="/">Inicio</a>
 		<a href="/products">Productos</a>
 		<a href="/contacts">Contactos</a>
 	</div>
 
-	<div>
+	<div class="flex gap-4">
 		<Icon icon="material-symbols:search" width="25px" />
 		<Icon icon="ph:bag-thin" width="25px" />
 	</div>
