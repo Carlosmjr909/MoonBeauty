@@ -45,16 +45,17 @@
             </p>
         </div>
 
-        <div class="p-4 bg-slate-900 ">
+        <div class="p-4 bg-slate-900 flex gap-3">
             <img src="/Agua.png" alt="" />
-            </div>
-            <div class="p-4 bg-slate-900 flex-col text-white">
+
+            <div class="text-white">
             <p>Luminous Serenity</p>
             <p>
                 Descubre el brillo que nace desde adentro con productos
                 diseñados para nutrir no solo tu piel, sino tu bienestar diario
             </p>
             <button>Saber Mas</button>
+            </div>
         </div>
     </div>
 </section>
