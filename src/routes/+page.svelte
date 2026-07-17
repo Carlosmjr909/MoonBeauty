@@ -3,30 +3,34 @@
     import Icon from "@iconify/svelte";
 </script>
 
-<section>
-    <img src="/labial.png" alt="" />
+<section class="flex justify-center py-36 relative">
+    <img src="/labial.png" alt="" class="absolute -z-10 w-full h-full top-0 object-cover"/>
     <div>
-        <p class="text-4xl text-cyan-300">MoonBeauty</p>
+        <p class="text-4xl text-cyan-300 text-center">MoonBeauty</p>
         <p>Desde Corea hasta tu hogar</p>
         <a href="/products">Ver Catalogo</a>
     </div>
 </section>
 
 <section class="p-12 space-y-4 bg-gray-50">
-    <div class="flex">
-        <div class="bg-white">
-            <Icon icon="mdi:stars" width="35px" />
+    <div class="flex space-x-4">
+
+
+        <div class="bg-white rounded-3xl flex flex-col p-10 ">
+            <Icon icon="mdi:stars" width="35px"/>
             <p>La Ciencia de la Calma</p>
             <p>
                 Seleccionamos cuidadosamente rituales coreanos que combinan la
                 tecnologia clinica mas avanzada con ingredientes botanicos
                 ancestrales
             </p>
-            <img src="/planta.png" alt="" />
+            <img src="/planta.png" alt="" class="w-full rounded-2xl" />
         </div>
 
-        <div class="p-4 bg-blue-50">
-            <Icon icon="mdi:medal-outline" width="25px" />
+
+
+        <div class="p-4 bg-blue-50 rounded-3xl flex flex-col justify-center items-center text-center font-bold text-indigo-950">
+            <Icon icon="mdi:medal-outline" width="25px"/>
             <p>Curaduria Exclusiva</p>
             <p>
                 Solo marcas que cumplen con los estandares mas estrictos de
@@ -35,8 +39,8 @@
         </div>
     </div>
 
-    <div class="flex">
-        <div class="bg-blue-50">
+    <div class="flex space-x-4">
+        <div class="bg-blue-50 rounded-3xl">
             <Icon icon="mdi:truck-outline" width="25px" />
             <p>Envio Directo</p>
             <p>
@@ -45,16 +49,17 @@
             </p>
         </div>
 
-        <div class="p-4 bg-slate-900 flex gap-3">
-            <img src="/Agua.png" alt="" />
+        <div class="p-4 bg-slate-700 flex gap-10 rounded-3xl">
+            <img src="/Agua.png" alt="" class="rounded-3xl"/>
 
             <div class="text-white">
-            <p>Luminous Serenity</p>
-            <p>
-                Descubre el brillo que nace desde adentro con productos
-                diseñados para nutrir no solo tu piel, sino tu bienestar diario
-            </p>
-            <button>Saber Mas</button>
+                <p>Luminous Serenity</p>
+                <p>
+                    Descubre el brillo que nace desde adentro con productos
+                    diseñados para nutrir no solo tu piel, sino tu bienestar
+                    diario
+                </p>
+                <button>Saber Mas</button>
             </div>
         </div>
     </div>
@@ -66,7 +71,7 @@
         <p>Favoritos de Temporada</p>
         <button>Ver Todos</button>
     </div>
-    <div>
+    <div class="flex gap-4 px-12">
         <Tarjeta></Tarjeta>
         <Tarjeta></Tarjeta>
         <Tarjeta></Tarjeta>

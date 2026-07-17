@@ -1,4 +1,20 @@
-<div>
+<script>
+
+const PropiedadesDelComponente = $props()
+
+
+</script>
+
+<!-- 
+  PROPIEDADES DEL COMPONENTE
+   Tipo de producto: Rostro
+   Nombre: Lunar Mist Serum
+   precio: $85.00
+   imagen: source
+-->
+
+
+<div class="flex-1">
     <img src="/labial.png" alt="" />
 
     <div>
