@@ -3,12 +3,12 @@
     import Icon from "@iconify/svelte";
 </script>
 
-<section class="flex justify-center py-36 relative">
-    <img src="/labial.png" alt="" class="absolute -z-10 w-full h-full top-0 object-cover"/>
-    <div>
-        <p class="text-4xl text-cyan-300 text-center">MoonBeauty</p>
-        <p>Desde Corea hasta tu hogar</p>
-        <a href="/products">Ver Catalogo</a>
+<section class="flex justify-center py-100 relative text-center">
+    <img src="/fondo.jpg" alt="" class="absolute -z-10 w-full h-full top-0 object-cover"/>
+    <div class="space-y-4">
+        <p class="text-6xl text-slate-500 text-center">MoonBeauty</p>
+        <p class="text-2xl text-slate-500">Desde Corea hasta tu hogar</p>
+        <a class="bg-sky-200 px-12 py-3 rounded-3xl text-lg text-slate-500 hover:bg-slate-500 hover:text-white transition-all duration-500 " href="/products">Ver Catalogo</a>
     </div>
 </section>
 
@@ -16,7 +16,7 @@
     <div class="flex space-x-4">
 
 
-        <div class="bg-white rounded-3xl flex flex-col p-10 ">
+        <div class="bg-white rounded-3xl flex flex-col p-10 hover:-translate-y-2 transition-all ">
             <Icon icon="mdi:stars" width="35px"/>
             <p>La Ciencia de la Calma</p>
             <p>
@@ -28,10 +28,9 @@
         </div>
 
 
-
-        <div class="p-4 bg-blue-50 rounded-3xl flex flex-col justify-center items-center text-center font-bold text-indigo-950">
+        <div class="p-4 bg-blue-50 rounded-3xl flex flex-col justify-center items-center text-center font-bold text-indigo-950 hover:-translate-y-2 transition-all duration-500">
             <Icon icon="mdi:medal-outline" width="25px"/>
-            <p>Curaduria Exclusiva</p>
+            <p class="font-PTSerif">Curaduria Exclusiva</p>
             <p>
                 Solo marcas que cumplen con los estandares mas estrictos de
                 K-Beauty y sostenibilidad
@@ -40,7 +39,7 @@
     </div>
 
     <div class="flex space-x-4">
-        <div class="bg-blue-50 rounded-3xl">
+        <div class="bg-blue-50 rounded-3xl hover:-translate-y-2 transition-all duration-500">
             <Icon icon="mdi:truck-outline" width="25px" />
             <p>Envio Directo</p>
             <p>
@@ -49,7 +48,7 @@
             </p>
         </div>
 
-        <div class="p-4 bg-slate-700 flex gap-10 rounded-3xl">
+        <div class="p-4 bg-slate-700 flex gap-10 rounded-3xl overflow-hidden relative hover:-translate-y-2 transition-all duration-500">
             <img src="/Agua.png" alt="" class="rounded-3xl"/>
 
             <div class="text-white">

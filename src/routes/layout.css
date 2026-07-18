@@ -1,1 +1,11 @@
 @import 'tailwindcss';
+
+
+@font-face {
+    font-family: MiTypografia;
+    src: url('/PTSerif-Regular.ttf');
+}
+
+.font-PTSerif {
+    font-family: MiTypografia;
+}
