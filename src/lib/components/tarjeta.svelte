@@ -1,13 +1,13 @@
 <script>
 
-const PropiedadesDelComponente = $props()
+const { Tipo, Nombre, precio, imagen } = $props()
 
 
 </script>
 
 <!-- 
   PROPIEDADES DEL COMPONENTE
-   Tipo de producto: Rostro
+   Tipo: Rostro
    Nombre: Lunar Mist Serum
    precio: $85.00
    imagen: source
@@ -15,11 +15,11 @@ const PropiedadesDelComponente = $props()
 
 
 <div class="flex-1">
-    <img src="/labial.png" alt="" />
+    <img src={imagen} alt="" class="w-full h-150 object-cover" />
 
     <div>
-        <p>Rostro</p>
-        <p>Lunar Mist Serum</p>
-        <p>$85.00</p>
+        <p>{Tipo}</p>
+        <p>{Nombre}</p>
+        <p>${precio}</p>
     </div>
 </div>

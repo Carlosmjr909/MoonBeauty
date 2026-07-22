@@ -3,9 +3,18 @@
 
 @font-face {
     font-family: MiTypografia;
-    src: url('/PTSerif-Regular.ttf');
+    src: url('/PlayfairDisplay-VariableFont_wght.ttf');
 }
 
-.font-PTSerif {
+.font-PlayFair {
     font-family: MiTypografia;
+}
+
+@font-face {
+    font-family: MiTypografia2;
+    src: url('BeVietnamPro-Regular.ttf');
+}
+
+.font-BeVietnam {
+    font-family: MiTypografia2;
 }

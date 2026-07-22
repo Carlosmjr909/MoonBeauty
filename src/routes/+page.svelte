@@ -1,14 +1,16 @@
 <script>
+// @ts-nocheck
+
     import Tarjeta from "$lib/components/tarjeta.svelte";
     import Icon from "@iconify/svelte";
 </script>
 
-<section class="flex justify-center py-100 relative text-center">
+<section class="flex justify-center py-62 text-center">
     <img src="/fondo.jpg" alt="" class="absolute -z-10 w-full h-full top-0 object-cover"/>
     <div class="space-y-4">
-        <p class="text-6xl text-slate-500 text-center">MoonBeauty</p>
-        <p class="text-2xl text-slate-500">Desde Corea hasta tu hogar</p>
-        <a class="bg-sky-200 px-12 py-3 rounded-3xl text-lg text-slate-500 hover:bg-slate-500 hover:text-white transition-all duration-500 " href="/products">Ver Catalogo</a>
+        <p class="font-PlayFair text-6xl text-slate-500 text-center">MoonBeauty</p>
+        <p class="font-BeVietnam text-2xl text-slate-500">Desde Corea hasta tu hogar</p>
+        <a class="font-BeVietnam bg-sky-200 px-12 py-3 rounded-3xl text-lg text-slate-500 hover:bg-slate-500 hover:text-white transition-all duration-500 " href="/products">Ver Catalogo</a>
     </div>
 </section>
 
@@ -30,10 +32,9 @@
 
         <div class="p-4 bg-blue-50 rounded-3xl flex flex-col justify-center items-center text-center font-bold text-indigo-950 hover:-translate-y-2 transition-all duration-500">
             <Icon icon="mdi:medal-outline" width="25px"/>
-            <p class="font-PTSerif">Curaduria Exclusiva</p>
+            <p>Curaduria Exclusiva</p>
             <p>
-                Solo marcas que cumplen con los estandares mas estrictos de
-                K-Beauty y sostenibilidad
+                Solo marcas que cumplen con los estandares mas estrictos de K-Beauty y sostenibilidad
             </p>
         </div>
     </div>
@@ -64,16 +65,34 @@
     </div>
 </section>
 
-<section>
-    <p>LO NUEVO</p>
-    <div>
-        <p>Favoritos de Temporada</p>
-        <button>Ver Todos</button>
+<section class="p-12 font-bold text-slate-600">
+    <p class="text-base py-10 px-12 font-BeVietnam">New arrivals</p>
+    <div class="flex justify-between px-12">
+        <p class="text-3xl font-PlayFair">Favoritos de Temporada</p>
+        <a class="bg-sky-200 rounded-3xl px-4 py-2 font-BeVietnam" href="/products">Ver Todos</a>
     </div>
-    <div class="flex gap-4 px-12">
-        <Tarjeta></Tarjeta>
-        <Tarjeta></Tarjeta>
-        <Tarjeta></Tarjeta>
+    <div class="flex gap-16 p-12">
+        <Tarjeta 
+         Tipo="Protector solar"
+         Nombre="Tocobo bio watery sun cream"
+         precio="19"
+         imagen="/Tocobo-bio-watery-sun-cream.jpg"
+         ></Tarjeta>
+
+
+        <Tarjeta
+        Tipo="Balsamo labial"
+        Nombre="glass tinted lip balm"
+        precio="12"
+        imagen="/glass tinted lip balm.png"
+        ></Tarjeta>
+
+        <Tarjeta 
+        Tipo="Balsamo limpiador"
+        Nombre="pure grinding cleansing balm"
+        precio="25"
+        imagen="/pure grinding cleansing balm.png"
+        ></Tarjeta>
     </div>
 </section>
 
