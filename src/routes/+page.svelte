@@ -1,46 +1,60 @@
 <script>
-// @ts-nocheck
+    // @ts-nocheck
 
     import Tarjeta from "$lib/components/tarjeta.svelte";
     import Icon from "@iconify/svelte";
 
-    const DatosTarjeta1 = {
-        Tipo: "Protector solar",
-        Nombre: "Tocobo bio watery sun cream",
-        precio: 19,
-        imagen: "/Tocobo-bio-watery-sun-cream.jpg"
-    }
-
-    const DatosTarjeta2 = {
-        Tipo: "Balsamo labial",
-        Nombre: "glass tinted lip balm",
-        precio: 12,
-        imagen: "/glass tinted lip balm.png"
-    }
-
-    const DatosTarjeta3 = {
-        Tipo: "Balsamo limpiador",
-        Nombre: "pure grinding cleansing balm",
-        precio: 25,
-        imagen: "/pure grinding cleansing balm.png"
-    }
+    const ListaTarjeta = [
+        {   
+            id: 1,
+            Tipo: "Protector solar",
+            Nombre: "Tocobo bio watery sun cream",
+            precio: 19,
+            imagen: "/Tocobo-bio-watery-sun-cream.jpg",
+        },
+        {
+            id: 2,
+            Tipo: "Balsamo labial",
+            Nombre: "glass tinted lip balm",
+            precio: 12,
+            imagen: "/glass tinted lip balm.png",
+        },
+        {
+            id: 3,
+            Tipo: "Balsamo limpiador",
+            Nombre: "pure grinding cleansing balm",
+            precio: 25,
+            imagen: "/pure grinding cleansing balm.png",
+        },
+    ];
 </script>
 
 <section class="flex justify-center py-62 text-center">
-    <img src="/fondo.jpg" alt="" class="absolute -z-10 w-full h-full top-0 object-cover"/>
+    <img
+        src="/fondo.jpg"
+        alt=""
+        class="absolute -z-10 w-full h-full top-0 object-cover"
+    />
     <div class="space-y-4">
-        <p class="font-PlayFair text-6xl text-slate-500 text-center">MoonBeauty</p>
-        <p class="font-BeVietnam text-2xl text-slate-500">Desde Corea hasta tu hogar</p>
-        <a class="font-BeVietnam bg-sky-200 px-12 py-3 rounded-3xl text-lg text-slate-500 hover:bg-slate-500 hover:text-white transition-all duration-500 " href="/products">Ver Catalogo</a>
+        <p class="font-PlayFair text-6xl text-slate-500 text-center">
+            MoonBeauty
+        </p>
+        <p class="font-BeVietnam text-2xl text-slate-500">
+            Desde Corea hasta tu hogar
+        </p>
+        <a
+            class="font-BeVietnam bg-sky-200 px-12 py-3 rounded-3xl text-lg text-slate-500 hover:bg-slate-500 hover:text-white transition-all duration-500"
+            href="/products">Ver Catalogo</a
+        >
     </div>
 </section>
 
 <section class="p-12 space-y-4 bg-gray-50">
     <div class="flex space-x-4">
-
-
-        <div class="bg-white rounded-3xl flex flex-col p-10 hover:-translate-y-2 transition-all ">
-            <Icon icon="mdi:stars" width="35px"/>
+        <div
+            class="bg-white rounded-3xl flex flex-col p-10 hover:-translate-y-2 transition-all"
+        >
+            <Icon icon="mdi:stars" width="35px" />
             <p>La Ciencia de la Calma</p>
             <p>
                 Seleccionamos cuidadosamente rituales coreanos que combinan la
@@ -50,18 +64,22 @@
             <img src="/planta.png" alt="" class="w-full rounded-2xl" />
         </div>
 
-
-        <div class="p-4 bg-blue-50 rounded-3xl flex flex-col justify-center items-center text-center font-bold text-indigo-950 hover:-translate-y-2 transition-all duration-500">
-            <Icon icon="mdi:medal-outline" width="25px"/>
+        <div
+            class="p-4 bg-blue-50 rounded-3xl flex flex-col justify-center items-center text-center font-bold text-indigo-950 hover:-translate-y-2 transition-all duration-500"
+        >
+            <Icon icon="mdi:medal-outline" width="25px" />
             <p>Curaduria Exclusiva</p>
             <p>
-                Solo marcas que cumplen con los estandares mas estrictos de K-Beauty y sostenibilidad
+                Solo marcas que cumplen con los estandares mas estrictos de
+                K-Beauty y sostenibilidad
             </p>
         </div>
     </div>
 
     <div class="flex space-x-4">
-        <div class="bg-blue-50 rounded-3xl hover:-translate-y-2 transition-all duration-500">
+        <div
+            class="bg-blue-50 rounded-3xl hover:-translate-y-2 transition-all duration-500"
+        >
             <Icon icon="mdi:truck-outline" width="25px" />
             <p>Envio Directo</p>
             <p>
@@ -70,8 +88,10 @@
             </p>
         </div>
 
-        <div class="p-4 bg-slate-700 flex gap-10 rounded-3xl overflow-hidden relative hover:-translate-y-2 transition-all duration-500">
-            <img src="/Agua.png" alt="" class="rounded-3xl"/>
+        <div
+            class="p-4 bg-slate-700 flex gap-10 rounded-3xl overflow-hidden relative hover:-translate-y-2 transition-all duration-500"
+        >
+            <img src="/Agua.png" alt="" class="rounded-3xl" />
 
             <div class="text-white">
                 <p>Luminous Serenity</p>
@@ -90,15 +110,15 @@
     <p class="text-base py-10 px-12 font-BeVietnam">New arrivals</p>
     <div class="flex justify-between px-12">
         <p class="text-3xl font-PlayFair">Favoritos de Temporada</p>
-        <a class="bg-sky-200 rounded-3xl px-4 py-2 font-BeVietnam" href="/products">Ver Todos</a>
+        <a
+            class="bg-sky-200 rounded-3xl px-4 py-2 font-BeVietnam"
+            href="/products">Ver Todos</a
+        >
     </div>
     <div class="flex gap-16 p-12">
-        <Tarjeta {...DatosTarjeta1}></Tarjeta>
-
-
-        <Tarjeta {...DatosTarjeta2}></Tarjeta>
-
-        <Tarjeta {...DatosTarjeta3}></Tarjeta>
+    {#each ListaTarjeta as data}
+     <Tarjeta {...data}/>  
+{/each}
     </div>
 </section>
 
