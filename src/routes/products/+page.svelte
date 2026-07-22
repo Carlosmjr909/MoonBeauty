@@ -2,7 +2,6 @@
     import Tarjeta from "$lib/components/tarjeta.svelte";
 </script>
 
-<Tarjeta></Tarjeta>
 
 <section>
     <div>
