@@ -1,6 +1,12 @@
-<script>
+<script lang="ts">
 
-const { Tipo, Nombre, precio, imagen } = $props()
+interface PropTypes {
+   Tipo: string
+   Nombre: string
+   precio: number
+   imagen: string
+}
+const { Tipo, Nombre, precio, imagen }: PropTypes= $props()
 
 
 </script>

@@ -3,6 +3,27 @@
 
     import Tarjeta from "$lib/components/tarjeta.svelte";
     import Icon from "@iconify/svelte";
+
+    const DatosTarjeta1 = {
+        Tipo: "Protector solar",
+        Nombre: "Tocobo bio watery sun cream",
+        precio: 19,
+        imagen: "/Tocobo-bio-watery-sun-cream.jpg"
+    }
+
+    const DatosTarjeta2 = {
+        Tipo: "Balsamo labial",
+        Nombre: "glass tinted lip balm",
+        precio: 12,
+        imagen: "/glass tinted lip balm.png"
+    }
+
+    const DatosTarjeta3 = {
+        Tipo: "Balsamo limpiador",
+        Nombre: "pure grinding cleansing balm",
+        precio: 25,
+        imagen: "/pure grinding cleansing balm.png"
+    }
 </script>
 
 <section class="flex justify-center py-62 text-center">
@@ -72,27 +93,12 @@
         <a class="bg-sky-200 rounded-3xl px-4 py-2 font-BeVietnam" href="/products">Ver Todos</a>
     </div>
     <div class="flex gap-16 p-12">
-        <Tarjeta 
-         Tipo="Protector solar"
-         Nombre="Tocobo bio watery sun cream"
-         precio="19"
-         imagen="/Tocobo-bio-watery-sun-cream.jpg"
-         ></Tarjeta>
+        <Tarjeta {...DatosTarjeta1}></Tarjeta>
 
 
-        <Tarjeta
-        Tipo="Balsamo labial"
-        Nombre="glass tinted lip balm"
-        precio="12"
-        imagen="/glass tinted lip balm.png"
-        ></Tarjeta>
+        <Tarjeta {...DatosTarjeta2}></Tarjeta>
 
-        <Tarjeta 
-        Tipo="Balsamo limpiador"
-        Nombre="pure grinding cleansing balm"
-        precio="25"
-        imagen="/pure grinding cleansing balm.png"
-        ></Tarjeta>
+        <Tarjeta {...DatosTarjeta3}></Tarjeta>
     </div>
 </section>
 
