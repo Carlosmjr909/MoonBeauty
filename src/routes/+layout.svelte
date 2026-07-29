@@ -8,7 +8,7 @@
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
 <header
-	class="flex justify-between items-center px-15 bg-white/70 backdrop-blur-md"
+	class="flex justify-between items-center px-15 bg-white/70 backdrop-blur-md sticky top-0 z-10"
 >
 	<img src="/logo.webp" alt="" class="w-30 h-auto" />
 
@@ -29,8 +29,8 @@
 
 	<div class="flex gap-6 font-bold text-slate-500">
 		<Icon icon="material-symbols:search" width="25px" />
-		<Icon icon="gg:profile" width="25px" />
-		<Icon icon="ph:bag-thin" width="25px" />
+		<a href="create_account"><Icon icon="gg:profile" width="25px" /></a>
+        <Icon icon="ph:bag-thin" width="25px" />
 	</div>
 </header>
 

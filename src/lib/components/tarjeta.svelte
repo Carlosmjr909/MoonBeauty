@@ -19,7 +19,11 @@
 
 <a href="/products/{id}">
     <div class="flex-1">
-        <img src={imagen} alt="" class="w-full h-150 object-cover" />
+     <div class="overflow-hidden h-150">
+        <img src={imagen} alt="" class="w-full h-150 object-cover hover:scale-110 duration-600 transition-transform<"/>
+    
+    </div>
+        
 
         <div>
             <p>{Tipo}</p>

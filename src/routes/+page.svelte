@@ -3,30 +3,9 @@
 
     import Tarjeta from "$lib/components/tarjeta.svelte";
     import Icon from "@iconify/svelte";
+    
+    import { products } from "$lib/products";
 
-    const ListaTarjeta = [
-        {   
-            id: 1,
-            Tipo: "Protector solar",
-            Nombre: "Tocobo bio watery sun cream",
-            precio: 19,
-            imagen: "/Tocobo-bio-watery-sun-cream.jpg",
-        },
-        {
-            id: 2,
-            Tipo: "Balsamo labial",
-            Nombre: "glass tinted lip balm",
-            precio: 12,
-            imagen: "/glass tinted lip balm.png",
-        },
-        {
-            id: 3,
-            Tipo: "Balsamo limpiador",
-            Nombre: "pure grinding cleansing balm",
-            precio: 25,
-            imagen: "/pure grinding cleansing balm.png",
-        },
-    ];
 </script>
 
 <section class="flex justify-center py-62 text-center">
@@ -65,7 +44,7 @@
         </div>
 
         <div
-            class="p-4 bg-blue-50 rounded-3xl flex flex-col justify-center items-center text-center font-bold text-indigo-950 hover:-translate-y-2 transition-all duration-500"
+            class="p-4 bg-blue-50 rounded-3xl flex flex-col justify-center items-center text-center font-bold text-indigo-950 hover:-translate-y-2 transition-all duration-500 space-y-4"
         >
             <Icon icon="mdi:medal-outline" width="25px" />
             <p>Curaduria Exclusiva</p>
@@ -115,18 +94,10 @@
             href="/products">Ver Todos</a
         >
     </div>
-    <div class="flex gap-16 p-12">
-    {#each ListaTarjeta as data}
+    <div class="flex gap-4 p-12">
+    {#each products as data}
      <Tarjeta {...data}/>  
 {/each}
     </div>
 </section>
 
-<section>
-    <Icon icon="at-icons:quotation-marks" width="25px" />
-    <p>
-        "La verdadera belleza no se trata de perfeccion, sino de la luz que
-        emanas cuando te sientes en paz con tu ritual".
-    </p>
-    <p>Filosofia MoonBeauty</p>
-</section>
