@@ -6,6 +6,7 @@
     
     import { products } from "$lib/products";
 
+    const miniListaProductos = products.filter( (product) => product.precio <= 15 )
 </script>
 
 <section class="flex justify-center py-62 text-center">
@@ -95,7 +96,7 @@
         >
     </div>
     <div class="flex gap-4 p-12">
-    {#each products as data}
+    {#each miniListaProductos as data}
      <Tarjeta {...data}/>  
 {/each}
     </div>
