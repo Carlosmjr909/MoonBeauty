@@ -54,6 +54,6 @@
     </form>
 
     <div class="px-24 overflow-hidden relative flex-2">
-        <img src="/imagen fondo login.webp" alt="" class="rounded-4xl w-full h-175">
+        <img src="/imagen_login.webp" alt="" class="rounded-4xl w-full h-175">
     </div>
 </section>

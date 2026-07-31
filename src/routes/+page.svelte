@@ -29,6 +29,22 @@
     </div>
 </section>
 
+<section class="p-12 font-bold text-slate-600">
+    <p class="text-base py-10 px-12 font-BeVietnam">New arrivals</p>
+    <div class="flex justify-between px-12">
+        <p class="text-3xl font-PlayFair">Favoritos de Temporada</p>
+        <a
+            class="bg-sky-200 rounded-3xl px-4 py-2 font-BeVietnam"
+            href="/products">Ver Todos</a
+        >
+    </div>
+    <div class="flex gap-4 p-12">
+    {#each miniListaProductos as data}
+     <Tarjeta {...data}/>  
+{/each}
+    </div>
+</section>
+
 <section class="p-12 space-y-4 bg-gray-50">
     <div class="flex space-x-4">
         <div
@@ -86,19 +102,5 @@
     </div>
 </section>
 
-<section class="p-12 font-bold text-slate-600">
-    <p class="text-base py-10 px-12 font-BeVietnam">New arrivals</p>
-    <div class="flex justify-between px-12">
-        <p class="text-3xl font-PlayFair">Favoritos de Temporada</p>
-        <a
-            class="bg-sky-200 rounded-3xl px-4 py-2 font-BeVietnam"
-            href="/products">Ver Todos</a
-        >
-    </div>
-    <div class="flex gap-4 p-12">
-    {#each miniListaProductos as data}
-     <Tarjeta {...data}/>  
-{/each}
-    </div>
-</section>
+
 
