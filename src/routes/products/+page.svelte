@@ -1,17 +1,34 @@
 <script lang="ts">
     import Tarjeta from "$lib/components/tarjeta.svelte";
     import { products } from "../../lib/products";
+
+    let { data } = $props();
 </script>
 
 <section class="bg-slate-50 py-12 px-16">
-    <div class="grid grid-cols-1 
-    sm:grid-cols-2 
-    md:grid-cols-3 
-    lg:grid-cols-4 
-    gap-4">
+    <div>
+        <p
+            class="font-PlayFair text-3xl
+    sm:text-2xl
+    md:text-3xl
+    lg:text-4xl
+    2xl:text-6xl
+    "
+        >
+            Nuestros Productos
+        </p>
+    </div>
 
-        {#each products as data}            
-            <Tarjeta {...data}></Tarjeta>
+    <div
+        class="grid grid-cols-1 my-12
+    sm:grid-cols-2
+    md:grid-cols-3
+    lg:grid-cols-4
+    gap-4"
+    >
+        {#each products as product}
+            <Tarjeta {...product} tasaBCV={data?.tasaBCV?.promedio ?? null}
+            ></Tarjeta>
         {/each}
     </div>
 </section>

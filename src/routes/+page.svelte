@@ -1,14 +1,14 @@
 <script lang="ts">
 	import Tarjeta from '$lib/components/tarjeta.svelte';
 	import Icon from '@iconify/svelte';
-    
+
 	import { products } from '$lib/products';
 
-	const miniListaProductos = products
-		.filter((product) => product.precio <= 15)
+	const miniListaProductos = products.filter(
+		(product) => product.precio <= 15
+	);
 </script>
 
-<!-- HERO PRINCIPAL -->
 <section
 	class=" isolate flex min-h-[calc(100svh-5rem)] items-center justify-center overflow-hidden px-4 py-20 text-center sm:px-6 lg:min-h-[calc(100svh-6rem)] lg:px-8"
 >
@@ -19,7 +19,6 @@
 		class="absolute top-0 -z-10 h-full w-full object-cover"
 	/>
 
-	<!-- Capa suave para mejorar la lectura -->
 	<div
 		class=" -z-10 bg-white/20 backdrop-blur-[1px]"
 	></div>
@@ -46,7 +45,6 @@
 	</div>
 </section>
 
-<!-- PRODUCTOS DESTACADOS -->
 <section class="bg-gray-50 py-12 sm:py-16 lg:py-20 2xl:py-24">
 	<div
 		class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[1600px]"
@@ -99,11 +97,11 @@
 				Nuestra esencia
 			</p>
 
-			<h2
+			<p
 				class="mt-3 font-PlayFair text-3xl text-slate-700 sm:text-4xl lg:text-5xl"
 			>
 				Belleza, calma y cuidado
-			</h2>
+		</p>
 		</div>
 
 		<div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -121,11 +119,11 @@
 							<Icon icon="mdi:stars" width="28" />
 						</div>
 
-						<h3
+						<p
 							class="mt-5 font-PlayFair text-2xl font-bold text-slate-700 sm:text-3xl"
 						>
 							La ciencia de la calma
-						</h3>
+					</p>
 
 						<p
 							class="mt-4 text-sm leading-7 text-slate-600 sm:text-base"
@@ -180,11 +178,11 @@
 					<Icon icon="mdi:truck-outline" width="28" />
 				</div>
 
-				<h3
+				<p
 					class="mt-5 font-PlayFair text-2xl font-bold text-slate-700 sm:text-3xl"
 				>
 					Envío directo
-				</h3>
+			</p>
 
 				<p
 					class="mt-4 max-w-xl text-sm leading-7 text-slate-600 sm:text-base lg:text-lg"
@@ -212,9 +210,9 @@
 				<div
 					class="relative flex h-full min-h-105 flex-col justify-end p-7 text-white sm:min-h-115 sm:p-10 lg:min-h-80 lg:max-w-xl lg:justify-center"
 				>
-					<h3 class="font-PlayFair text-3xl font-bold sm:text-4xl">
+					<p class="font-PlayFair text-3xl font-bold sm:text-4xl">
 						Luminous Serenity
-					</h3>
+					</p>
 
 					<p
 						class="mt-4 text-sm leading-7 text-white/85 sm:text-base lg:text-lg"

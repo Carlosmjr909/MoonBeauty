@@ -1,6 +1,7 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
     import { carrito, totalCarritoUSD, cantidadCarrito } from "$lib/cart.js";
+    import { goto } from "$app/navigation";
 
     import {
         convertirUSDaVES,
@@ -19,24 +20,20 @@
     } = $props();
 
     const tasaValida = $derived(
-		typeof tasaBCV === 'number' &&
-		Number.isFinite(tasaBCV) &&
-		tasaBCV > 0
-	);
+        typeof tasaBCV === "number" && Number.isFinite(tasaBCV) && tasaBCV > 0,
+    );
 
     const totalCarritoVES = $derived(
-	tasaValida
-		? convertirUSDaVES($totalCarritoUSD, tasaBCV as number)
-		: null
-);
+        tasaValida
+            ? convertirUSDaVES($totalCarritoUSD, tasaBCV as number)
+            : null,
+    );
 
     const carritoItems = $derived($carrito ?? []);
 
-    function continuarCompra() {
-        console.info("Continuar compra", {
-            totalUSD: $totalCarritoUSD,
-            totalVES: totalCarritoVES,
-        });
+    async function continuarCompra() {
+        cerrar();
+        await goto("/checkout");
     }
 </script>
 
@@ -75,9 +72,7 @@
             <Icon icon="material-symbols:close-rounded" width="27" />
         </button>
     </header>
-<p class="px-6 py-2 text-xs text-red-500">
-	Tasa recibida: {String(tasaBCV)}
-</p>
+
     {#if $carrito.length === 0}
         <div
             class="flex flex-1 flex-col items-center justify-center px-8 text-center"
@@ -224,12 +219,6 @@
                 </div>
             </div>
 
-           {#if tasaValida}
-	<p class="mt-2 text-xs text-slate-400">
-		Tasa BCV: 1 USD =
-		{formatearVES(tasaBCV as number)}
-	</p>
-{/if}
             <div>
                 <p class="mt-1 text-xs text-slate-400">
                     El costo de envío se calculará después.
@@ -238,11 +227,10 @@
                 <button
                     type="button"
                     onclick={continuarCompra}
-                    class="mt-5 w-full rounded-full bg-slate-600 px-6 py-4 font-semibold text-white transition hover:bg-slate-500"
+                    class="mt-5 flex w-full justify-center rounded-full bg-slate-600 px-6 py-4 font-semibold text-white transition hover:bg-slate-500"
                 >
                     Continuar compra
                 </button>
-
                 <button
                     type="button"
                     onclick={() => carrito.vaciar()}
