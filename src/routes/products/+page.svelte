@@ -1,11 +1,12 @@
 <script lang="ts">
     import Tarjeta from "$lib/components/tarjeta.svelte";
+    import { fade } from "svelte/transition";
     import { products } from "../../lib/products";
 
     let { data } = $props();
 </script>
 
-<section class="bg-slate-50 py-12 px-16">
+<section transition:fade class="bg-slate-50 py-12 px-16">
     <div>
         <p
             class="font-PlayFair text-3xl
