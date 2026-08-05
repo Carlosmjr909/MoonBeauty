@@ -85,21 +85,13 @@ export const products = [
         {
            id: 11,
             Tipo: "Mascarilla facial",
-            Nombre: "Vita Tone Up Sun Cream",
-            precio: 4,
-            imagen: "/TOCOBO Vita Tone Up Sun Cream.webp",
-            descripcion: "Experience luminous serenity. Our signature mist delivers deep 24h hydration, merging potent Korean botanical extracts with modern molecular delivery for an instant, dewy radiance." 
-        },
-        {
-           id: 12,
-            Tipo: "Mascarilla facial",
             Nombre: "PDRN Booster Shot",
             precio: 18,
             imagen: "/PDRN BOOSTER SHOT.webp",
             descripcion: "PDRN Booster Shot es un tratamiento concentrado de alto rendimiento formulado con PDRN (ADN de salmón) para regenerar intensamente la piel y restaurar su barrera protectora. Este potente suero actúa a nivel celular estimulando la producción de colágeno y elastina, lo que ayuda a reparar el tejido dañado, recuperar la firmeza y mejorar la elasticidad perdida. Su acción hidratante y revitalizante atenúa líneas finas, reduce la irritación y devuelve la densidad al rostro. Su textura ligera penetra rápidamente, dejando la piel con un aspecto visiblemente más terso, uniforme, saludable y con un brillo natural radiante." 
         },
         {
-           id: 13,
+           id: 12,
             Tipo: "Mascarilla facial",
             Nombre: "Madeca Cream",
             precio: 28,
@@ -107,7 +99,7 @@ export const products = [
             descripcion: "Madeca Cream es la icónica crema reparadora coreana de Centellian24 formulada con TECA (Extracto Titulado de Centella Asiática) de alta pureza. Esta crema intensiva calma al instante la piel irritada, repara la barrera cutánea dañada y estimula la síntesis de colágeno para combatir los signos del envejecimiento. Ayuda a atenuar cicatrices, marcas de acné e hiperpigmentación, mientras proporciona una nutrición profunda y duradera. Su textura rica pero de rápida absorción deja el rostro suave, protegido, elástico y con una apariencia visiblemente más saludable y uniforme." 
         },
         {
-           id: 14,
+           id: 13,
             Tipo: "Mascarilla facial",
             Nombre: "Jelly Seal Dewy Mask",
             precio: 5,
@@ -115,7 +107,7 @@ export const products = [
             descripcion: "Jelly Seal Dewy Mask es una mascarilla facial formulada para sellar la humedad en la piel y proporcionar un acabado visiblemente hidratado, fresco y dewy (jugoso). Su textura tipo gel o jalea crea una barrera protectora que evita la pérdida de agua transepidérmica, permitiendo que los ingredientes activos penetren profundamente para calmar la piel seca o deshidratada. Enriquecida con agentes humectantes y revitalizantes, ayuda a suavizar la textura irregular y a devolver la elasticidad perdida. Deja el rostro con una apariencia luminosa, firme, plump e intensamente nutrida desde la primera aplicación." 
         },
         {
-           id: 15,
+           id: 14,
             Tipo: "Mascarilla facial",
             Nombre: "The Mini Glow Set",
             precio: 15,
