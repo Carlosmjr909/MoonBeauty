@@ -127,7 +127,7 @@
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
-<header class="sticky top-0 z-50 bg-white/60 backdrop-blur-md">
+<header class="sticky top-0 z-50 bg-white/60 backdrop-blur-md px-16">
 	<div
 		class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-24 lg:px-8 2xl:max-w-[1600px]"
 	>
@@ -144,6 +144,9 @@
 			/>
 		</a>
 
+
+
+		
 		<nav
 			aria-label="Navegación principal"
 			class="hidden items-center gap-8 lg:flex xl:gap-12"
@@ -162,12 +165,6 @@
 				Productos
 			</a>
 
-			<a
-				href="/contacts"
-				class="font-BeVietnam font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
-			>
-				Contactos
-			</a>
 		</nav>
 
 		<div class="flex items-center gap-2 sm:gap-4 lg:gap-5">
@@ -276,13 +273,6 @@
 					Productos
 				</a>
 
-				<a
-					href="/contacts"
-					onclick={cerrarMenu}
-					class="rounded-xl px-4 py-3 font-BeVietnam font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
-				>
-					Contactos
-				</a>
 
 				<a
 					href="/create_account"
@@ -474,3 +464,13 @@
 		</p>
 	</div>
 </footer>
+
+<a
+	href="https://wa.me/584125050043?text=¡Hola! Estoy interesado en algunos productos de Moon Beauty. ¿Podrían asesorarme?"
+	target="_blank"
+	rel="noopener noreferrer"
+	class="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-black text-white shadow-2xl transition-all duration-300 hover:scale-110 hover:shadow-green-400/40"
+	aria-label="WhatsApp"
+>
+	<Icon icon="mdi:whatsapp" class="h-9 w-9" />
+</a>
