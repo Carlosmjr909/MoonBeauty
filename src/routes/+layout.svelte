@@ -7,9 +7,11 @@
 	import { signOut } from "firebase/auth";
 	import { auth } from "$lib/firebase";
 	import { goto } from "$app/navigation";
+	import Lenis from "lenis";
 	// @ts-ignore
 	import CartDrawer from "$lib/components/CartDrawer.svelte";
 	import { products as productosImportados } from "$lib/products.js";
+	import { onMount } from "svelte";
 
 	let { children, data } = $props();
 
@@ -123,6 +125,12 @@
 		await signOut(auth);
 		await goto("/");
 	}
+
+	onMount(() => {
+		const lenis = new Lenis({
+			autoRaf: true,
+		});
+	});
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -144,9 +152,6 @@
 			/>
 		</a>
 
-
-
-		
 		<nav
 			aria-label="Navegación principal"
 			class="hidden items-center gap-8 lg:flex xl:gap-12"
@@ -164,7 +169,6 @@
 			>
 				Productos
 			</a>
-
 		</nav>
 
 		<div class="flex items-center gap-2 sm:gap-4 lg:gap-5">
@@ -186,36 +190,36 @@
 			</button>
 
 			{#if !$autenticacionCargando}
-	{#if $usuario}
-		<div class="flex items-center gap-3">
-			<a
-				href="/account"
-				class="flex items-center gap-2 text-sm text-slate-600"
-			>
-				<Icon
-					icon="material-symbols:account-circle-outline"
-					width="25"
-				/>
+				{#if $usuario}
+					<div class="flex items-center gap-3">
+						<a
+							href="/account"
+							class="flex items-center gap-2 text-sm text-slate-600"
+						>
+							<Icon
+								icon="material-symbols:account-circle-outline"
+								width="25"
+							/>
 
-				<span class="hidden lg:inline">
-					{$usuario.displayName ?? 'Mi cuenta'}
-				</span>
-			</a>
+							<span class="hidden lg:inline">
+								{$usuario.displayName ?? "Mi cuenta"}
+							</span>
+						</a>
 
-			<button
-				type="button"
-				onclick={cerrarSesion}
-				class="text-sm text-slate-500 hover:text-red-600"
-			>
-				Salir
-			</button>
-		</div>
-	{:else}
-		<a href="/login" aria-label="Iniciar sesión">
-			<Icon icon="gg:profile" width="25" />
-		</a>
-	{/if}
-{/if}
+						<button
+							type="button"
+							onclick={cerrarSesion}
+							class="text-sm text-slate-500 hover:text-red-600"
+						>
+							Salir
+						</button>
+					</div>
+				{:else}
+					<a href="/login" aria-label="Iniciar sesión">
+						<Icon icon="gg:profile" width="25" />
+					</a>
+				{/if}
+			{/if}
 
 			<button
 				type="button"
@@ -272,7 +276,6 @@
 				>
 					Productos
 				</a>
-
 
 				<a
 					href="/create_account"

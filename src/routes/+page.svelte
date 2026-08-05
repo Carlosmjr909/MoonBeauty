@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Tarjeta from '$lib/components/tarjeta.svelte';
 	import Icon from '@iconify/svelte';
+	
 
 	import { products } from '$lib/products';
 
