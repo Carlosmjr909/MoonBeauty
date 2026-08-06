@@ -3,7 +3,6 @@
 	import Icon from '@iconify/svelte';
 
 	import { products } from '$lib/products';
-    import { onMount } from 'svelte';
 
 	const miniListaProductos = products.filter(
 		(product) => product.precio <= 15
@@ -15,17 +14,9 @@
         elementoAnimado: null,
     });
 
-
-    onMount(() => {
-        gsap.from(estado.elementoAnimado, {
-            opacity: 0,
-            translateY:-100, 
-        })
-    })
 </script>
 
 <section
-bind:this={estado.elementoAnimado}
 class="isolate flex min-h-[calc(100svh-5rem)] items-center justify-center overflow-hidden px-4 py-20 text-center sm:px-6 lg:min-h-[calc(100svh-6rem)] lg:px-8"
 >
 	<img

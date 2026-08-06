@@ -1,8 +1,6 @@
 <script lang="ts">
     import Tarjeta from "$lib/components/tarjeta.svelte";
-    import { onMount } from "svelte";
     import { products } from "../../lib/products";
-    import { gsap } from "gsap";
 
     const estado = $state<{
         elementoAnimado: null | HTMLElement
@@ -10,20 +8,10 @@
         elementoAnimado: null,
     });
 
-
-    onMount(() => {
-        gsap.from(estado.elementoAnimado, {
-            opacity: 0,
-            translateY:-100, 
-            
-        })
-    })
-
     let { data } = $props();
 </script>
 
-<section class="bg-slate-50 py-12 px-16"
-bind:this={estado.elementoAnimado}>
+<section class="bg-slate-50 py-12 px-16">
     <div>
         <p
             class="font-PlayFair text-3xl
