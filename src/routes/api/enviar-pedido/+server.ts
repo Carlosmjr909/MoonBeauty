@@ -15,13 +15,31 @@ type ItemPedido = {
 	subtotalUSD: number;
 };
 
+type EntregaPedido = {
+	direccion: string;
+	casaApartamento?: string;
+	ciudad: string;
+	codigoPostal?: string;
+	estado: string;
+};
+
+type ComprobantePago = {
+	url?: string | null;
+	referencia?: string | null;
+};
+
 type DatosPedido = {
 	numeroPedido: string;
 	nombre: string;
 	correo: string;
 	telefono: string;
+	entrega: EntregaPedido;
 	metodoPago: string;
+	comprobantePago?: ComprobantePago;
 	items: ItemPedido[];
+	subtotalUSD: number;
+	cupon?: string | null;
+	descuentoUSD?: number;
 	totalUSD: number;
 	tasaBCV: number;
 	totalVES: number;
@@ -48,10 +66,55 @@ function obtenerMetodoPago(metodo: string): string {
 	const metodos: Record<string, string> = {
 		efectivo: 'Efectivo',
 		pago_movil: 'Pago móvil',
-		binance: 'Binance'
+		binance: 'Binance',
+		zelle: 'Zelle',
+		zinli: 'Zinli'
 	};
 
 	return metodos[metodo] ?? metodo;
+}
+
+function filaDescuento(datos: DatosPedido): string {
+	if (!datos.cupon || !datos.descuentoUSD) {
+		return '';
+	}
+
+	return `
+		<p><strong>Subtotal USD:</strong> ${escaparHtml(formatearNumero(datos.subtotalUSD))}</p>
+		<p><strong>Cupón aplicado:</strong> ${escaparHtml(datos.cupon)} (-${escaparHtml(formatearNumero(datos.descuentoUSD))} USD)</p>
+	`;
+}
+
+function filaEntrega(datos: DatosPedido): string {
+	const entrega = datos.entrega;
+	if (!entrega) return '';
+
+	const casaApartamento = entrega.casaApartamento?.trim();
+	const codigoPostal = entrega.codigoPostal?.trim();
+
+	return `
+		<h3 style="margin-top: 16px;">Entrega</h3>
+		<p><strong>Dirección:</strong> ${escaparHtml(entrega.direccion)}</p>
+		${casaApartamento ? `<p><strong>Casa/Apartamento:</strong> ${escaparHtml(casaApartamento)}</p>` : ''}
+		<p><strong>Ciudad:</strong> ${escaparHtml(entrega.ciudad)}</p>
+		<p><strong>Estado:</strong> ${escaparHtml(entrega.estado)}</p>
+		${codigoPostal ? `<p><strong>Código postal:</strong> ${escaparHtml(codigoPostal)}</p>` : ''}
+	`;
+}
+
+function filaComprobante(datos: DatosPedido): string {
+	const comprobante = datos.comprobantePago;
+	if (!comprobante || (!comprobante.url && !comprobante.referencia)) {
+		return '';
+	}
+
+	const referencia = comprobante.referencia?.trim();
+
+	return `
+		<h3 style="margin-top: 16px;">Comprobante de pago</h3>
+		${referencia ? `<p><strong>Referencia:</strong> ${escaparHtml(referencia)}</p>` : ''}
+		${comprobante.url ? `<p><a href="${escaparHtml(comprobante.url)}">Ver comprobante subido</a></p>` : ''}
+	`;
 }
 
 export const POST: RequestHandler = async ({ request }): Promise<Response> => {
@@ -106,7 +169,37 @@ export const POST: RequestHandler = async ({ request }): Promise<Response> => {
 			);
 		}
 
-		const html = `
+		const filasProductos = datos.items
+			.map(
+				(item) => `
+					<tr>
+						<td style="border: 1px solid #d1d5db; padding: 8px;">${escaparHtml(item.nombre)}</td>
+						<td style="border: 1px solid #d1d5db; padding: 8px;">${escaparHtml(item.cantidad)}</td>
+						<td style="border: 1px solid #d1d5db; padding: 8px;">${escaparHtml(formatearNumero(item.precioUSD))}</td>
+						<td style="border: 1px solid #d1d5db; padding: 8px;">${escaparHtml(formatearNumero(item.subtotalUSD))}</td>
+					</tr>
+				`
+			)
+			.join('');
+
+		const tablaProductos = `
+			<h3 style="margin-top: 16px;">Productos</h3>
+			<table style="border-collapse: collapse; width: 100%;">
+				<thead>
+					<tr>
+						<th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Producto</th>
+						<th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Cantidad</th>
+						<th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Precio USD</th>
+						<th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Subtotal USD</th>
+					</tr>
+				</thead>
+				<tbody>
+					${filasProductos}
+				</tbody>
+			</table>
+		`;
+
+		const htmlEmpresa = `
 			<div style="font-family: Arial, sans-serif; color: #111827;">
 				<h2 style="margin-bottom: 12px;">Nuevo pedido recibido</h2>
 				<p><strong>Número del pedido:</strong> ${escaparHtml(datos.numeroPedido)}</p>
@@ -114,34 +207,28 @@ export const POST: RequestHandler = async ({ request }): Promise<Response> => {
 				<p><strong>Correo:</strong> ${escaparHtml(datos.correo ?? '')}</p>
 				<p><strong>Teléfono:</strong> ${escaparHtml(datos.telefono ?? '')}</p>
 				<p><strong>Método de pago:</strong> ${escaparHtml(obtenerMetodoPago(datos.metodoPago))}</p>
+				${filaDescuento(datos)}
 				<p><strong>Total USD:</strong> ${escaparHtml(formatearNumero(datos.totalUSD))}</p>
 				<p><strong>Tasa BCV:</strong> ${escaparHtml(formatearNumero(datos.tasaBCV))}</p>
 				<p><strong>Total VES:</strong> ${escaparHtml(formatearNumero(datos.totalVES))}</p>
-				<h3 style="margin-top: 16px;">Productos</h3>
-				<table style="border-collapse: collapse; width: 100%;">
-					<thead>
-						<tr>
-							<th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Producto</th>
-							<th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Cantidad</th>
-							<th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Precio USD</th>
-							<th style="border: 1px solid #d1d5db; padding: 8px; text-align: left;">Subtotal USD</th>
-						</tr>
-					</thead>
-					<tbody>
-						${datos.items
-							.map(
-								(item) => `
-									<tr>
-										<td style="border: 1px solid #d1d5db; padding: 8px;">${escaparHtml(item.nombre)}</td>
-										<td style="border: 1px solid #d1d5db; padding: 8px;">${escaparHtml(item.cantidad)}</td>
-										<td style="border: 1px solid #d1d5db; padding: 8px;">${escaparHtml(formatearNumero(item.precioUSD))}</td>
-										<td style="border: 1px solid #d1d5db; padding: 8px;">${escaparHtml(formatearNumero(item.subtotalUSD))}</td>
-									</tr>
-								`
-							)
-							.join('')}
-					</tbody>
-				</table>
+				${filaEntrega(datos)}
+				${filaComprobante(datos)}
+				${tablaProductos}
+			</div>
+		`;
+
+		const htmlComprador = `
+			<div style="font-family: Arial, sans-serif; color: #111827;">
+				<h2 style="margin-bottom: 12px;">¡Gracias por tu compra, ${escaparHtml(datos.nombre)}!</h2>
+				<p>Recibimos tu pedido y pronto nos pondremos en contacto para coordinar el pago y la entrega.</p>
+				<p><strong>Número del pedido:</strong> ${escaparHtml(datos.numeroPedido)}</p>
+				<p><strong>Método de pago:</strong> ${escaparHtml(obtenerMetodoPago(datos.metodoPago))}</p>
+				${filaDescuento(datos)}
+				<p><strong>Total USD:</strong> ${escaparHtml(formatearNumero(datos.totalUSD))}</p>
+				<p><strong>Tasa BCV:</strong> ${escaparHtml(formatearNumero(datos.tasaBCV))}</p>
+				<p><strong>Total VES:</strong> ${escaparHtml(formatearNumero(datos.totalVES))}</p>
+				${filaEntrega(datos)}
+				${tablaProductos}
 			</div>
 		`;
 
@@ -160,22 +247,42 @@ export const POST: RequestHandler = async ({ request }): Promise<Response> => {
 		const resend = new Resend(
 	RESEND_API_KEY
 );
-		const { error: emailError } = await resend.emails.send({
-			from: RESEND_FROM_EMAIL,
-			to: [COMPANY_ORDER_EMAIL],
-			subject: `Nuevo pedido ${datos.numeroPedido}`,
-			html
-		});
 
-		if (emailError) {
+		const correoComprador = datos.correo?.trim();
+
+		const [envioEmpresa, envioComprador] = await Promise.all([
+			resend.emails.send({
+				from: RESEND_FROM_EMAIL,
+				to: [COMPANY_ORDER_EMAIL],
+				subject: `Nuevo pedido ${datos.numeroPedido}`,
+				html: htmlEmpresa
+			}),
+			correoComprador
+				? resend.emails.send({
+						from: RESEND_FROM_EMAIL,
+						to: [correoComprador],
+						subject: `Confirmación de tu pedido ${datos.numeroPedido}`,
+						html: htmlComprador
+					})
+				: Promise.resolve({ error: null })
+		]);
+
+		if (envioEmpresa.error) {
 			return json(
 				{
 					ok: false,
-					error: emailError.message ?? 'No se pudo enviar el correo.'
+					error: envioEmpresa.error.message ?? 'No se pudo enviar el correo a la empresa.'
 				},
 				{
 					status: 500
 				}
+			);
+		}
+
+		if (envioComprador.error) {
+			console.error(
+				'El correo a la empresa se envió, pero falló el del comprador:',
+				envioComprador.error
 			);
 		}
 

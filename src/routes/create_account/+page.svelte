@@ -145,7 +145,7 @@
 			>
 				<div>
 					<p
-						class="font-PlayFair text-3xl text-slate-700 sm:text-4xl lg:text-5xl"
+						class="font-Mendigo text-3xl text-slate-700 sm:text-4xl lg:text-5xl"
 					>
 						Crea tu cuenta
 					</p>

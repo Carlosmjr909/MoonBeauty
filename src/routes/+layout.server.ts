@@ -1,4 +1,8 @@
 import type { LayoutServerLoad } from './$types';
+import {
+	obtenerCategoriasPublicas,
+	obtenerProductosPublicos
+} from '$lib/server/productos';
 
 export type TasaBCV = {
 	moneda: string;
@@ -10,7 +14,10 @@ export type TasaBCV = {
 	fechaActualizacion: string;
 };
 
-export const load: LayoutServerLoad = async ({ fetch, setHeaders }) => {
+async function cargarTasaBCV(
+	fetch: typeof globalThis.fetch,
+	setHeaders: Parameters<LayoutServerLoad>[0]['setHeaders']
+) {
 	try {
 		const respuesta = await fetch(
 			'https://ve.dolarapi.com/v1/dolares/oficial',
@@ -46,10 +53,7 @@ export const load: LayoutServerLoad = async ({ fetch, setHeaders }) => {
 				'public, max-age=300, stale-while-revalidate=600'
 		});
 
-		return {
-			tasaBCV,
-			errorTasaBCV: null
-		};
+		return { tasaBCV, errorTasaBCV: null };
 	} catch (error) {
 		console.error('Error obteniendo la tasa BCV:', error);
 
@@ -59,4 +63,24 @@ export const load: LayoutServerLoad = async ({ fetch, setHeaders }) => {
 				'No se pudo consultar la tasa BCV en este momento.'
 		};
 	}
+}
+
+export const load: LayoutServerLoad = async ({ fetch, setHeaders }) => {
+	const [datosTasaBCV, productos, categorias] = await Promise.all([
+		cargarTasaBCV(fetch, setHeaders),
+		obtenerProductosPublicos().catch((error) => {
+			console.error('Error obteniendo productos:', error);
+			return [];
+		}),
+		obtenerCategoriasPublicas().catch((error) => {
+			console.error('Error obteniendo categorías:', error);
+			return [];
+		})
+	]);
+
+	return {
+		...datosTasaBCV,
+		productos,
+		categorias
+	};
 };

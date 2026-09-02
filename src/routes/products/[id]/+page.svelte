@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { products } from "$lib/products";
 	import {
 		convertirUSDaVES,
 		formatearUSD,
@@ -12,9 +11,8 @@
 	let { data } = $props();
 
 	const product = $derived(
-		products.find(
-			(producto: { id: number }) =>
-				producto.id === Number(page.params.id),
+		(data.productos ?? []).find(
+			(producto) => producto.id === page.params.id,
 		),
 	);
 
@@ -27,6 +25,8 @@
 	let cantidad = $state(1);
 	let mensaje = $state("");
 
+	const agotado = $derived((product?.stock ?? 0) <= 0);
+
 	function restar() {
 		if (cantidad > 1) {
 			cantidad--;
@@ -34,17 +34,22 @@
 	}
 
 	function sumar() {
+		if (product && cantidad >= product.stock) {
+			return;
+		}
 		cantidad++;
 	}
 
 	function agregarAlCarrito() {
-		if (!product) {
+		if (!product || agotado) {
 			return;
 		}
 
-		carrito.agregar(product, cantidad);
+		const seAgrego = carrito.agregar(product, cantidad);
 
-		mensaje = `${cantidad} producto${cantidad > 1 ? "s" : ""} agregado${cantidad > 1 ? "s" : ""} al carrito`;
+		mensaje = seAgrego
+			? `${cantidad} producto${cantidad > 1 ? "s" : ""} agregado${cantidad > 1 ? "s" : ""} al carrito`
+			: `Solo queda${product.stock === 1 ? "" : "n"} ${product.stock} unidad${product.stock === 1 ? "" : "es"} disponible${product.stock === 1 ? "" : "s"} de este producto.`;
 
 		cantidad = 1;
 
@@ -153,16 +158,30 @@
 						{/if}
 					</div>
 				</div>
-				<div class="mt-8 flex gap-4 sm:flex-row sm:items-center">
+				{#if agotado}
+					<p
+						class="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-slate-900/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white"
+					>
+						Agotado
+					</p>
+				{:else if product.stock <= 5}
+					<p class="mt-8 text-sm font-semibold text-amber-600">
+						¡Últimas {product.stock} unidades disponibles!
+					</p>
+				{/if}
+
+				<div class="mt-4 flex gap-4 sm:flex-row sm:items-center">
 					<div
 						class="flex h-14 w-full items-center rounded-full
 			border border-black/30 px-2 sm:w-auto"
+						class:opacity-50={agotado}
 					>
 						<button
 							type="button"
 							aria-label="Disminuir cantidad"
 							onclick={restar}
-							class="px-5 text-2xl text-black/50"
+							disabled={agotado}
+							class="px-5 text-2xl text-black/50 disabled:cursor-not-allowed"
 						>
 							−
 						</button>
@@ -175,7 +194,8 @@
 							type="button"
 							aria-label="Aumentar cantidad"
 							onclick={sumar}
-							class="px-5 text-2xl text-black/50"
+							disabled={agotado || cantidad >= product.stock}
+							class="px-5 text-2xl text-black/50 disabled:cursor-not-allowed disabled:opacity-40"
 						>
 							+
 						</button>
@@ -184,11 +204,12 @@
 					<button
 						type="button"
 						onclick={agregarAlCarrito}
+						disabled={agotado}
 						class="h-14 w-full rounded-full bg-gray-600 px-8
 			text-base font-semibold text-white transition
-			hover:bg-gray-500 sm:flex-1 lg:text-lg"
+			hover:bg-gray-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:hover:bg-slate-300 sm:flex-1 lg:text-lg"
 					>
-						Agregar al carrito
+						{agotado ? 'Sin stock' : 'Agregar al carrito'}
 					</button>
 				</div>
 				{#if mensaje}

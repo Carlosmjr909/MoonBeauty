@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function esAdmin() {
+      return request.auth != null &&
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    match /productos/{archivo} {
+      allow read: if true;
+      allow write: if esAdmin() &&
+        request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    match /categorias/{archivo} {
+      allow read: if true;
+      allow write: if esAdmin() &&
+        request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    match /instagram/{archivo} {
+      allow read: if true;
+      allow write: if esAdmin() &&
+        request.resource.size < 15 * 1024 * 1024 &&
+        (request.resource.contentType.matches('image/.*') ||
+          request.resource.contentType.matches('video/.*'));
+    }
+
+    // Comprobantes de pago: cualquier comprador (incluida sesión anónima
+    // de invitado) puede subir el suyo; solo el admin puede listarlos/leerlos
+    // directamente (la URL con token que se guarda en el pedido sigue
+    // funcionando para mostrárselo al propio comprador que lo subió).
+    // La lectura queda abierta a cualquier usuario autenticado (incluida
+    // sesión anónima de invitado): el propio comprador necesita poder
+    // pedir la URL de descarga justo después de subir su comprobante
+    // (getDownloadURL también exige permiso de lectura, no solo de
+    // escritura). El nombre de archivo lleva un UUID aleatorio, así que
+    // no es listable/adivinable por nadie que no tenga ese link exacto.
+    match /comprobantes/{archivo} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+        request.resource.size < 8 * 1024 * 1024 &&
+        (request.resource.contentType.matches('image/.*') ||
+          request.resource.contentType == 'application/pdf');
+    }
+  }
+}

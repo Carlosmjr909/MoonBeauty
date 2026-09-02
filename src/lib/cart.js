@@ -9,6 +9,7 @@ import { derived, writable } from 'svelte/store';
  * @property {string} imagen
  * @property {number} precio
  * @property {number} [OfertaEnDivisas]
+ * @property {number} [stock]
  */
 
 /**
@@ -20,12 +21,13 @@ import { derived, writable } from 'svelte/store';
  * @property {number} precio
  * @property {number} precioOriginal
  * @property {number} cantidad
+ * @property {number | undefined} stock
  */
 
 /**
  * @typedef {Object} CarritoStore
  * @property {(run: (productos: ProductoCarrito[]) => void) => () => void} subscribe
- * @property {(producto: ProductoCarritoInput, cantidad?: number) => void} agregar
+ * @property {(producto: ProductoCarritoInput, cantidad?: number) => boolean} agregar
  * @property {(id: string | number) => void} aumentar
  * @property {(id: string | number) => void} disminuir
  * @property {(id: string | number) => void} eliminar
@@ -77,21 +79,51 @@ function crearCarrito() {
 		/**
 		 * @param {ProductoCarritoInput} producto
 		 * @param {number} [cantidad=1]
+		 * @returns {boolean} true si se agregó todo lo pedido, false si se
+		 *   recortó por falta de stock (o no se pudo agregar nada más).
 		 */
 		agregar(producto, cantidad = 1) {
-			const cantidadValida = Math.max(1, Number(cantidad) || 1);
+			const cantidadPedida = Math.max(1, Number(cantidad) || 1);
+			const stockDisponible =
+				typeof producto.stock === 'number' && Number.isFinite(producto.stock)
+					? Math.max(0, producto.stock)
+					: undefined;
+
+			let seAgregoTodo = true;
 
 			update((productos) => {
 				const productoExistente = productos.find(
 					(item) => item.id === producto.id
 				);
 
+				const yaEnCarrito = productoExistente?.cantidad ?? 0;
+
+				const cupoRestante =
+					stockDisponible === undefined
+						? cantidadPedida
+						: Math.max(0, stockDisponible - yaEnCarrito);
+
+				const cantidadAAgregar = Math.min(cantidadPedida, cupoRestante);
+				seAgregoTodo = cantidadAAgregar === cantidadPedida;
+
+				if (cantidadAAgregar <= 0) {
+					// Ya se llegó al tope de stock; solo refrescamos el stock guardado.
+					return productoExistente
+						? productos.map((item) =>
+								item.id === producto.id
+									? { ...item, stock: stockDisponible }
+									: item
+							)
+						: productos;
+				}
+
 				if (productoExistente) {
 					return productos.map((item) =>
 						item.id === producto.id
 							? {
 									...item,
-									cantidad: item.cantidad + cantidadValida
+									cantidad: item.cantidad + cantidadAAgregar,
+									stock: stockDisponible
 								}
 							: item
 					);
@@ -119,10 +151,13 @@ function crearCarrito() {
 						precio: precioFinal,
 
 						precioOriginal: producto.precio,
-						cantidad: cantidadValida
+						cantidad: cantidadAAgregar,
+						stock: stockDisponible
 					}
 				];
 			});
+
+			return seAgregoTodo;
 		},
 
 		/**
@@ -130,14 +165,17 @@ function crearCarrito() {
 		 */
 		aumentar(id) {
 			update((productos) =>
-				productos.map((producto) =>
-					producto.id === id
-						? {
-								...producto,
-								cantidad: producto.cantidad + 1
-							}
-						: producto
-				)
+				productos.map((producto) => {
+					if (producto.id !== id) return producto;
+
+					const hayCupo =
+						typeof producto.stock !== 'number' ||
+						producto.cantidad < producto.stock;
+
+					return hayCupo
+						? { ...producto, cantidad: producto.cantidad + 1 }
+						: producto;
+				})
 			);
 		},
 

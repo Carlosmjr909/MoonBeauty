@@ -107,7 +107,7 @@
 			>
 				<div class="text-center">
 					<p
-						class="font-PlayFair text-3xl text-slate-600 sm:text-4xl lg:text-5xl"
+						class="font-Mendigo text-3xl text-slate-600 sm:text-4xl lg:text-5xl"
 					>
 						MoonBeauty
 					</p>
@@ -281,7 +281,7 @@
 			<div
 				class="absolute bottom-12 left-10 right-10 rounded-3xl bg-white/20 p-8 text-white backdrop-blur-md xl:bottom-16 xl:left-16 xl:right-16"
 			>
-				<p class="font-PlayFair text-3xl xl:text-4xl">
+				<p class="font-Mendigo text-3xl xl:text-4xl">
 					Tu piel, tu ritual
 				</p>
 

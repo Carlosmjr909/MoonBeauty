@@ -55,7 +55,7 @@
         class="flex items-center justify-between border-b border-slate-200 px-6 py-5"
     >
         <div>
-            <h2 class="font-PlayFair text-2xl text-slate-700">Tu carrito</h2>
+            <h2 class="font-Mendigo text-2xl text-slate-700">Tu carrito</h2>
 
             <p class="mt-1 text-sm text-slate-400">
                 {$cantidadCarrito}
@@ -174,7 +174,9 @@
                                     onclick={() =>
                                         producto?.id != null &&
                                         carrito.aumentar(producto.id)}
-                                    class="px-3 text-lg text-slate-500"
+                                    disabled={typeof producto?.stock === "number" &&
+                                        producto.cantidad >= producto.stock}
+                                    class="px-3 text-lg text-slate-500 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     +
                                 </button>

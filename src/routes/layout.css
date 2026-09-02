@@ -18,3 +18,12 @@
 .font-BeVietnam {
     font-family: MiTypografia2;
 }
+
+@font-face {
+    font-family: MiTypografia3;
+    src: url('Manrope-Regular.ttf');
+}
+
+.font-Manrope {
+    font-family: MiTypografia3;
+}

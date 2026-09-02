@@ -4,13 +4,16 @@
 	import Icon from "@iconify/svelte";
 	import { cantidadCarrito } from "$lib/cart";
 	import { usuario, autenticacionCargando } from "$lib/auth";
+	import { esAdmin } from "$lib/admin";
 	import { signOut } from "firebase/auth";
 	import { auth } from "$lib/firebase";
 	import { goto } from "$app/navigation";
+	import { page } from "$app/state";
+	import { fade } from "svelte/transition";
+	import { cubicOut } from "svelte/easing";
 	import Lenis from "lenis";
 	// @ts-ignore
 	import CartDrawer from "$lib/components/CartDrawer.svelte";
-	import { products as productosImportados } from "$lib/products.js";
 	import { onMount } from "svelte";
 
 	let { children, data } = $props();
@@ -19,6 +22,7 @@
 		id?: string | number;
 		Nombre: string;
 		Tipo: string;
+		marca?: string | null;
 		imagen?: string | null;
 		precio?: number | string | null;
 		especificacion?: string | null;
@@ -50,18 +54,20 @@
 	const productosEncontrados = $derived(
 		textoBusqueda.trim().length === 0
 			? []
-			: productosImportados
+			: productosLayout
 					.filter((producto) => {
 						const texto = textoBusqueda.trim().toLowerCase();
 
 						const nombre = producto.Nombre?.toLowerCase() ?? "";
 						const tipo = producto.Tipo?.toLowerCase() ?? "";
+						const marca = producto.marca?.toLowerCase() ?? "";
 						const especificacion =
 							producto.especificacion?.toLowerCase() ?? "";
 
 						return (
 							nombre.includes(texto) ||
 							tipo.includes(texto) ||
+							marca.includes(texto) ||
 							especificacion.includes(texto)
 						);
 					})
@@ -135,7 +141,21 @@
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
-<header class="sticky top-0 z-50 bg-white/60 backdrop-blur-md px-16">
+<div class="sticky top-0 z-50">
+	<div class="cupon-marquee bg-slate-500/80 py-2 text-white">
+		<div class="cupon-marquee__track">
+			{#each Array(6) as _, copia (copia)}
+				<p
+					class="mx-10 shrink-0 whitespace-nowrap text-xs font-semibold sm:mx-14 sm:text-sm"
+				>
+					20% de descuento para pagos en $ con el código <strong>MOON20</strong>.
+					Aplica para pagos en Efectivo $, Binance, Zelle y Zinli.
+				</p>
+			{/each}
+		</div>
+	</div>
+
+	<header class="bg-white/60 backdrop-blur-md px-16">
 	<div
 		class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-24 lg:px-8 2xl:max-w-[1600px]"
 	>
@@ -190,8 +210,22 @@
 			</button>
 
 			{#if !$autenticacionCargando}
-				{#if $usuario}
+				{#if $usuario && !$usuario.isAnonymous}
 					<div class="flex items-center gap-3">
+						{#if $esAdmin}
+							<a
+								href="/admin"
+								class="flex items-center gap-2 rounded-full bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-600"
+							>
+								<Icon
+									icon="material-symbols:admin-panel-settings-outline"
+									width="20"
+								/>
+
+								<span class="hidden lg:inline">Admin</span>
+							</a>
+						{/if}
+
 						<a
 							href="/account"
 							class="flex items-center gap-2 text-sm text-slate-600"
@@ -285,6 +319,20 @@
 					<Icon icon="gg:profile" width="23" />
 					Mi cuenta
 				</a>
+
+				{#if $esAdmin}
+					<a
+						href="/admin"
+						onclick={cerrarMenu}
+						class="flex items-center gap-3 rounded-xl px-4 py-3 font-BeVietnam font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+					>
+						<Icon
+							icon="material-symbols:admin-panel-settings-outline"
+							width="23"
+						/>
+						Admin
+					</a>
+				{/if}
 			</div>
 		</nav>
 	{/if}
@@ -341,7 +389,9 @@
 
 									<div class="min-w-0 flex-1">
 										<p class="text-xs text-slate-400">
-											{producto.Tipo}
+											{producto.marca
+												? `${producto.marca} · ${producto.Tipo}`
+												: producto.Tipo}
 										</p>
 
 										<p
@@ -353,7 +403,7 @@
 										<p
 											class="mt-1 text-sm font-bold text-sky-700"
 										>
-											${producto.precio.toFixed(2)}
+											${Number(producto.precio ?? 0).toFixed(2)}
 										</p>
 									</div>
 
@@ -390,9 +440,19 @@
 			</div>
 		</div>
 	{/if}
-</header>
+	</header>
+</div>
 
-{@render children()}
+<div class="grid grid-cols-1 *:[grid-area:1/1] *:min-w-0">
+	{#key page.url.pathname}
+		<div
+			in:fade={{ duration: 350, delay: 150, easing: cubicOut }}
+			out:fade={{ duration: 150 }}
+		>
+			{@render children()}
+		</div>
+	{/key}
+</div>
 
 <CartDrawer
 	abierto={carritoAbierto}
@@ -477,3 +537,49 @@
 >
 	<Icon icon="mdi:whatsapp" class="h-9 w-9" />
 </a>
+
+<style>
+	.cupon-marquee {
+		width: 100%;
+		overflow: hidden;
+		-webkit-mask-image: linear-gradient(
+			to right,
+			transparent,
+			#000 4%,
+			#000 96%,
+			transparent
+		);
+		mask-image: linear-gradient(
+			to right,
+			transparent,
+			#000 4%,
+			#000 96%,
+			transparent
+		);
+	}
+
+	.cupon-marquee__track {
+		display: flex;
+		width: max-content;
+		animation: cupon-marquee-scroll 66s linear infinite;
+	}
+
+	.cupon-marquee:hover .cupon-marquee__track {
+		animation-play-state: paused;
+	}
+
+	@keyframes cupon-marquee-scroll {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-50%);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cupon-marquee__track {
+			animation: none;
+		}
+	}
+</style>
