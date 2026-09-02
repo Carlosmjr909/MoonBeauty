@@ -433,7 +433,7 @@
 			<div
 				bind:this={pista}
 				onscroll={actualizarLimites}
-				class="pista-scroll flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [-webkit-overflow-scrolling:touch] [touch-action:pan-x]"
+				class="pista-scroll flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [-webkit-overflow-scrolling:touch]"
 			>
 				{#each nuevosProductos as producto (producto.id)}
 					<div
@@ -885,10 +885,6 @@
 		display: flex;
 		width: max-content;
 		animation: marquee-scroll 35s linear infinite;
-	}
-
-	.marquee:hover .marquee__track {
-		animation-play-state: paused;
 	}
 
 	@keyframes marquee-scroll {
