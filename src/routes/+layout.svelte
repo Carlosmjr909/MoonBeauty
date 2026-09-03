@@ -460,71 +460,175 @@
 	tasaBCV={data?.tasaBCV?.promedio ?? null}
 />
 
-<footer class="bg-slate-100">
+<footer class="border-t border-slate-200 bg-slate-100">
 	<div
-		class="mx-auto flex max-w-7xl flex-col items-center px-4 py-12 text-center sm:px-6 lg:px-8 lg:py-16 2xl:max-w-[1600px]"
+		class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16 2xl:max-w-[1600px]"
 	>
-		<p class="font-PlayFair text-3xl text-slate-700 sm:text-4xl">
-			MoonBeauty
-		</p>
+		<div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
+			<div>
+				<p class="font-PlayFair text-3xl text-slate-700">MoonBeauty</p>
 
-		<nav
-			aria-label="Redes sociales"
-			class="mt-7 flex flex-wrap justify-center gap-x-6 gap-y-3 text-base text-slate-600 sm:text-lg"
+				<p class="mt-3 max-w-sm text-sm leading-6 text-slate-500">
+					Descubre el brillo que nace desde adentro con nuestra
+					curaduría exclusiva de cosmética coreana, entregada
+					directamente en tu puerta.
+				</p>
+
+				<nav
+					aria-label="Redes sociales"
+					class="mt-5 flex items-center gap-3"
+				>
+					<a
+						href="https://www.instagram.com/moonbeauty.val/"
+						target="_blank"
+						rel="noreferrer"
+						aria-label="Instagram"
+						class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm transition hover:bg-sky-100 hover:text-sky-700"
+					>
+						<Icon icon="mdi:instagram" width="19" />
+					</a>
+
+					<a
+						href="https://wa.me/584125050043"
+						target="_blank"
+						rel="noreferrer"
+						aria-label="WhatsApp"
+						class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm transition hover:bg-sky-100 hover:text-sky-700"
+					>
+						<Icon icon="mdi:whatsapp" width="19" />
+					</a>
+
+					<a
+						href="mailto:moonbeautyval@gmail.com"
+						aria-label="Correo electrónico"
+						class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm transition hover:bg-sky-100 hover:text-sky-700"
+					>
+						<Icon icon="material-symbols:mail-outline-rounded" width="19" />
+					</a>
+				</nav>
+			</div>
+
+			<div>
+				<p class="font-Mendigo text-lg text-slate-700">Contacto</p>
+
+				<ul class="mt-4 space-y-3 text-sm text-slate-600">
+					<li class="flex items-start gap-2">
+						<Icon
+							icon="material-symbols:location-on-outline-rounded"
+							width="19"
+							class="mt-0.5 shrink-0 text-slate-400"
+						/>
+						Valencia, Estado Carabobo, Venezuela
+					</li>
+
+					<li class="flex items-start gap-2">
+						<Icon
+							icon="material-symbols:chat-outline-rounded"
+							width="19"
+							class="mt-0.5 shrink-0 text-slate-400"
+						/>
+						<a
+							href="https://wa.me/584125050043"
+							target="_blank"
+							rel="noreferrer"
+							class="transition hover:text-sky-700 hover:underline"
+						>
+							+58 412-505 0043
+						</a>
+					</li>
+
+					<li class="flex items-start gap-2">
+						<Icon
+							icon="material-symbols:schedule-outline-rounded"
+							width="19"
+							class="mt-0.5 shrink-0 text-slate-400"
+						/>
+						Todos los días · Respondemos por WhatsApp
+					</li>
+				</ul>
+			</div>
+
+			<div>
+				<p class="font-Mendigo text-lg text-slate-700">Información</p>
+
+				<ul class="mt-4 space-y-3 text-sm text-slate-600">
+					<li>
+						<a
+							href="/envios"
+							class="transition hover:text-sky-700 hover:underline"
+						>
+							Políticas de Envío
+						</a>
+					</li>
+					<li>
+						<a
+							href="/cambios-y-devoluciones"
+							class="transition hover:text-sky-700 hover:underline"
+						>
+							Cambios y Devoluciones
+						</a>
+					</li>
+					<li>
+						<a
+							href="/terminos-y-condiciones"
+							class="transition hover:text-sky-700 hover:underline"
+						>
+							Términos y Condiciones
+						</a>
+					</li>
+					<li>
+						<a
+							href="/privacidad"
+							class="transition hover:text-sky-700 hover:underline"
+						>
+							Política de Privacidad
+						</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+
+		<div class="my-10 h-px w-full bg-slate-300"></div>
+
+		<div
+			class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between"
 		>
-			<a
-				href="https://www.instagram.com/moonbeauty.val/"
-				target="_blank"
-				rel="noreferrer"
-				class="transition hover:text-slate-900 hover:underline"
-			>
-				Instagram
-			</a>
+			<div>
+				<p class="text-sm font-semibold text-slate-700">
+					Suscríbete para recibir consejos de K-Beauty.
+				</p>
 
-			<a href="/" class="transition hover:text-slate-900 hover:underline">
-				Facebook
-			</a>
+				<form
+					class="mt-4 flex w-full max-w-md flex-col gap-3 sm:flex-row"
+					onsubmit={(event) => event.preventDefault()}
+				>
+					<label for="correo-suscripcion" class="sr-only">
+						Correo electrónico
+					</label>
 
-			<a href="/" class="transition hover:text-slate-900 hover:underline">
-				Pinterest
-			</a>
-		</nav>
+					<input
+						id="correo-suscripcion"
+						class="h-11 min-w-0 flex-1 rounded-full border border-slate-200 bg-white px-5 text-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+						type="email"
+						name="correo"
+						placeholder="Tu correo electrónico"
+						required
+					/>
 
-		<p class="mt-8 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-			Suscríbete para recibir consejos de K-Beauty y ofertas exclusivas.
-		</p>
+					<button
+						class="h-11 shrink-0 rounded-full bg-slate-600 px-6 text-sm font-semibold text-white transition hover:bg-slate-500"
+						type="submit"
+					>
+						Unirse
+					</button>
+				</form>
+			</div>
 
-		<form
-			class="mt-6 flex w-full max-w-xl flex-col gap-3 sm:flex-row"
-			onsubmit={(event) => event.preventDefault()}
-		>
-			<label for="correo-suscripcion" class="sr-only">
-				Correo electrónico
-			</label>
-
-			<input
-				id="correo-suscripcion"
-				class="h-12 min-w-0 flex-1 rounded-full border border-slate-200 bg-white px-6 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
-				type="email"
-				name="correo"
-				placeholder="Tu correo electrónico"
-				required
-			/>
-
-			<button
-				class="h-12 rounded-full bg-slate-600 px-7 font-semibold text-white transition hover:bg-slate-500"
-				type="submit"
-			>
-				Unirse
-			</button>
-		</form>
-
-		<div class="my-8 h-px w-full bg-slate-300"></div>
-
-		<p class="text-sm leading-6 text-slate-500 sm:text-base">
-			© {new Date().getFullYear()} MoonBeauty. Luminous Serenity for your
-			skin.
-		</p>
+			<p class="text-sm text-slate-500">
+				© {new Date().getFullYear()} MoonBeauty. Luminous Serenity for
+				your skin.
+			</p>
+		</div>
 	</div>
 </footer>
 
