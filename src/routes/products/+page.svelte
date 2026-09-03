@@ -1,11 +1,23 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { gsap } from 'gsap';
-	import { ScrollTrigger } from 'gsap/ScrollTrigger';
+	import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 	import Categoria from '$lib/components/categoria.svelte';
 	import Tarjeta from '$lib/components/tarjeta.svelte';
 
-	gsap.registerPlugin(ScrollTrigger);
+	// gsap/ScrollTrigger es CommonJS: en el servidor (SSR en Vercel) Node
+	// no puede resolverlo vía import estático con nombre. Como esta
+	// animación solo tiene sentido en el navegador, se carga de forma
+	// dinámica y solo del lado del cliente.
+	let scrollTriggerModulo: typeof ScrollTrigger | null = null;
+
+	const scrollTriggerCargado = browser
+		? import('gsap/ScrollTrigger').then((mod) => {
+				gsap.registerPlugin(mod.ScrollTrigger);
+				scrollTriggerModulo = mod.ScrollTrigger;
+			})
+		: Promise.resolve();
 
 	let { data } = $props();
 
@@ -123,22 +135,30 @@
 
 		gsap.set(tarjetas, { opacity: 0, x: -40, y: 50 });
 
-		const triggers = ScrollTrigger.batch(tarjetas, {
-			start: 'top 88%',
-			once: true,
-			onEnter: (lote) => {
-				gsap.to(lote, {
-					opacity: 1,
-					x: 0,
-					y: 0,
-					duration: 0.8,
-					ease: 'power3.out',
-					stagger: 0.09
-				});
-			}
+		let cancelado = false;
+		let triggers: ScrollTrigger[] = [];
+
+		scrollTriggerCargado.then(() => {
+			if (cancelado || !scrollTriggerModulo) return;
+
+			triggers = scrollTriggerModulo.batch(tarjetas, {
+				start: 'top 88%',
+				once: true,
+				onEnter: (lote) => {
+					gsap.to(lote, {
+						opacity: 1,
+						x: 0,
+						y: 0,
+						duration: 0.8,
+						ease: 'power3.out',
+						stagger: 0.09
+					});
+				}
+			});
 		});
 
 		return () => {
+			cancelado = true;
 			triggers.forEach((trigger) => trigger.kill());
 		};
 	});

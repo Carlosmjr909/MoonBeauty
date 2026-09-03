@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { gsap } from "gsap";
-	import { ScrollTrigger } from "gsap/ScrollTrigger";
+	import type { ScrollTrigger } from "gsap/ScrollTrigger";
 	import Tarjeta from "$lib/components/tarjeta.svelte";
 	import Icon from "@iconify/svelte";
 	import { publicacionesInstagram } from "$lib/instagramPosts";
-
-	gsap.registerPlugin(ScrollTrigger);
 
 	let { data } = $props();
 
@@ -193,6 +191,17 @@
 			return;
 		}
 
+		// gsap/ScrollTrigger es CommonJS y en el servidor (SSR en Vercel)
+		// Node no puede resolver su named export vía import estático. Como
+		// esta animación solo tiene sentido en el navegador, se carga de
+		// forma dinámica aquí adentro, que nunca corre en el servidor.
+		let cancelado = false;
+		let limpiar: (() => void) | undefined;
+
+		import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
+			if (cancelado) return;
+			gsap.registerPlugin(ScrollTrigger);
+
 		const animaciones: gsap.core.Tween[] = [];
 
 		// "Favoritos de temporada": el encabezado sube con fade, y el
@@ -347,9 +356,15 @@
 			}
 		}
 
+			limpiar = () => {
+				animaciones.forEach((tween) => tween.scrollTrigger?.kill());
+				triggersEsencia.forEach((trigger) => trigger.kill());
+			};
+		});
+
 		return () => {
-			animaciones.forEach((tween) => tween.scrollTrigger?.kill());
-			triggersEsencia.forEach((trigger) => trigger.kill());
+			cancelado = true;
+			limpiar?.();
 		};
 	});
 </script>
