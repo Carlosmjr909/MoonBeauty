@@ -7,23 +7,33 @@ import {
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-import {
-	FIREBASE_ADMIN_CLIENT_EMAIL,
-	FIREBASE_ADMIN_PRIVATE_KEY,
-	FIREBASE_ADMIN_PROJECT_ID
-} from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
+/**
+ * Obtiene la clave privada del service account. Acepta dos formatos:
+ *
+ * - FIREBASE_ADMIN_PRIVATE_KEY_BASE64: la clave completa codificada en
+ *   base64 (recomendado para plataformas como Vercel, donde pegar la
+ *   clave PEM con "\n" literales es propenso a romperse en la UI).
+ * - FIREBASE_ADMIN_PRIVATE_KEY: la clave PEM con saltos de línea escapados
+ *   como "\n" (formato usado en el .env local).
+ */
 function obtenerClavePrivada(): string {
-	if (!FIREBASE_ADMIN_PRIVATE_KEY) {
+	const claveBase64 = env.FIREBASE_ADMIN_PRIVATE_KEY_BASE64;
+
+	if (claveBase64) {
+		return Buffer.from(claveBase64, 'base64').toString('utf8');
+	}
+
+	const claveEscapada = env.FIREBASE_ADMIN_PRIVATE_KEY;
+
+	if (!claveEscapada) {
 		throw new Error(
-			'Falta FIREBASE_ADMIN_PRIVATE_KEY en las variables de entorno.'
+			'Falta FIREBASE_ADMIN_PRIVATE_KEY (o FIREBASE_ADMIN_PRIVATE_KEY_BASE64) en las variables de entorno.'
 		);
 	}
 
-	return FIREBASE_ADMIN_PRIVATE_KEY.replace(
-		/\\n/g,
-		'\n'
-	);
+	return claveEscapada.replace(/\\n/g, '\n');
 }
 
 function inicializarFirebaseAdmin() {
@@ -32,8 +42,8 @@ function inicializarFirebaseAdmin() {
 	}
 
 	if (
-		!FIREBASE_ADMIN_PROJECT_ID ||
-		!FIREBASE_ADMIN_CLIENT_EMAIL
+		!env.FIREBASE_ADMIN_PROJECT_ID ||
+		!env.FIREBASE_ADMIN_CLIENT_EMAIL
 	) {
 		throw new Error(
 			'Faltan las variables privadas de Firebase Admin.'
@@ -43,10 +53,10 @@ function inicializarFirebaseAdmin() {
 	return initializeApp({
 		credential: cert({
 			projectId:
-				FIREBASE_ADMIN_PROJECT_ID,
+				env.FIREBASE_ADMIN_PROJECT_ID,
 
 			clientEmail:
-				FIREBASE_ADMIN_CLIENT_EMAIL,
+				env.FIREBASE_ADMIN_CLIENT_EMAIL,
 
 			privateKey:
 				obtenerClavePrivada()

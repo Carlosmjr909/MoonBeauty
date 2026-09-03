@@ -1,22 +1,25 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
-	import { gsap } from 'gsap';
 	import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 	import Categoria from '$lib/components/categoria.svelte';
 	import Tarjeta from '$lib/components/tarjeta.svelte';
 
-	// gsap/ScrollTrigger es CommonJS: en el servidor (SSR en Vercel) Node
-	// no puede resolverlo vía import estático con nombre. Como esta
-	// animación solo tiene sentido en el navegador, se carga de forma
-	// dinámica y solo del lado del cliente.
+	// gsap y gsap/ScrollTrigger no traen "type": "module" en su package.json
+	// y en el servidor (SSR en Vercel) Node no logra resolverlos bien vía
+	// import estático. Como esta animación solo tiene sentido en el
+	// navegador, se cargan de forma dinámica y solo del lado del cliente.
+	let gsapModulo: typeof import('gsap')['gsap'] | null = null;
 	let scrollTriggerModulo: typeof ScrollTrigger | null = null;
 
-	const scrollTriggerCargado = browser
-		? import('gsap/ScrollTrigger').then((mod) => {
-				gsap.registerPlugin(mod.ScrollTrigger);
-				scrollTriggerModulo = mod.ScrollTrigger;
-			})
+	const gsapCargado = browser
+		? Promise.all([import('gsap'), import('gsap/ScrollTrigger')]).then(
+				([mod, stMod]) => {
+					gsapModulo = mod.gsap;
+					scrollTriggerModulo = stMod.ScrollTrigger;
+					gsapModulo.registerPlugin(scrollTriggerModulo);
+				}
+			)
 		: Promise.resolve();
 
 	let { data } = $props();
@@ -124,28 +127,28 @@
 		const tarjetas = Array.from(contenedor.children) as HTMLElement[];
 		if (!tarjetas.length) return;
 
-		const prefiereMenosMovimiento = window.matchMedia(
-			'(prefers-reduced-motion: reduce)'
-		).matches;
-
-		if (prefiereMenosMovimiento) {
-			gsap.set(tarjetas, { opacity: 1, x: 0, y: 0 });
-			return;
-		}
-
-		gsap.set(tarjetas, { opacity: 0, x: -40, y: 50 });
-
 		let cancelado = false;
 		let triggers: ScrollTrigger[] = [];
 
-		scrollTriggerCargado.then(() => {
-			if (cancelado || !scrollTriggerModulo) return;
+		gsapCargado.then(() => {
+			if (cancelado || !gsapModulo || !scrollTriggerModulo) return;
+
+			const prefiereMenosMovimiento = window.matchMedia(
+				'(prefers-reduced-motion: reduce)'
+			).matches;
+
+			if (prefiereMenosMovimiento) {
+				gsapModulo.set(tarjetas, { opacity: 1, x: 0, y: 0 });
+				return;
+			}
+
+			gsapModulo.set(tarjetas, { opacity: 0, x: -40, y: 50 });
 
 			triggers = scrollTriggerModulo.batch(tarjetas, {
 				start: 'top 88%',
 				once: true,
 				onEnter: (lote) => {
-					gsap.to(lote, {
+					gsapModulo!.to(lote, {
 						opacity: 1,
 						x: 0,
 						y: 0,

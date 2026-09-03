@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { gsap } from "gsap";
-	import type { ScrollTrigger } from "gsap/ScrollTrigger";
 	import Tarjeta from "$lib/components/tarjeta.svelte";
 	import Icon from "@iconify/svelte";
 	import { publicacionesInstagram } from "$lib/instagramPosts";
@@ -198,11 +196,12 @@
 		let cancelado = false;
 		let limpiar: (() => void) | undefined;
 
-		import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
-			if (cancelado) return;
-			gsap.registerPlugin(ScrollTrigger);
+		Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
+			([{ gsap }, { ScrollTrigger }]) => {
+				if (cancelado) return;
+				gsap.registerPlugin(ScrollTrigger);
 
-		const animaciones: gsap.core.Tween[] = [];
+		const animaciones: Array<{ scrollTrigger?: { kill: () => void } | null }> = [];
 
 		// "Favoritos de temporada": el encabezado sube con fade, y el
 		// carrusel de productos sube un poco después con un leve zoom-in.
@@ -356,11 +355,12 @@
 			}
 		}
 
-			limpiar = () => {
-				animaciones.forEach((tween) => tween.scrollTrigger?.kill());
-				triggersEsencia.forEach((trigger) => trigger.kill());
-			};
-		});
+				limpiar = () => {
+					animaciones.forEach((tween) => tween.scrollTrigger?.kill());
+					triggersEsencia.forEach((trigger) => trigger.kill());
+				};
+			},
+		);
 
 		return () => {
 			cancelado = true;
