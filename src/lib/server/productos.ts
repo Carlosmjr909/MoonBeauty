@@ -10,6 +10,7 @@ export type ProductoPublico = {
 	imagen: string;
 	precio: number;
 	stock: number;
+	popular: boolean;
 	fechaCreacion: number;
 };
 
@@ -37,6 +38,7 @@ export async function obtenerProductosPublicos(): Promise<ProductoPublico[]> {
 			imagen: String(datos.imagen ?? ''),
 			precio: Number(datos.precio ?? 0),
 			stock: Number(datos.stock ?? 0),
+			popular: Boolean(datos.popular ?? false),
 			fechaCreacion:
 				fechaCreacion && typeof fechaCreacion.toMillis === 'function'
 					? fechaCreacion.toMillis()

@@ -55,7 +55,7 @@
         class="flex items-center justify-between border-b border-slate-200 px-6 py-5"
     >
         <div>
-            <h2 class="font-Mendigo text-2xl text-slate-700">Tu carrito</h2>
+            <h2 class="font-Manrope text-2xl text-slate-700">Tu carrito</h2>
 
             <p class="mt-1 text-sm text-slate-400">
                 {$cantidadCarrito}

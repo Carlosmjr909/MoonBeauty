@@ -112,7 +112,7 @@
 
 			<div class="w-full lg:w-1/2 lg:pt-4 flex flex-col">
 				<p
-					class="font-PlayFair text-3xl leading-tight text-gray-600
+					class="font-Manrope text-3xl leading-tight text-gray-600
 			sm:text-4xl
 			lg:text-5xl
 			2xl:text-6xl"
@@ -122,7 +122,7 @@
 
 				{#if product.especificacion}
 					<p
-						class="font-BeVietnam text-base text-slate-400
+						class="font-Manrope text-base text-slate-400
 				sm:text-lg
 				lg:text-xl"
 					>
@@ -133,7 +133,7 @@
 				<div class="bg-slate-700 h-px w-24 my-8"></div>
 
 				<p
-					class="whitespace-pre-line font-BeVietnam text-base leading-7 text-gray-500
+					class="whitespace-pre-line font-Manrope text-base leading-7 text-gray-500
 			sm:text-lg
 			lg:text-xl lg:leading-8
 			2xl:text-2xl"
@@ -145,7 +145,7 @@
 					<div
 						class="rounded-4xl bg-sky-100 w-38 px-5 py-4 sm:min-w-52"
 					>
-						<p class="font-BeVietnam text-2xl sm:text-3xl">
+						<p class="font-Manrope text-2xl sm:text-3xl">
 							{formatearUSD(product.precio)}
 						</p>
 

@@ -155,9 +155,9 @@
 		</div>
 	</div>
 
-	<header class="bg-white/60 backdrop-blur-md px-16">
+	<header class="bg-white/60 backdrop-blur-md px-4 sm:px-6 lg:px-16">
 	<div
-		class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-24 lg:px-8 2xl:max-w-[1600px]"
+		class="mx-auto flex h-20 max-w-7xl items-center justify-between px-2 sm:px-6 lg:h-24 lg:px-8 2xl:max-w-[1600px]"
 	>
 		<a
 			href="/"
@@ -178,16 +178,23 @@
 		>
 			<a
 				href="/"
-				class="font-BeVietnam font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
+				class="font-Manrope font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
 			>
 				Inicio
 			</a>
 
 			<a
 				href="/products"
-				class="font-BeVietnam font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
+				class="font-Manrope font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
 			>
 				Productos
+			</a>
+
+			<a
+				href="/categorias"
+				class="font-Manrope font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
+			>
+				Categorías
 			</a>
 		</nav>
 
@@ -261,7 +268,7 @@
 				onclick={abrirCarrito}
 				class="relative transition hover:-translate-y-1"
 			>
-				<Icon icon="ph:bag-thin" width="25px" />
+				<Icon icon="keyline-icons:shopping-cart" width="25px" />
 
 				{#if $cantidadCarrito > 0}
 					<span
@@ -298,7 +305,7 @@
 				<a
 					href="/"
 					onclick={cerrarMenu}
-					class="rounded-xl px-4 py-3 font-BeVietnam font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+					class="rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
 				>
 					Inicio
 				</a>
@@ -306,15 +313,23 @@
 				<a
 					href="/products"
 					onclick={cerrarMenu}
-					class="rounded-xl px-4 py-3 font-BeVietnam font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+					class="rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
 				>
 					Productos
 				</a>
 
 				<a
+					href="/categorias"
+					onclick={cerrarMenu}
+					class="rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+				>
+					Categorías
+				</a>
+
+				<a
 					href="/create_account"
 					onclick={cerrarMenu}
-					class="flex items-center gap-3 rounded-xl px-4 py-3 font-BeVietnam font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800 sm:hidden"
+					class="flex items-center gap-3 rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800 sm:hidden"
 				>
 					<Icon icon="gg:profile" width="23" />
 					Mi cuenta
@@ -324,7 +339,7 @@
 					<a
 						href="/admin"
 						onclick={cerrarMenu}
-						class="flex items-center gap-3 rounded-xl px-4 py-3 font-BeVietnam font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+						class="flex items-center gap-3 rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
 					>
 						<Icon
 							icon="material-symbols:admin-panel-settings-outline"
@@ -466,7 +481,7 @@
 	>
 		<div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
 			<div>
-				<p class="font-PlayFair text-3xl text-slate-700">MoonBeauty</p>
+				<p class="font-Manrope text-3xl text-slate-700">MoonBeauty</p>
 
 				<p class="mt-3 max-w-sm text-sm leading-6 text-slate-500">
 					Descubre el brillo que nace desde adentro con nuestra
@@ -509,7 +524,7 @@
 			</div>
 
 			<div>
-				<p class="font-Mendigo text-lg text-slate-700">Contacto</p>
+				<p class="font-Manrope text-lg text-slate-700">Contacto</p>
 
 				<ul class="mt-4 space-y-3 text-sm text-slate-600">
 					<li class="flex items-start gap-2">
@@ -549,7 +564,7 @@
 			</div>
 
 			<div>
-				<p class="font-Mendigo text-lg text-slate-700">Información</p>
+				<p class="font-Manrope text-lg text-slate-700">Información</p>
 
 				<ul class="mt-4 space-y-3 text-sm text-slate-600">
 					<li>

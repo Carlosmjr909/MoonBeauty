@@ -18,7 +18,7 @@
 		{#if $autenticacionCargando}
 			<p>Cargando cuenta...</p>
 		{:else if $usuario}
-			<h1 class="font-PlayFair text-4xl text-slate-700">
+			<h1 class="font-Manrope text-4xl text-slate-700">
 				Mi cuenta
 			</h1>
 

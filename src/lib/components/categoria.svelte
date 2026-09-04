@@ -39,7 +39,7 @@
 				<p class="hidden text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-600 sm:block">
 					Categoría
 				</p>
-				<h2 class="font-Mendigo text-base text-slate-800 sm:text-2xl lg:text-3xl">
+				<h2 class="font-Manrope text-base text-slate-800 sm:text-2xl lg:text-3xl">
 					{nombre}
 				</h2>
 				<p class="hidden text-sm leading-6 text-slate-600 lg:block">

@@ -30,7 +30,8 @@
 		descripcion: "",
 		especificacion: "",
 		precio: 0,
-		stock: 0
+		stock: 0,
+		popular: false
 	};
 
 	let formulario = $state({ ...formularioVacio });
@@ -128,6 +129,7 @@
 		marca?: string;
 		precio?: number;
 		stock?: number;
+		popular?: boolean;
 	};
 	const cambiosPorGuardar = $state<Record<string, CambiosProducto>>({});
 
@@ -205,7 +207,8 @@
 				especificacion: formulario.especificacion.trim(),
 				imagen: urlImagen,
 				precio: Number(formulario.precio) || 0,
-				stock: Number(formulario.stock) || 0
+				stock: Number(formulario.stock) || 0,
+				popular: formulario.popular
 			});
 
 			formulario = { ...formularioVacio };
@@ -309,7 +312,7 @@
 </script>
 
 <section class="mx-auto max-w-6xl px-6 py-12">
-	<p class="font-PlayFair text-3xl text-slate-700">Inventario</p>
+	<p class="font-Manrope text-3xl text-slate-700">Inventario</p>
 
 	{#if error}
 		<div class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -401,6 +404,18 @@
 			/>
 		</div>
 
+		<div class="flex items-center gap-2 sm:col-span-2">
+			<input
+				id="popular"
+				type="checkbox"
+				bind:checked={formulario.popular}
+				class="h-4 w-4 rounded border-slate-300"
+			/>
+			<label for="popular" class="text-sm font-semibold text-slate-600">
+				Marcar como "Más popular" (aparecerá en el filtro de más populares)
+			</label>
+		</div>
+
 		<div class="flex flex-col gap-1 sm:col-span-2">
 			<label for="especificacion" class="text-sm font-semibold text-slate-600">
 				Especificación (opcional, ej. "SPF50+ PA++++")
@@ -474,7 +489,7 @@
 <div class="mt-10 rounded-2xl bg-slate-50 p-6">
 		<div class="mb-5 flex items-end justify-between gap-3">
 			<div>
-				<p class="font-PlayFair text-2xl text-slate-700">Categorías</p>
+				<p class="font-Manrope text-2xl text-slate-700">Categorías</p>
 				<p class="text-sm text-slate-500">
 					Edita la imagen y la descripción que verán los clientes.
 				</p>
@@ -618,6 +633,7 @@
 							<th class="py-2 pr-4">Marca</th>
 							<th class="py-2 pr-4">Precio</th>
 							<th class="py-2 pr-4">Stock</th>
+							<th class="py-2 pr-4">Popular</th>
 							<th class="py-2 pr-4">Descripción</th>
 							<th class="py-2 pr-4"></th>
 						</tr>
@@ -711,6 +727,20 @@
 												) || 0
 											)}
 										class="w-20 rounded-lg border border-slate-200 px-2 py-1 text-slate-700"
+									/>
+								</td>
+								<td class="py-3 pr-4 text-center">
+									<input
+										type="checkbox"
+										checked={cambiosPorGuardar[producto.id]?.popular ??
+											producto.popular}
+										onchange={(evento) =>
+											actualizarCampoPendiente(
+												producto.id,
+												"popular",
+												(evento.target as HTMLInputElement).checked
+											)}
+										class="h-4 w-4 rounded border-slate-300"
 									/>
 								</td>
 								<td class="max-w-xs py-3 pr-4 text-slate-500">

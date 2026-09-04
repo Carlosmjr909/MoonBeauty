@@ -145,13 +145,13 @@
 			>
 				<div>
 					<p
-						class="font-Mendigo text-3xl text-slate-700 sm:text-4xl lg:text-5xl"
+						class="font-Manrope text-3xl text-slate-700 sm:text-4xl lg:text-5xl"
 					>
 						Crea tu cuenta
 					</p>
 
 					<p
-						class="mt-3 font-BeVietnam text-sm leading-6 text-slate-500 sm:text-base lg:text-lg"
+						class="mt-3 font-Manrope text-sm leading-6 text-slate-500 sm:text-base lg:text-lg"
 					>
 						Únete al ritual de belleza coreana y descubre tu
 						luminosidad interior.
@@ -161,7 +161,7 @@
 				<div class="mt-8">
 					<label
 						for="nombre"
-						class="mb-2 block font-BeVietnam text-sm font-semibold uppercase tracking-wide text-slate-600"
+						class="mb-2 block font-Manrope text-sm font-semibold uppercase tracking-wide text-slate-600"
 					>
 						Nombre completo
 					</label>
@@ -189,7 +189,7 @@
 				<div class="mt-5">
 					<label
 						for="correo"
-						class="mb-2 block font-BeVietnam text-sm font-semibold uppercase tracking-wide text-slate-600"
+						class="mb-2 block font-Manrope text-sm font-semibold uppercase tracking-wide text-slate-600"
 					>
 						Correo electrónico
 					</label>
@@ -218,7 +218,7 @@
 					<div>
 						<label
 							for="contrasena"
-							class="mb-2 block font-BeVietnam text-sm font-semibold uppercase tracking-wide text-slate-600"
+							class="mb-2 block font-Manrope text-sm font-semibold uppercase tracking-wide text-slate-600"
 						>
 							Contraseña
 						</label>
@@ -258,7 +258,7 @@
 					<div>
 						<label
 							for="confirmar-contrasena"
-							class="mb-2 block font-BeVietnam text-sm font-semibold uppercase tracking-wide text-slate-600"
+							class="mb-2 block font-Manrope text-sm font-semibold uppercase tracking-wide text-slate-600"
 						>
 							Confirmar contraseña
 						</label>
@@ -337,7 +337,7 @@
 				<button
 					type="submit"
 					disabled={cargando}
-					class="mt-7 h-13 w-full rounded-full bg-slate-600 px-6 font-BeVietnam font-semibold text-white shadow-md transition hover:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+					class="mt-7 h-13 w-full rounded-full bg-slate-600 px-6 font-Manrope font-semibold text-white shadow-md transition hover:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
 				>
 					{cargando ? "Creando cuenta..." : "Crear cuenta"}
 				</button>
@@ -354,7 +354,7 @@
 					type="button"
 					onclick={registrarseConGoogle}
 					disabled={cargando}
-					class="flex h-13 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-5 font-BeVietnam font-medium text-slate-600 transition hover:bg-slate-100 disabled:opacity-60"
+					class="flex h-13 w-full items-center justify-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-5 font-Manrope font-medium text-slate-600 transition hover:bg-slate-100 disabled:opacity-60"
 				>
 					<Icon icon="flat-color-icons:google" width="24" />
 					Registrarse con Google
@@ -390,7 +390,7 @@
 			<div
 				class="absolute bottom-12 left-10 right-10 rounded-3xl bg-white/20 p-8 text-white backdrop-blur-md xl:bottom-16 xl:left-16 xl:right-16"
 			>
-				<p class="font-PlayFair text-3xl xl:text-4xl">
+				<p class="font-Manrope text-3xl xl:text-4xl">
 					Una rutina creada para ti
 				</p>
 

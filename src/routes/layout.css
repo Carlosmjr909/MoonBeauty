@@ -2,24 +2,6 @@
 
 
 @font-face {
-    font-family: MiTypografia;
-    src: url('/PlayfairDisplay-VariableFont_wght.ttf');
-}
-
-.font-PlayFair {
-    font-family: MiTypografia;
-}
-
-@font-face {
-    font-family: MiTypografia2;
-    src: url('BeVietnamPro-Regular.ttf');
-}
-
-.font-BeVietnam {
-    font-family: MiTypografia2;
-}
-
-@font-face {
     font-family: MiTypografia3;
     src: url('Manrope-Regular.ttf');
 }

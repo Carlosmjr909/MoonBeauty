@@ -380,7 +380,7 @@
 	/>
 	
 
-	<div class="mx-auto w-full px-12">
+	<div class="mx-auto w-full px-8 lg:px-12">
 		<p class="text-sky-200 font-Manrope text-lg">K-BEAUTY · MOON BEAUTY</p>
 		<p
 			class="font-Manrope my-4 text-5xl leading-none text-slate-600 sm:text-6xl md:text-7xl lg:text-8xl 2xl:text-9xl"
@@ -427,7 +427,7 @@
 			</div>
 
 			<a
-				class="inline-flex w-fit shrink-0 items-center justify-center rounded-full bg-sky-200 px-6 py-3 font-BeVietnam text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-600 hover:text-white sm:text-base"
+				class="inline-flex w-fit shrink-0 items-center justify-center rounded-full bg-sky-200 px-6 py-3 font-Manrope text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-600 hover:text-white sm:text-base"
 				href="/products"
 			>
 				Ver todos
@@ -455,7 +455,11 @@
 						data-item
 						class="w-[calc((100%-1.25rem)/2)] shrink-0 snap-start lg:w-[calc((100%-2.5rem)/3)] xl:w-[calc((100%-3.75rem)/4)]"
 					>
-						<Tarjeta {...producto} />
+						<Tarjeta
+							{...producto}
+							tasaBCV={data?.tasaBCV?.promedio ?? null}
+							etiquetaSuperior="marca"
+						/>
 					</div>
 				{/each}
 			</div>
@@ -478,7 +482,7 @@
 	class="overflow-hidden bg-white py-12 sm:py-16 lg:py-20 2xl:py-24"
 >
 	<p
-		class="mb-10 text-center font-BeVietnam text-sm font-bold uppercase tracking-[0.2em] text-sky-700 sm:text-base lg:mb-14"
+		class="mb-10 text-center font-Manrope text-sm font-bold uppercase tracking-[0.2em] text-sky-700 sm:text-base lg:mb-14"
 	>
 		Marcas que amamos
 	</p>
@@ -511,12 +515,12 @@
 		>
 			<div bind:this={encabezadoInstagramTexto}>
 				<p
-					class="font-BeVietnam text-sm font-bold uppercase tracking-[0.2em] text-sky-700"
+					class="font-Manrope text-sm font-bold uppercase tracking-[0.2em] text-sky-700"
 				>
 					Síguenos
 				</p>
 				<p
-					class="mt-2 font-Mendigo text-3xl text-slate-700 sm:text-4xl lg:text-5xl"
+					class="mt-2 font-Manrope text-3xl text-slate-700 sm:text-4xl lg:text-5xl"
 				>
 					Nuestro Instagram
 				</p>
@@ -527,7 +531,7 @@
 				href={INSTAGRAM_URL}
 				target="_blank"
 				rel="noreferrer"
-				class="inline-flex w-fit shrink-0 items-center justify-center gap-2 rounded-full bg-sky-200 px-6 py-3 font-BeVietnam text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-600 hover:text-white sm:text-base"
+				class="inline-flex w-fit shrink-0 items-center justify-center gap-2 rounded-full bg-sky-200 px-6 py-3 font-Manrope text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-600 hover:text-white sm:text-base"
 			>
 				<Icon icon="mdi:instagram" width="20" />
 				Síguenos en Instagram
@@ -729,13 +733,13 @@
 			class="mx-auto mb-10 max-w-3xl text-center lg:mb-14"
 		>
 			<p
-				class="font-BeVietnam text-sm font-bold uppercase tracking-[0.2em] text-sky-700"
+				class="font-Manrope text-sm font-bold uppercase tracking-[0.2em] text-sky-700"
 			>
 				Nuestra esencia
 			</p>
 
 			<p
-				class="mt-3 font-Mendigo text-3xl text-slate-700 sm:text-4xl lg:text-5xl"
+				class="mt-3 font-Manrope text-3xl text-slate-700 sm:text-4xl lg:text-5xl"
 			>
 				Belleza, calma y cuidado
 			</p>
@@ -758,7 +762,7 @@
 						</div>
 
 						<p
-							class="mt-3 font-Mendigo text-lg font-bold text-slate-700 sm:mt-5 sm:text-2xl lg:text-3xl"
+							class="mt-3 font-Manrope text-lg font-bold text-slate-700 sm:mt-5 sm:text-2xl lg:text-3xl"
 						>
 							La ciencia de la calma
 						</p>
@@ -791,7 +795,7 @@
 					<Icon icon="mdi:medal-outline" width="24" />
 				</div>
 
-				<p class="mt-3 font-Mendigo text-base font-bold sm:mt-5 sm:text-2xl lg:text-3xl">
+				<p class="mt-3 font-Manrope text-base font-bold sm:mt-5 sm:text-2xl lg:text-3xl">
 					Curaduría exclusiva
 				</p>
 
@@ -813,7 +817,7 @@
 				</div>
 
 				<p
-					class="mt-3 font-Mendigo text-base font-bold text-slate-700 sm:mt-5 sm:text-2xl lg:text-3xl"
+					class="mt-3 font-Manrope text-base font-bold text-slate-700 sm:mt-5 sm:text-2xl lg:text-3xl"
 				>
 					Envío directo
 				</p>
@@ -843,7 +847,7 @@
 				<div
 					class="relative flex h-full min-h-64 flex-col justify-end p-4 text-white sm:min-h-105 sm:p-10 lg:min-h-80 lg:max-w-xl lg:justify-center"
 				>
-					<p class="font-Mendigo text-xl font-bold sm:text-4xl">
+					<p class="font-Manrope text-xl font-bold sm:text-4xl">
 						Luminous Serenity
 					</p>
 

@@ -30,6 +30,7 @@ export type Producto = {
 	imagen: string;
 	precio: number;
 	stock: number;
+	popular: boolean;
 };
 
 export type NuevoProducto = Omit<Producto, 'id'>;
@@ -74,7 +75,8 @@ export function escucharProductos(
 					especificacion: String(datos.especificacion ?? ''),
 					imagen: String(datos.imagen ?? ''),
 					precio: Number(datos.precio ?? 0),
-					stock: Number(datos.stock ?? 0)
+					stock: Number(datos.stock ?? 0),
+					popular: Boolean(datos.popular ?? false)
 				} satisfies Producto;
 			});
 

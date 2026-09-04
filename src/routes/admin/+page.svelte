@@ -1,5 +1,5 @@
 <section class="mx-auto max-w-3xl px-6 py-16">
-	<p class="font-PlayFair text-3xl text-slate-700">Panel de administración</p>
+	<p class="font-Manrope text-3xl text-slate-700">Panel de administración</p>
 
 	<div class="mt-8">
 		<a

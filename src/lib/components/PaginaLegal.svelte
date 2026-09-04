@@ -17,7 +17,7 @@
 			← Volver al inicio
 		</a>
 
-		<h1 class="mt-4 font-Mendigo text-4xl text-slate-800 sm:text-5xl">
+		<h1 class="mt-4 font-Manrope text-4xl text-slate-800 sm:text-5xl">
 			{titulo}
 		</h1>
 
@@ -36,7 +36,7 @@
 <style>
 	.legal-contenido :global(h2) {
 		margin-top: 2rem;
-		font-family: "Mendigo", serif;
+		font-family: "Manrope", sans-serif;
 		font-size: 1.5rem;
 		color: #334155;
 	}

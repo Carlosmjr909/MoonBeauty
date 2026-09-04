@@ -37,7 +37,7 @@
 		onsubmit={recuperar}
 		class="w-full max-w-md rounded-3xl bg-white p-8 shadow-sm"
 	>
-		<h1 class="font-PlayFair text-3xl text-slate-700">
+		<h1 class="font-Manrope text-3xl text-slate-700">
 			Recuperar contraseña
 		</h1>
 

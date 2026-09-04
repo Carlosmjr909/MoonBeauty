@@ -626,7 +626,7 @@ carrito.vaciar();
 				</p>
 
 				<h1
-					class="mt-2 font-PlayFair text-4xl text-slate-700"
+					class="mt-2 font-Manrope text-4xl text-slate-700"
 				>
 					¡Gracias por tu compra!
 				</h1>
@@ -700,7 +700,7 @@ carrito.vaciar();
 					</p>
 
 					<h1
-						class="mt-2 font-Mendigo text-4xl text-slate-700"
+						class="mt-2 font-Manrope text-4xl text-slate-700"
 					>
 						Finalizar compra
 					</h1>
@@ -1077,7 +1077,7 @@ carrito.vaciar();
 					class="h-fit rounded-3xl bg-white p-6 shadow-sm lg:sticky lg:top-28"
 				>
 					<h2
-						class="font-Mendigo text-2xl text-slate-700"
+						class="font-Manrope text-2xl text-slate-700"
 					>
 						Resumen
 					</h2>
@@ -1200,7 +1200,7 @@ carrito.vaciar();
 				<Icon icon="material-symbols:close-rounded" width="20" />
 			</button>
 
-			<p class="pr-6 font-Mendigo text-lg text-slate-700">
+			<p class="pr-6 font-Manrope text-lg text-slate-700">
 				¿Sabías que...?
 			</p>
 

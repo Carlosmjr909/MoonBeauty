@@ -11,6 +11,7 @@
 	interface PropTypes {
 		Tipo: string;
 		Nombre: string;
+		marca?: string | null;
 		especificacion?: string;
 		precio: number;
 		imagen: string;
@@ -18,19 +19,27 @@
 		OfertaEnDivisas?: number;
 		tasaBCV?: number | null;
 		stock?: number;
+		/** Qué mostrar como etiqueta pequeña arriba del nombre. */
+		etiquetaSuperior?: 'tipo' | 'marca';
 	}
 
 	const {
 		Tipo,
 		Nombre,
+		marca = '',
 		especificacion = '',
 		precio,
 		imagen,
 		id,
 		OfertaEnDivisas = 0,
 		tasaBCV = null,
-		stock = 1
+		stock = 1,
+		etiquetaSuperior = 'tipo'
 	}: PropTypes = $props();
+
+	const etiqueta = $derived(
+		etiquetaSuperior === 'marca' && marca ? marca : Tipo
+	);
 
 	const agotado = $derived(stock <= 0);
 
@@ -126,13 +135,13 @@
 	</div>
 
 	<div class="space-y-1 py-4">
-		<p class="text-sm text-slate-500 font-Mendigo">
-			{Tipo}
+		<p class="text-sm text-slate-500 font-Manrope">
+			{etiqueta}
 		</p>
 
 		<a
 			href="/products/{id}"
-			class="block font-Mendigo text-xl text-slate-700 transition hover:text-sky-700"
+			class="block font-Manrope text-xl text-slate-700 transition hover:text-sky-700"
 		>
 			{Nombre}
 		</a>
