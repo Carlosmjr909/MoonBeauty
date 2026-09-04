@@ -199,8 +199,20 @@ export const POST: RequestHandler = async ({ request }): Promise<Response> => {
 			</table>
 		`;
 
+		const encabezadoCorreo = `
+			<div style="text-align: center; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #e5e7eb;">
+				<img
+					src="https://www.moonbeautyval.com/correo/logo-correo.png"
+					alt="Moon Beauty"
+					width="140"
+					style="max-width: 140px; height: auto;"
+				/>
+			</div>
+		`;
+
 		const htmlEmpresa = `
 			<div style="font-family: Arial, sans-serif; color: #111827;">
+				${encabezadoCorreo}
 				<h2 style="margin-bottom: 12px;">Nuevo pedido recibido</h2>
 				<p><strong>Número del pedido:</strong> ${escaparHtml(datos.numeroPedido)}</p>
 				<p><strong>Comprador:</strong> ${escaparHtml(datos.nombre)}</p>
@@ -219,6 +231,7 @@ export const POST: RequestHandler = async ({ request }): Promise<Response> => {
 
 		const htmlComprador = `
 			<div style="font-family: Arial, sans-serif; color: #111827;">
+				${encabezadoCorreo}
 				<h2 style="margin-bottom: 12px;">¡Gracias por tu compra, ${escaparHtml(datos.nombre)}!</h2>
 				<p>Recibimos tu pedido y pronto nos pondremos en contacto para coordinar el pago y la entrega.</p>
 				<p><strong>Número del pedido:</strong> ${escaparHtml(datos.numeroPedido)}</p>

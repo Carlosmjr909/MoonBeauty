@@ -222,7 +222,11 @@
 	let mostrarPopupCuenta = $state(false);
 
 	onMount(() => {
-		if (auth.currentUser) return;
+		// Una sesión anónima de invitado (de una compra anterior) también
+		// cuenta como "currentUser" para Firebase, así que hay que
+		// descartarla explícitamente o el popup nunca se muestra de nuevo
+		// una vez que alguien ya compró como invitado en este navegador.
+		if (auth.currentUser && !auth.currentUser.isAnonymous) return;
 
 		try {
 			if (sessionStorage.getItem('popupCuentaCerrado')) return;
