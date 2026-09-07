@@ -15,9 +15,13 @@
 	// @ts-ignore
 	import CartDrawer from "$lib/components/CartDrawer.svelte";
 	import { onMount } from "svelte";
-	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+	import { injectSpeedInsights } from "@vercel/speed-insights/sveltekit";
+	import { dev } from "$app/environment";
+	import { injectAnalytics } from "@vercel/analytics/sveltekit";
 
-injectSpeedInsights();
+	injectAnalytics({ mode: dev ? "development" : "production" });
+
+	injectSpeedInsights();
 
 	let { children, data } = $props();
 
@@ -188,313 +192,318 @@ injectSpeedInsights();
 				<p
 					class="mx-10 shrink-0 whitespace-nowrap text-xs font-semibold sm:mx-14 sm:text-sm"
 				>
-					20% de descuento para pagos en $ con el código <strong>MOON20</strong>.
-					Aplica para pagos en Efectivo $, Binance, Zelle y Zinli.
+					20% de descuento para pagos en $ con el código <strong
+						>MOON20</strong
+					>. Aplica para pagos en Efectivo $, Binance, Zelle y Zinli.
 				</p>
 			{/each}
 		</div>
 	</div>
 
 	<header class="bg-white/60 backdrop-blur-md px-4 sm:px-6 lg:px-16">
-	<div
-		class="mx-auto flex h-20 max-w-7xl items-center justify-between px-2 sm:px-6 lg:h-24 lg:px-8 2xl:max-w-[1600px]"
-	>
-		<a
-			href="/"
-			aria-label="Ir al inicio"
-			onclick={cerrarMenu}
-			class="shrink-0"
-		>
-			<img
-				src="/logo.webp"
-				alt="Moon Beauty"
-				class="h-auto w-20 sm:w-24 lg:w-30"
-			/>
-		</a>
-
-		<nav
-			aria-label="Navegación principal"
-			class="hidden items-center gap-8 lg:flex xl:gap-12"
+		<div
+			class="mx-auto flex h-20 max-w-7xl items-center justify-between px-2 sm:px-6 lg:h-24 lg:px-8 2xl:max-w-[1600px]"
 		>
 			<a
 				href="/"
-				class="font-Manrope font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
+				aria-label="Ir al inicio"
+				onclick={cerrarMenu}
+				class="shrink-0"
 			>
-				Inicio
-			</a>
-
-			<a
-				href="/products"
-				class="font-Manrope font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
-			>
-				Productos
-			</a>
-
-			<a
-				href="/categorias"
-				class="font-Manrope font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
-			>
-				Categorías
-			</a>
-		</nav>
-
-		<div class="flex items-center gap-2 sm:gap-4 lg:gap-5">
-			<button
-				type="button"
-				aria-label={buscadorAbierto
-					? "Cerrar buscador"
-					: "Abrir buscador"}
-				aria-expanded={buscadorAbierto}
-				onclick={alternarBuscador}
-				class="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-			>
-				<Icon
-					icon={buscadorAbierto
-						? "material-symbols:close-rounded"
-						: "material-symbols:search"}
-					width="24"
+				<img
+					src="/logo.webp"
+					alt="Moon Beauty"
+					class="h-auto w-20 sm:w-24 lg:w-30"
 				/>
-			</button>
+			</a>
 
-			{#if !$autenticacionCargando}
-				{#if $usuario && !$usuario.isAnonymous}
-					<div class="flex items-center gap-3">
-						{#if $esAdmin}
-							<a
-								href="/admin"
-								class="flex items-center gap-2 rounded-full bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-600"
-							>
-								<Icon
-									icon="material-symbols:admin-panel-settings-outline"
-									width="20"
-								/>
-
-								<span class="hidden lg:inline">Admin</span>
-							</a>
-						{/if}
-
-						<a
-							href="/account"
-							class="flex items-center gap-2 text-sm text-slate-600"
-						>
-							<Icon
-								icon="material-symbols:account-circle-outline"
-								width="25"
-							/>
-
-							<span class="hidden lg:inline">
-								{$usuario.displayName ?? "Mi cuenta"}
-							</span>
-						</a>
-
-						<button
-							type="button"
-							onclick={cerrarSesion}
-							class="text-sm text-slate-500 hover:text-red-600"
-						>
-							Salir
-						</button>
-					</div>
-				{:else}
-					<a href="/login" aria-label="Iniciar sesión">
-						<Icon icon="gg:profile" width="25" />
-					</a>
-				{/if}
-			{/if}
-
-			<button
-				type="button"
-				aria-label="Abrir carrito"
-				onclick={abrirCarrito}
-				class="relative transition hover:-translate-y-1"
+			<nav
+				aria-label="Navegación principal"
+				class="hidden items-center gap-8 lg:flex xl:gap-12"
 			>
-				<Icon icon="keyline-icons:shopping-cart" width="25px" />
-
-				{#if $cantidadCarrito > 0}
-					<span
-						class="absolute -right-3 -top-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-sky-300 px-1 text-xs font-bold text-slate-700"
-					>
-						{$cantidadCarrito}
-					</span>
-				{/if}
-			</button>
-
-			<button
-				type="button"
-				aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
-				aria-expanded={menuAbierto}
-				onclick={alternarMenu}
-				class="flex rounded-full p-2 text-slate-600 transition hover:bg-slate-100 lg:hidden"
-			>
-				<Icon
-					icon={menuAbierto
-						? "material-symbols:close-rounded"
-						: "material-symbols:menu-rounded"}
-					width="28"
-				/>
-			</button>
-		</div>
-	</div>
-
-	{#if menuAbierto}
-		<nav
-			aria-label="Navegación móvil"
-			class="border-t border-slate-200 bg-white px-4 py-5 shadow-lg lg:hidden"
-		>
-			<div class="mx-auto flex max-w-7xl flex-col gap-2">
 				<a
 					href="/"
-					onclick={cerrarMenu}
-					class="rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+					class="font-Manrope font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
 				>
 					Inicio
 				</a>
 
 				<a
 					href="/products"
-					onclick={cerrarMenu}
-					class="rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+					class="font-Manrope font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
 				>
 					Productos
 				</a>
 
 				<a
 					href="/categorias"
-					onclick={cerrarMenu}
-					class="rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+					class="font-Manrope font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
 				>
 					Categorías
 				</a>
+			</nav>
 
-				<a
-					href="/create_account"
-					onclick={cerrarMenu}
-					class="flex items-center gap-3 rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800 sm:hidden"
+			<div class="flex items-center gap-2 sm:gap-4 lg:gap-5">
+				<button
+					type="button"
+					aria-label={buscadorAbierto
+						? "Cerrar buscador"
+						: "Abrir buscador"}
+					aria-expanded={buscadorAbierto}
+					onclick={alternarBuscador}
+					class="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
 				>
-					<Icon icon="gg:profile" width="23" />
-					Mi cuenta
-				</a>
-
-				{#if $esAdmin}
-					<a
-						href="/admin"
-						onclick={cerrarMenu}
-						class="flex items-center gap-3 rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
-					>
-						<Icon
-							icon="material-symbols:admin-panel-settings-outline"
-							width="23"
-						/>
-						Admin
-					</a>
-				{/if}
-			</div>
-		</nav>
-	{/if}
-
-	{#if buscadorAbierto}
-		<div class="border-t border-slate-200 bg-white shadow-lg">
-			<div class="mx-auto max-w-3xl px-4 py-5 sm:px-6">
-				<div class="relative">
 					<Icon
-						icon="material-symbols:search"
-						width="23"
-						class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+						icon={buscadorAbierto
+							? "material-symbols:close-rounded"
+							: "material-symbols:search"}
+						width="24"
 					/>
+				</button>
 
-					<input
-						type="search"
-						placeholder="Buscar productos..."
-						aria-label="Buscar productos"
-						bind:value={textoBusqueda}
-						class="h-13 w-full rounded-full border border-slate-200 bg-slate-50 py-3 pl-12 pr-12 text-slate-700 outline-none transition focus:border-sky-300 focus:bg-white focus:ring-2 focus:ring-sky-100"
-					/>
-
-					{#if textoBusqueda}
-						<button
-							type="button"
-							aria-label="Limpiar búsqueda"
-							onclick={() => (textoBusqueda = "")}
-							class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-slate-400 hover:bg-slate-200"
-						>
-							<Icon
-								icon="material-symbols:close-rounded"
-								width="20"
-							/>
-						</button>
-					{/if}
-				</div>
-
-				{#if textoBusqueda.trim().length > 0}
-					<div
-						class="mt-4 max-h-96 overflow-y-auto rounded-2xl border border-slate-100 bg-white"
-					>
-						{#if productosEncontrados.length > 0}
-							{#each productosEncontrados as producto (producto.id)}
+				{#if !$autenticacionCargando}
+					{#if $usuario && !$usuario.isAnonymous}
+						<div class="flex items-center gap-3">
+							{#if $esAdmin}
 								<a
-									href="/products/{producto.id}"
-									onclick={cerrarBuscador}
-									class="flex items-center gap-4 border-b border-slate-100 p-3 transition last:border-b-0 hover:bg-sky-50"
+									href="/admin"
+									class="flex items-center gap-2 rounded-full bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-600"
 								>
-									<img
-										src={producto.imagen}
-										alt={producto.Nombre}
-										class="h-16 w-16 shrink-0 rounded-xl object-cover"
-									/>
-
-									<div class="min-w-0 flex-1">
-										<p class="text-xs text-slate-400">
-											{producto.marca
-												? `${producto.marca} · ${producto.Tipo}`
-												: producto.Tipo}
-										</p>
-
-										<p
-											class="truncate font-semibold text-slate-700"
-										>
-											{producto.Nombre}
-										</p>
-
-										<p
-											class="mt-1 text-sm font-bold text-sky-700"
-										>
-											${Number(producto.precio ?? 0).toFixed(2)}
-										</p>
-									</div>
-
 									<Icon
-										icon="material-symbols:chevron-right-rounded"
-										width="25"
-										class="text-slate-400"
+										icon="material-symbols:admin-panel-settings-outline"
+										width="20"
 									/>
+
+									<span class="hidden lg:inline">Admin</span>
 								</a>
-							{/each}
-						{:else}
-							<div class="px-6 py-10 text-center">
+							{/if}
+
+							<a
+								href="/account"
+								class="flex items-center gap-2 text-sm text-slate-600"
+							>
 								<Icon
-									icon="material-symbols:search-off-rounded"
-									width="45"
-									class="mx-auto text-slate-300"
+									icon="material-symbols:account-circle-outline"
+									width="25"
 								/>
 
-								<p class="mt-3 font-semibold text-slate-600">
-									No encontramos productos
-								</p>
+								<span class="hidden lg:inline">
+									{$usuario.displayName ?? "Mi cuenta"}
+								</span>
+							</a>
 
-								<p class="mt-1 text-sm text-slate-400">
-									Intenta buscar con otro nombre.
-								</p>
-							</div>
-						{/if}
-					</div>
-				{:else}
-					<p class="mt-3 px-2 text-sm text-slate-400">
-						Busca por nombre o tipo de producto.
-					</p>
+							<button
+								type="button"
+								onclick={cerrarSesion}
+								class="text-sm text-slate-500 hover:text-red-600"
+							>
+								Salir
+							</button>
+						</div>
+					{:else}
+						<a href="/login" aria-label="Iniciar sesión">
+							<Icon icon="gg:profile" width="25" />
+						</a>
+					{/if}
 				{/if}
+
+				<button
+					type="button"
+					aria-label="Abrir carrito"
+					onclick={abrirCarrito}
+					class="relative transition hover:-translate-y-1"
+				>
+					<Icon icon="keyline-icons:shopping-cart" width="25px" />
+
+					{#if $cantidadCarrito > 0}
+						<span
+							class="absolute -right-3 -top-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-sky-300 px-1 text-xs font-bold text-slate-700"
+						>
+							{$cantidadCarrito}
+						</span>
+					{/if}
+				</button>
+
+				<button
+					type="button"
+					aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+					aria-expanded={menuAbierto}
+					onclick={alternarMenu}
+					class="flex rounded-full p-2 text-slate-600 transition hover:bg-slate-100 lg:hidden"
+				>
+					<Icon
+						icon={menuAbierto
+							? "material-symbols:close-rounded"
+							: "material-symbols:menu-rounded"}
+						width="28"
+					/>
+				</button>
 			</div>
 		</div>
-	{/if}
+
+		{#if menuAbierto}
+			<nav
+				aria-label="Navegación móvil"
+				class="border-t border-slate-200 bg-white px-4 py-5 shadow-lg lg:hidden"
+			>
+				<div class="mx-auto flex max-w-7xl flex-col gap-2">
+					<a
+						href="/"
+						onclick={cerrarMenu}
+						class="rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+					>
+						Inicio
+					</a>
+
+					<a
+						href="/products"
+						onclick={cerrarMenu}
+						class="rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+					>
+						Productos
+					</a>
+
+					<a
+						href="/categorias"
+						onclick={cerrarMenu}
+						class="rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+					>
+						Categorías
+					</a>
+
+					<a
+						href="/create_account"
+						onclick={cerrarMenu}
+						class="flex items-center gap-3 rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800 sm:hidden"
+					>
+						<Icon icon="gg:profile" width="23" />
+						Mi cuenta
+					</a>
+
+					{#if $esAdmin}
+						<a
+							href="/admin"
+							onclick={cerrarMenu}
+							class="flex items-center gap-3 rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+						>
+							<Icon
+								icon="material-symbols:admin-panel-settings-outline"
+								width="23"
+							/>
+							Admin
+						</a>
+					{/if}
+				</div>
+			</nav>
+		{/if}
+
+		{#if buscadorAbierto}
+			<div class="border-t border-slate-200 bg-white shadow-lg">
+				<div class="mx-auto max-w-3xl px-4 py-5 sm:px-6">
+					<div class="relative">
+						<Icon
+							icon="material-symbols:search"
+							width="23"
+							class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+						/>
+
+						<input
+							type="search"
+							placeholder="Buscar productos..."
+							aria-label="Buscar productos"
+							bind:value={textoBusqueda}
+							class="h-13 w-full rounded-full border border-slate-200 bg-slate-50 py-3 pl-12 pr-12 text-slate-700 outline-none transition focus:border-sky-300 focus:bg-white focus:ring-2 focus:ring-sky-100"
+						/>
+
+						{#if textoBusqueda}
+							<button
+								type="button"
+								aria-label="Limpiar búsqueda"
+								onclick={() => (textoBusqueda = "")}
+								class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-slate-400 hover:bg-slate-200"
+							>
+								<Icon
+									icon="material-symbols:close-rounded"
+									width="20"
+								/>
+							</button>
+						{/if}
+					</div>
+
+					{#if textoBusqueda.trim().length > 0}
+						<div
+							class="mt-4 max-h-96 overflow-y-auto rounded-2xl border border-slate-100 bg-white"
+						>
+							{#if productosEncontrados.length > 0}
+								{#each productosEncontrados as producto (producto.id)}
+									<a
+										href="/products/{producto.id}"
+										onclick={cerrarBuscador}
+										class="flex items-center gap-4 border-b border-slate-100 p-3 transition last:border-b-0 hover:bg-sky-50"
+									>
+										<img
+											src={producto.imagen}
+											alt={producto.Nombre}
+											class="h-16 w-16 shrink-0 rounded-xl object-cover"
+										/>
+
+										<div class="min-w-0 flex-1">
+											<p class="text-xs text-slate-400">
+												{producto.marca
+													? `${producto.marca} · ${producto.Tipo}`
+													: producto.Tipo}
+											</p>
+
+											<p
+												class="truncate font-semibold text-slate-700"
+											>
+												{producto.Nombre}
+											</p>
+
+											<p
+												class="mt-1 text-sm font-bold text-sky-700"
+											>
+												${Number(
+													producto.precio ?? 0,
+												).toFixed(2)}
+											</p>
+										</div>
+
+										<Icon
+											icon="material-symbols:chevron-right-rounded"
+											width="25"
+											class="text-slate-400"
+										/>
+									</a>
+								{/each}
+							{:else}
+								<div class="px-6 py-10 text-center">
+									<Icon
+										icon="material-symbols:search-off-rounded"
+										width="45"
+										class="mx-auto text-slate-300"
+									/>
+
+									<p
+										class="mt-3 font-semibold text-slate-600"
+									>
+										No encontramos productos
+									</p>
+
+									<p class="mt-1 text-sm text-slate-400">
+										Intenta buscar con otro nombre.
+									</p>
+								</div>
+							{/if}
+						</div>
+					{:else}
+						<p class="mt-3 px-2 text-sm text-slate-400">
+							Busca por nombre o tipo de producto.
+						</p>
+					{/if}
+				</div>
+			</div>
+		{/if}
 	</header>
 </div>
 
@@ -535,7 +544,8 @@ injectSpeedInsights();
 		</p>
 
 		<p class="mt-3 text-sm text-slate-600">
-			Únete a nuestra comunidad y recibe contenido hecho con amor, ofertas exclusivas y sorpresas antes que nadie.
+			Únete a nuestra comunidad y recibe contenido hecho con amor, ofertas
+			exclusivas y sorpresas antes que nadie.
 		</p>
 
 		<button
@@ -591,7 +601,10 @@ injectSpeedInsights();
 						aria-label="Correo electrónico"
 						class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm transition hover:bg-sky-100 hover:text-sky-700"
 					>
-						<Icon icon="material-symbols:mail-outline-rounded" width="19" />
+						<Icon
+							icon="material-symbols:mail-outline-rounded"
+							width="19"
+						/>
 					</a>
 				</nav>
 			</div>
@@ -713,8 +726,8 @@ injectSpeedInsights();
 			</div>
 
 			<p class="text-sm text-slate-500">
-				© {new Date().getFullYear()} MoonBeauty. Luminous Serenity for
-				your skin.
+				© {new Date().getFullYear()} MoonBeauty. Luminous Serenity for your
+				skin.
 			</p>
 		</div>
 	</div>
