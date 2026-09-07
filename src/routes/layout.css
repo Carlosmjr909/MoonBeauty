@@ -6,6 +6,10 @@
     src: url('Manrope-Regular.ttf');
 }
 
+html {
+    font-family: MiTypografia3, sans-serif;
+}
+
 .font-Manrope {
     font-family: MiTypografia3;
 }
