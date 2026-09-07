@@ -47,6 +47,7 @@
 
 	let menuAbierto = $state(false);
 	let carritoAbierto = $state(false);
+	let mostrarPopupCuenta = $state(false);
 
 	let buscadorAbierto = $state(false);
 	let textoBusqueda = $state("");
@@ -137,6 +138,42 @@
 			autoRaf: true,
 		});
 	});
+
+	// Popup de "crea tu cuenta": aparece en cualquier página (no solo en
+	// el checkout), a los 5s de entrar, mientras no haya una sesión real
+	// iniciada. Una sesión anónima de invitado (de una compra anterior)
+	// también cuenta como "currentUser" para Firebase, así que hay que
+	// descartarla explícitamente o el popup nunca se mostraría de nuevo
+	// una vez que alguien ya compró como invitado en este navegador.
+	onMount(() => {
+		if (auth.currentUser && !auth.currentUser.isAnonymous) return;
+
+		try {
+			if (sessionStorage.getItem("popupCuentaCerrado")) return;
+		} catch {
+			// sessionStorage no disponible; mostramos igual.
+		}
+
+		const id = setTimeout(() => {
+			mostrarPopupCuenta = true;
+		}, 5000);
+
+		return () => clearTimeout(id);
+	});
+
+	function cerrarPopupCuenta() {
+		mostrarPopupCuenta = false;
+		try {
+			sessionStorage.setItem("popupCuentaCerrado", "1");
+		} catch {
+			// Ignorar si sessionStorage no está disponible.
+		}
+	}
+
+	function irACrearCuenta() {
+		cerrarPopupCuenta();
+		goto("/create_account");
+	}
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -474,6 +511,39 @@
 	cerrar={cerrarCarrito}
 	tasaBCV={data?.tasaBCV?.promedio ?? null}
 />
+
+{#if mostrarPopupCuenta}
+	<div
+		class="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-2xl bg-sky-200/80 p-5 shadow-2xl ring-1 ring-slate-200 sm:inset-x-6 sm:bottom-6 lg:inset-x-auto lg:right-6"
+		role="dialog"
+		aria-label="Crea tu cuenta"
+	>
+		<button
+			type="button"
+			onclick={cerrarPopupCuenta}
+			aria-label="Cerrar"
+			class="absolute right-3 top-3 text-slate-400 transition hover:text-slate-600"
+		>
+			<Icon icon="material-symbols:close-rounded" width="20" />
+		</button>
+
+		<p class="pr-6 font-Manrope text-lg text-slate-700 text-center">
+			Un espacio creado para ti✨.
+		</p>
+
+		<p class="mt-3 text-sm text-slate-600">
+			Únete a nuestra comunidad y recibe contenido hecho con amor, ofertas exclusivas y sorpresas antes que nadie.
+		</p>
+
+		<button
+			type="button"
+			onclick={irACrearCuenta}
+			class="mt-4 h-11 w-full rounded-full bg-slate-700/80 text-sm font-semibold text-white transition hover:bg-slate-600/80"
+		>
+			Suscribete aqui
+		</button>
+	</div>
+{/if}
 
 <footer class="border-t border-slate-200 bg-slate-100">
 	<div

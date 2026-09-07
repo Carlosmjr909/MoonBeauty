@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import { onMount, tick } from 'svelte';
+	import { tick } from 'svelte';
 	import { slide } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import { env } from '$env/dynamic/public';
@@ -218,42 +218,6 @@
 	let codigoCupon = $state('');
 	let cuponAplicado = $state(false);
 	let errorCupon = $state('');
-
-	let mostrarPopupCuenta = $state(false);
-
-	onMount(() => {
-		// Una sesión anónima de invitado (de una compra anterior) también
-		// cuenta como "currentUser" para Firebase, así que hay que
-		// descartarla explícitamente o el popup nunca se muestra de nuevo
-		// una vez que alguien ya compró como invitado en este navegador.
-		if (auth.currentUser && !auth.currentUser.isAnonymous) return;
-
-		try {
-			if (sessionStorage.getItem('popupCuentaCerrado')) return;
-		} catch {
-			// sessionStorage no disponible; mostramos igual.
-		}
-
-		const id = setTimeout(() => {
-			mostrarPopupCuenta = true;
-		}, 3500);
-
-		return () => clearTimeout(id);
-	});
-
-	function cerrarPopupCuenta() {
-		mostrarPopupCuenta = false;
-		try {
-			sessionStorage.setItem('popupCuentaCerrado', '1');
-		} catch {
-			// Ignorar si sessionStorage no está disponible.
-		}
-	}
-
-	function irACrearCuenta() {
-		cerrarPopupCuenta();
-		goto('/create_account');
-	}
 
 	const infoPago: Partial<Record<MetodoPago, string[]>> = {
 		pago_movil: [
@@ -1185,37 +1149,3 @@ carrito.vaciar();
 	</div>
 </main>
 
-	{#if mostrarPopupCuenta}
-		<div
-			class="fixed bottom-4 right-4 z-50 w-[calc(100%-2rem)] max-w-xs rounded-2xl bg-white p-5 shadow-2xl ring-1 ring-slate-200 sm:right-6 sm:bottom-6"
-			role="dialog"
-			aria-label="Crea tu cuenta"
-		>
-			<button
-				type="button"
-				onclick={cerrarPopupCuenta}
-				aria-label="Cerrar"
-				class="absolute right-3 top-3 text-slate-400 transition hover:text-slate-600"
-			>
-				<Icon icon="material-symbols:close-rounded" width="20" />
-			</button>
-
-			<p class="pr-6 font-Manrope text-lg text-slate-700">
-				¿Sabías que...?
-			</p>
-
-			<p class="mt-2 text-sm text-slate-600">
-				Si inicias sesión vas a recibir ofertas exclusivas y podrás
-				ver el historial de todos tus pedidos. Puedes seguir
-				comprando como invitado si prefieres.
-			</p>
-
-			<button
-				type="button"
-				onclick={irACrearCuenta}
-				class="mt-4 h-11 w-full rounded-full bg-slate-700 text-sm font-semibold text-white transition hover:bg-slate-600"
-			>
-				Crea tu cuenta ahora
-			</button>
-		</div>
-	{/if}

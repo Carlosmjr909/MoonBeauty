@@ -95,7 +95,7 @@
 		>
 			<div
 				role="presentation"
-				class="relative h-180 flex-1 cursor-zoom-in overflow-hidden rounded-3xl hover:border hover:border-black/40"
+				class="relative aspect-[4/5] w-full flex-1 cursor-zoom-in overflow-hidden rounded-3xl hover:border hover:border-black/40 sm:aspect-[4/3] lg:aspect-auto lg:h-180"
 				onmousemove={moverZoom}
 				onmouseenter={activarZoom}
 				onmouseleave={desactivarZoom}

@@ -418,13 +418,6 @@
 			bind:this={encabezadoFavoritos}
 			class="mt-4 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"
 		>
-			<div>
-				<p
-					class="font-Manrope text-3xl text-slate-700 sm:text-4xl lg:text-4xl 2xl:text-5xl"
-				>
-					Favoritos de temporada
-				</p>
-			</div>
 
 			<a
 				class="inline-flex w-fit shrink-0 items-center justify-center rounded-full bg-sky-200 px-6 py-3 font-Manrope text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-600 hover:text-white sm:text-base"
