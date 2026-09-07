@@ -202,6 +202,18 @@ export async function actualizarCategoria(
 	});
 }
 
+export async function eliminarCategoria(idCategoria: string, imagen?: string) {
+	await deleteDoc(doc(db, COLECCION_CATEGORIAS, idCategoria));
+
+	if (!imagen) return;
+
+	try {
+		await deleteObject(ref(storage, imagen));
+	} catch (error) {
+		console.error('No se pudo eliminar la imagen de la categoría:', error);
+	}
+}
+
 export async function subirImagenCategoria(archivo: File): Promise<string> {
 	const nombreUnico = `${crypto.randomUUID()}-${archivo.name}`;
 	const referencia = ref(storage, `categorias/${nombreUnico}`);

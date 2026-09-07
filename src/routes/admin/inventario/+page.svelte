@@ -4,6 +4,7 @@
 		agregarProducto,
 		actualizarCategoria,
 		actualizarProducto,
+		eliminarCategoria,
 		eliminarProducto,
 		escucharCategorias,
 		escucharProductos,
@@ -235,6 +236,26 @@
 				err instanceof Error
 					? err.message
 					: "No se pudo eliminar el producto.";
+		}
+	}
+
+	async function manejarEliminarCategoria(categoria: Categoria) {
+		const confirmado = confirm(
+			`¿Eliminar la categoría "${categoria.nombre}"? Los productos que la usan no se eliminarán, pero perderán esta descripción e imagen personalizada.`,
+		);
+		if (!confirmado) return;
+
+		try {
+			await eliminarCategoria(categoria.id, categoria.imagen);
+
+			if (categoriaEditandoId === categoria.id) {
+				resetearFormularioCategoria();
+			}
+		} catch (err) {
+			error =
+				err instanceof Error
+					? err.message
+					: "No se pudo eliminar la categoría.";
 		}
 	}
 
@@ -601,13 +622,21 @@
 									<p class="mt-1 line-clamp-2 text-sm text-slate-500">{categoria.descripcion || "Sin descripción"}</p>
 								</div>
 							</div>
-							<div class="mt-4 flex justify-end">
+							<div class="mt-4 flex justify-end gap-2">
 								<button
 									type="button"
 									onclick={() => prepararEdicionCategoria(categoria)}
 									class="rounded-full bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100"
 								>
 									Editar
+								</button>
+
+								<button
+									type="button"
+									onclick={() => manejarEliminarCategoria(categoria)}
+									class="rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100"
+								>
+									Eliminar
 								</button>
 							</div>
 						</div>

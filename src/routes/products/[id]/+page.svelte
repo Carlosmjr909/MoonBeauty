@@ -1,5 +1,9 @@
 <script lang="ts">
 	import { page } from "$app/state";
+	import { browser } from "$app/environment";
+	import { fly } from "svelte/transition";
+	import { cubicOut } from "svelte/easing";
+	import type { ScrollTrigger } from "gsap/ScrollTrigger";
 	import {
 		convertirUSDaVES,
 		formatearUSD,
@@ -7,6 +11,24 @@
 		formatearFecha,
 	} from "$lib/utils/moneda";
 	import { carrito } from "$lib/cart";
+	import Tarjeta from "$lib/components/tarjeta.svelte";
+
+	// gsap y gsap/ScrollTrigger no traen "type": "module" en su package.json
+	// y en el servidor (SSR en Vercel) Node no logra resolverlos bien vía
+	// import estático. Como esta animación solo tiene sentido en el
+	// navegador, se cargan de forma dinámica y solo del lado del cliente.
+	let gsapModulo: (typeof import("gsap"))["gsap"] | null = null;
+	let scrollTriggerModulo: typeof ScrollTrigger | null = null;
+
+	const gsapCargado = browser
+		? Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
+				([mod, stMod]) => {
+					gsapModulo = mod.gsap;
+					scrollTriggerModulo = stMod.ScrollTrigger;
+					gsapModulo.registerPlugin(scrollTriggerModulo);
+				},
+			)
+		: Promise.resolve();
 
 	let { data } = $props();
 
@@ -14,6 +36,21 @@
 		(data.productos ?? []).find(
 			(producto) => producto.id === page.params.id,
 		),
+	);
+
+	const recomendados = $derived(
+		product
+			? (data.productos ?? [])
+					.filter(
+						(otro) =>
+							otro.id !== product.id &&
+							String(otro.Tipo ?? "").trim().toLowerCase() ===
+								String(product.Tipo ?? "")
+									.trim()
+									.toLowerCase(),
+					)
+					.slice(0, 4)
+			: [],
 	);
 
 	const precioBolivares = $derived(
@@ -81,10 +118,64 @@
 		posicionX = 50;
 		posicionY = 50;
 	}
+
+	let grillaRecomendados = $state<HTMLDivElement | null>(null);
+
+	// Misma entrada diagonal en cascada que usan /products y /categorias:
+	// las tarjetas ya visibles animan de inmediato, el resto aparece a
+	// medida que se hace scroll hacia ellas.
+	$effect(() => {
+		const contenedor = grillaRecomendados;
+		recomendados; // se lee para que el efecto se vuelva a ejecutar
+
+		if (!contenedor) return;
+
+		const tarjetas = Array.from(contenedor.children) as HTMLElement[];
+		if (!tarjetas.length) return;
+
+		let cancelado = false;
+		let triggers: ScrollTrigger[] = [];
+
+		gsapCargado.then(() => {
+			if (cancelado || !gsapModulo || !scrollTriggerModulo) return;
+
+			const prefiereMenosMovimiento = window.matchMedia(
+				"(prefers-reduced-motion: reduce)",
+			).matches;
+
+			if (prefiereMenosMovimiento) {
+				gsapModulo.set(tarjetas, { opacity: 1, x: 0, y: 0 });
+				return;
+			}
+
+			gsapModulo.set(tarjetas, { opacity: 0, x: -40, y: 50 });
+
+			triggers = scrollTriggerModulo.batch(tarjetas, {
+				start: "top 88%",
+				once: true,
+				onEnter: (lote) => {
+					gsapModulo!.to(lote, {
+						opacity: 1,
+						x: 0,
+						y: 0,
+						duration: 0.8,
+						ease: "power3.out",
+						stagger: 0.09,
+					});
+				},
+			});
+		});
+
+		return () => {
+			cancelado = true;
+			triggers.forEach((trigger) => trigger.kill());
+		};
+	});
 </script>
 
 <section class="bg-gray-50">
 	{#if product}
+	{#key product.id}
 		<div
 			class="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8
 		sm:px-6
@@ -99,6 +190,7 @@
 				onmousemove={moverZoom}
 				onmouseenter={activarZoom}
 				onmouseleave={desactivarZoom}
+				in:fly={{ y: 24, duration: 600, easing: cubicOut }}
 			>
 				<img
 					src={product.imagen}
@@ -110,7 +202,10 @@
 				/>
 			</div>
 
-			<div class="w-full lg:w-1/2 lg:pt-4 flex flex-col">
+			<div
+				class="w-full lg:w-1/2 lg:pt-4 flex flex-col"
+				in:fly={{ y: 24, duration: 600, delay: 150, easing: cubicOut }}
+			>
 				<p
 					class="font-Manrope text-3xl leading-tight text-gray-600
 			sm:text-4xl
@@ -222,6 +317,47 @@
 				{/if}
 			</div>
 		</div>
+	{/key}
+
+		{#if recomendados.length > 0}
+			<div
+				class="mx-auto max-w-7xl px-4 pb-16 sm:px-6 md:px-8 lg:px-12 2xl:max-w-[1600px]"
+			>
+				<p
+					class="mb-8 text-center font-Manrope text-3xl text-slate-700 sm:text-4xl"
+				>
+					Recomendados
+				</p>
+
+				<div
+					bind:this={grillaRecomendados}
+					class="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-2 [-webkit-overflow-scrolling:touch] sm:grid sm:snap-none sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:pb-0 xl:grid-cols-4"
+				>
+					{#each recomendados as producto (producto.id)}
+						<div
+							class="w-[calc((100%-0.75rem)/2)] shrink-0 snap-start sm:w-auto sm:shrink"
+						>
+							<Tarjeta
+								{...producto}
+								tasaBCV={data?.tasaBCV?.promedio ?? null}
+								etiquetaSuperior="marca"
+							/>
+						</div>
+					{/each}
+				</div>
+
+				<div class="mt-8 flex justify-center">
+					<a
+						href="/products?categoria={encodeURIComponent(
+							product.Tipo,
+						)}"
+						class="rounded-full bg-slate-700 px-8 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-white transition hover:bg-slate-600"
+					>
+						Ver todo
+					</a>
+				</div>
+			</div>
+		{/if}
 	{:else}
 		<div class="p-24 text-center">
 			<p class="text-2xl text-slate-600">Producto no encontrado</p>

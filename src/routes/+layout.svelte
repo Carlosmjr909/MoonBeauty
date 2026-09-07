@@ -15,6 +15,9 @@
 	// @ts-ignore
 	import CartDrawer from "$lib/components/CartDrawer.svelte";
 	import { onMount } from "svelte";
+	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+
+injectSpeedInsights();
 
 	let { children, data } = $props();
 
