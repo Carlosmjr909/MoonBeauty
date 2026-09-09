@@ -4,6 +4,7 @@
 	import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 	import Icon from '@iconify/svelte';
 	import Tarjeta from '$lib/components/tarjeta.svelte';
+	import { productoEnCategoria } from '$lib/inventario';
 
 	// gsap y gsap/ScrollTrigger no traen "type": "module" en su package.json
 	// y en el servidor (SSR en Vercel) Node no logra resolverlos bien vía
@@ -31,12 +32,12 @@
 		page.url.searchParams.get('categoria')?.trim() ?? ''
 	);
 
+	// Un producto puede estar en varias categorías, así que aparece en el
+	// filtro si cualquiera de ellas coincide.
 	const productosBase = $derived(
 		categoriaSeleccionada
-			? products.filter(
-					(product) =>
-						String(product.Tipo ?? '').trim().toLowerCase() ===
-						categoriaSeleccionada.toLowerCase()
+			? products.filter((product) =>
+					productoEnCategoria(product, categoriaSeleccionada)
 				)
 			: products
 	);
@@ -231,6 +232,7 @@
 					<Tarjeta
 						{...product}
 						tasaBCV={data?.tasaBCV?.promedio ?? null}
+						etiquetaSuperior="marca"
 					/>
 				{/each}
 			</div>

@@ -139,11 +139,23 @@
 		}
 	}
 
-	const nuevosProductos = $derived(
-		[...(data.productos ?? [])]
+	// "New arrivals": los productos que se marcaron como nuevo ingreso en
+	// el panel. Si todavía no hay ninguno marcado, se muestran los 12 más
+	// recientes, para que la sección nunca quede vacía.
+	const nuevosProductos = $derived.by(() => {
+		const todos = data.productos ?? [];
+		const marcados = todos.filter((producto) => producto.nuevoIngreso);
+
+		if (marcados.length > 0) {
+			return [...marcados].sort(
+				(a, b) => b.fechaCreacion - a.fechaCreacion,
+			);
+		}
+
+		return [...todos]
 			.sort((a, b) => b.fechaCreacion - a.fechaCreacion)
-			.slice(0, 12),
-	);
+			.slice(0, 12);
+	});
 
 	let pista = $state<HTMLDivElement | null>(null);
 	let alInicio = $state(true);

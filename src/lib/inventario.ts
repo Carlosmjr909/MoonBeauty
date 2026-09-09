@@ -23,7 +23,13 @@ import { db, storage } from '$lib/firebase';
 export type Producto = {
 	id: string;
 	Nombre: string;
+	/**
+	 * Categoría principal. Se mantiene por compatibilidad (los pedidos ya
+	 * guardados la usan) y siempre equivale a la primera de "categorias".
+	 */
 	Tipo: string;
+	/** Todas las categorías a las que pertenece el producto. */
+	categorias: string[];
 	marca: string;
 	descripcion: string;
 	especificacion: string;
@@ -31,7 +37,36 @@ export type Producto = {
 	precio: number;
 	stock: number;
 	popular: boolean;
+	/** Si aparece en el carrusel "New arrivals" de la portada. */
+	nuevoIngreso: boolean;
 };
+
+/**
+ * Un producto puede tener varias categorías. Los productos viejos solo
+ * tienen "Tipo", así que se usa como respaldo para que sigan apareciendo
+ * en su categoría de siempre.
+ */
+export function categoriasDeProducto(producto: {
+	Tipo?: string;
+	categorias?: string[];
+}): string[] {
+	if (Array.isArray(producto.categorias) && producto.categorias.length > 0) {
+		return producto.categorias;
+	}
+
+	return producto.Tipo ? [producto.Tipo] : [];
+}
+
+export function productoEnCategoria(
+	producto: { Tipo?: string; categorias?: string[] },
+	categoria: string
+): boolean {
+	const buscada = categoria.trim().toLowerCase();
+
+	return categoriasDeProducto(producto).some(
+		(nombre) => String(nombre).trim().toLowerCase() === buscada
+	);
+}
 
 export type NuevoProducto = Omit<Producto, 'id'>;
 
@@ -66,17 +101,25 @@ export function escucharProductos(
 			const productos = snapshot.docs.map((docSnap) => {
 				const datos = docSnap.data();
 
+				const tipo = String(datos.Tipo ?? '');
+
 				return {
 					id: docSnap.id,
 					Nombre: String(datos.Nombre ?? ''),
-					Tipo: String(datos.Tipo ?? ''),
+					Tipo: tipo,
+					categorias: Array.isArray(datos.categorias)
+						? datos.categorias.map((nombre) => String(nombre))
+						: tipo
+							? [tipo]
+							: [],
 					marca: String(datos.marca ?? ''),
 					descripcion: String(datos.descripcion ?? ''),
 					especificacion: String(datos.especificacion ?? ''),
 					imagen: String(datos.imagen ?? ''),
 					precio: Number(datos.precio ?? 0),
 					stock: Number(datos.stock ?? 0),
-					popular: Boolean(datos.popular ?? false)
+					popular: Boolean(datos.popular ?? false),
+					nuevoIngreso: Boolean(datos.nuevoIngreso ?? false)
 				} satisfies Producto;
 			});
 

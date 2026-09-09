@@ -12,6 +12,10 @@
 	} from "$lib/utils/moneda";
 	import { carrito } from "$lib/cart";
 	import Tarjeta from "$lib/components/tarjeta.svelte";
+	import {
+		categoriasDeProducto,
+		productoEnCategoria,
+	} from "$lib/inventario";
 
 	// gsap y gsap/ScrollTrigger no traen "type": "module" en su package.json
 	// y en el servidor (SSR en Vercel) Node no logra resolverlos bien vía
@@ -38,16 +42,17 @@
 		),
 	);
 
+	// Se recomienda lo que comparta al menos una categoría con el
+	// producto que se está viendo.
 	const recomendados = $derived(
 		product
 			? (data.productos ?? [])
 					.filter(
 						(otro) =>
 							otro.id !== product.id &&
-							String(otro.Tipo ?? "").trim().toLowerCase() ===
-								String(product.Tipo ?? "")
-									.trim()
-									.toLowerCase(),
+							categoriasDeProducto(product).some((categoria) =>
+								productoEnCategoria(otro, categoria),
+							),
 					)
 					.slice(0, 4)
 			: [],

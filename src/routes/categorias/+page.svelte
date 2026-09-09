@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 	import Categoria from '$lib/components/categoria.svelte';
+	import { categoriasDeProducto } from '$lib/inventario';
 
 	// gsap y gsap/ScrollTrigger no traen "type": "module" en su package.json
 	// y en el servidor (SSR en Vercel) Node no logra resolverlos bien vía
@@ -51,26 +52,30 @@
 			});
 		}
 
+		// Un producto puede pertenecer a varias categorías, así que suma
+		// en cada una de ellas.
 		for (const product of products) {
-			const nombreTipo = String(product.Tipo ?? '').trim();
-			if (!nombreTipo) continue;
+			for (const nombreCategoria of categoriasDeProducto(product)) {
+				const nombre = String(nombreCategoria ?? '').trim();
+				if (!nombre) continue;
 
-			const clave = nombreTipo.toLowerCase();
-			if (!mapa.has(clave)) {
-				mapa.set(clave, {
-					nombre: nombreTipo,
-					descripcion: descripcionCategoria(nombreTipo),
-					imagen: String(product.imagen ?? ''),
-					cantidad: 0,
-					href: `/products?categoria=${encodeURIComponent(nombreTipo)}`
-				});
-			}
+				const clave = nombre.toLowerCase();
+				if (!mapa.has(clave)) {
+					mapa.set(clave, {
+						nombre,
+						descripcion: descripcionCategoria(nombre),
+						imagen: String(product.imagen ?? ''),
+						cantidad: 0,
+						href: `/products?categoria=${encodeURIComponent(nombre)}`
+					});
+				}
 
-			const categoria = mapa.get(clave);
-			if (categoria) {
-				categoria.cantidad += 1;
-				if (!categoria.imagen && product.imagen) {
-					categoria.imagen = String(product.imagen);
+				const categoria = mapa.get(clave);
+				if (categoria) {
+					categoria.cantidad += 1;
+					if (!categoria.imagen && product.imagen) {
+						categoria.imagen = String(product.imagen);
+					}
 				}
 			}
 		}

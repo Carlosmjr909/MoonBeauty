@@ -3,7 +3,10 @@ import { adminDb } from '$lib/server/firebase-admin';
 export type ProductoPublico = {
 	id: string;
 	Nombre: string;
+	/** Categoría principal; equivale a la primera de "categorias". */
 	Tipo: string;
+	/** Todas las categorías a las que pertenece el producto. */
+	categorias: string[];
 	marca: string;
 	descripcion: string;
 	especificacion: string;
@@ -11,6 +14,7 @@ export type ProductoPublico = {
 	precio: number;
 	stock: number;
 	popular: boolean;
+	nuevoIngreso: boolean;
 	fechaCreacion: number;
 };
 
@@ -28,10 +32,19 @@ export async function obtenerProductosPublicos(): Promise<ProductoPublico[]> {
 		const datos = doc.data();
 		const fechaCreacion = datos.fechaCreacion;
 
+		const tipo = String(datos.Tipo ?? '');
+
 		return {
 			id: doc.id,
 			Nombre: String(datos.Nombre ?? ''),
-			Tipo: String(datos.Tipo ?? ''),
+			Tipo: tipo,
+			// Los productos creados antes de que existieran las categorías
+			// múltiples solo tienen "Tipo": se usa como su única categoría.
+			categorias: Array.isArray(datos.categorias)
+				? datos.categorias.map((nombre: unknown) => String(nombre))
+				: tipo
+					? [tipo]
+					: [],
 			marca: String(datos.marca ?? ''),
 			descripcion: String(datos.descripcion ?? ''),
 			especificacion: String(datos.especificacion ?? ''),
@@ -39,6 +52,7 @@ export async function obtenerProductosPublicos(): Promise<ProductoPublico[]> {
 			precio: Number(datos.precio ?? 0),
 			stock: Number(datos.stock ?? 0),
 			popular: Boolean(datos.popular ?? false),
+			nuevoIngreso: Boolean(datos.nuevoIngreso ?? false),
 			fechaCreacion:
 				fechaCreacion && typeof fechaCreacion.toMillis === 'function'
 					? fechaCreacion.toMillis()

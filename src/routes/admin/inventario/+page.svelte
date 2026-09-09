@@ -6,6 +6,7 @@
 		actualizarProducto,
 		eliminarCategoria,
 		eliminarProducto,
+		categoriasDeProducto,
 		escucharCategorias,
 		escucharProductos,
 		guardarCategoria,
@@ -26,13 +27,14 @@
 
 	const formularioVacio = {
 		Nombre: "",
-		Tipo: "",
+		categorias: [] as string[],
 		marca: "",
 		descripcion: "",
 		especificacion: "",
 		precio: 0,
 		stock: 0,
-		popular: false
+		popular: false,
+		nuevoIngreso: false
 	};
 
 	let formulario = $state({ ...formularioVacio });
@@ -127,10 +129,12 @@
 
 	type CambiosProducto = {
 		Tipo?: string;
+		categorias?: string[];
 		marca?: string;
 		precio?: number;
 		stock?: number;
 		popular?: boolean;
+		nuevoIngreso?: boolean;
 	};
 	const cambiosPorGuardar = $state<Record<string, CambiosProducto>>({});
 
@@ -146,6 +150,46 @@
 			opciones.push(tipoActual);
 		}
 		return opciones;
+	}
+
+	/** Categorías de un producto, contando las pendientes de guardar. */
+	function categoriasDe(producto: Producto): string[] {
+		return (
+			cambiosPorGuardar[producto.id]?.categorias ??
+			categoriasDeProducto(producto)
+		);
+	}
+
+	function alternarCategoriaFormulario(nombre: string, marcado: boolean) {
+		formulario.categorias = marcado
+			? [...formulario.categorias, nombre]
+			: formulario.categorias.filter((categoria) => categoria !== nombre);
+	}
+
+	/**
+	 * Marca o desmarca una categoría de un producto ya existente. "Tipo"
+	 * se mantiene apuntando a la primera categoría para que los pedidos
+	 * viejos y la búsqueda sigan funcionando igual.
+	 */
+	function alternarCategoriaProducto(
+		producto: Producto,
+		nombre: string,
+		marcado: boolean
+	) {
+		const actuales = categoriasDe(producto);
+
+		const nuevas = marcado
+			? [...actuales, nombre]
+			: actuales.filter((categoria) => categoria !== nombre);
+
+		if (nuevas.length === 0) {
+			error = "Cada producto debe quedar en al menos una categoría.";
+			return;
+		}
+
+		error = null;
+		actualizarCampoPendiente(producto.id, "categorias", nuevas);
+		actualizarCampoPendiente(producto.id, "Tipo", nuevas[0]);
 	}
 
 	const detenerProductos = escucharProductos(
@@ -182,8 +226,8 @@
 	async function manejarAgregar(evento: SubmitEvent) {
 		evento.preventDefault();
 
-		if (!formulario.Nombre.trim() || !formulario.Tipo.trim()) {
-			error = "El nombre y el tipo son obligatorios.";
+		if (!formulario.Nombre.trim() || formulario.categorias.length === 0) {
+			error = "El nombre y al menos una categoría son obligatorios.";
 			return;
 		}
 
@@ -202,14 +246,18 @@
 
 			await agregarProducto({
 				Nombre: formulario.Nombre.trim(),
-				Tipo: formulario.Tipo.trim(),
+				// "Tipo" es la categoría principal y se mantiene en sincronía
+				// con la primera de la lista, por compatibilidad.
+				Tipo: formulario.categorias[0],
+				categorias: [...formulario.categorias],
 				marca: formulario.marca.trim(),
 				descripcion: formulario.descripcion.trim(),
 				especificacion: formulario.especificacion.trim(),
 				imagen: urlImagen,
 				precio: Number(formulario.precio) || 0,
 				stock: Number(formulario.stock) || 0,
-				popular: formulario.popular
+				popular: formulario.popular,
+				nuevoIngreso: formulario.nuevoIngreso
 			});
 
 			formulario = { ...formularioVacio };
@@ -358,29 +406,46 @@
 			/>
 		</div>
 
-		<div class="flex flex-col gap-1">
-			<label for="tipo" class="text-sm font-semibold text-slate-600">
-				Tipo (categoría)
-			</label>
-			<select
-				id="tipo"
-				bind:value={formulario.Tipo}
-				required
-				class="rounded-lg border border-slate-200 bg-white px-3 py-2"
+		<fieldset class="flex flex-col gap-1">
+			<legend class="text-sm font-semibold text-slate-600">
+				Categorías
+			</legend>
+
+			<div
+				class="flex flex-wrap gap-2 rounded-lg border border-slate-200 bg-white p-2"
 			>
-				<option value="" disabled selected={!formulario.Tipo}>
-					Selecciona una categoría
-				</option>
 				{#each nombresCategorias as nombre}
-					<option value={nombre}>{nombre}</option>
+					<label
+						class="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm text-slate-600 ring-1 ring-slate-200"
+						class:bg-sky-50={formulario.categorias.includes(nombre)}
+						class:ring-sky-300={formulario.categorias.includes(nombre)}
+					>
+						<input
+							type="checkbox"
+							checked={formulario.categorias.includes(nombre)}
+							onchange={(evento) =>
+								alternarCategoriaFormulario(
+									nombre,
+									evento.currentTarget.checked
+								)}
+							class="h-4 w-4"
+						/>
+						{nombre}
+					</label>
 				{/each}
-			</select>
+			</div>
+
 			{#if nombresCategorias.length === 0}
 				<p class="text-xs text-slate-400">
 					Todavía no hay categorías creadas. Crea una abajo antes de agregar el producto.
 				</p>
+			{:else}
+				<p class="text-xs text-slate-400">
+					Puedes elegir varias. La primera que marques será la
+					principal.
+				</p>
 			{/if}
-		</div>
+		</fieldset>
 
 		<div class="flex flex-col gap-1">
 			<label for="marca" class="text-sm font-semibold text-slate-600">
@@ -434,6 +499,21 @@
 			/>
 			<label for="popular" class="text-sm font-semibold text-slate-600">
 				Marcar como "Más popular" (aparecerá en el filtro de más populares)
+			</label>
+		</div>
+
+		<div class="flex items-center gap-2 sm:col-span-2">
+			<input
+				id="nuevoIngreso"
+				type="checkbox"
+				bind:checked={formulario.nuevoIngreso}
+				class="h-4 w-4 rounded border-slate-300"
+			/>
+			<label
+				for="nuevoIngreso"
+				class="text-sm font-semibold text-slate-600"
+			>
+				Mostrar en "New arrivals" de la página principal
 			</label>
 		</div>
 
@@ -658,11 +738,12 @@
 						<tr class="border-b border-slate-200 text-slate-500">
 							<th class="py-2 pr-4">Imagen</th>
 							<th class="py-2 pr-4">Nombre</th>
-							<th class="py-2 pr-4">Tipo</th>
+							<th class="py-2 pr-4">Categorías</th>
 							<th class="py-2 pr-4">Marca</th>
 							<th class="py-2 pr-4">Precio</th>
 							<th class="py-2 pr-4">Stock</th>
 							<th class="py-2 pr-4">Popular</th>
+							<th class="py-2 pr-4">New arrivals</th>
 							<th class="py-2 pr-4">Descripción</th>
 							<th class="py-2 pr-4"></th>
 						</tr>
@@ -687,21 +768,28 @@
 									{producto.Nombre}
 								</td>
 								<td class="py-3 pr-4">
-									<select
-										value={cambiosPorGuardar[producto.id]?.Tipo ??
-											producto.Tipo}
-										onchange={(evento) =>
-											actualizarCampoPendiente(
-												producto.id,
-												"Tipo",
-												(evento.target as HTMLSelectElement).value
-											)}
-										class="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1 text-slate-700"
-									>
+									<div class="flex w-48 flex-col gap-1">
 										{#each opcionesTipo(producto.Tipo) as nombre}
-											<option value={nombre}>{nombre}</option>
+											<label
+												class="flex items-center gap-2 text-xs text-slate-600"
+											>
+												<input
+													type="checkbox"
+													checked={categoriasDe(producto).includes(
+														nombre
+													)}
+													onchange={(evento) =>
+														alternarCategoriaProducto(
+															producto,
+															nombre,
+															evento.currentTarget.checked
+														)}
+													class="h-3.5 w-3.5 shrink-0"
+												/>
+												{nombre}
+											</label>
 										{/each}
-									</select>
+									</div>
 								</td>
 								<td class="py-3 pr-4">
 									<input
@@ -767,6 +855,20 @@
 											actualizarCampoPendiente(
 												producto.id,
 												"popular",
+												(evento.target as HTMLInputElement).checked
+											)}
+										class="h-4 w-4 rounded border-slate-300"
+									/>
+								</td>
+								<td class="py-3 pr-4 text-center">
+									<input
+										type="checkbox"
+										checked={cambiosPorGuardar[producto.id]
+											?.nuevoIngreso ?? producto.nuevoIngreso}
+										onchange={(evento) =>
+											actualizarCampoPendiente(
+												producto.id,
+												"nuevoIngreso",
 												(evento.target as HTMLInputElement).checked
 											)}
 										class="h-4 w-4 rounded border-slate-300"
