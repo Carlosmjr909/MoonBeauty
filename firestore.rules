@@ -1,1 +1,98 @@
+rules_version = '2';
 
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function esAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Catálogo de productos: lectura pública, escritura solo admins.
+    match /productos/{productoId} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    // Categorías: lectura pública, escritura solo admins.
+    match /categorias/{categoriaId} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    // Solo el propio admin puede leer su doc (para confirmar el rol).
+    // Nadie escribe admins desde el cliente; se crea manualmente en la consola.
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Pedidos: un usuario crea/lee los suyos; los admins leen todos.
+    match /pedidos/{pedidoId} {
+      allow create: if request.auth != null &&
+        request.resource.data.usuarioId == request.auth.uid;
+      allow read: if request.auth != null &&
+        (resource.data.usuarioId == request.auth.uid || esAdmin());
+      allow update, delete: if esAdmin();
+    }
+
+    // Perfil del cliente. Cada quien escribe solo el suyo; los admins
+    // pueden leer todos para armar la lista de envío de promociones.
+    match /usuarios/{uid} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == uid || esAdmin());
+      allow create, update: if request.auth != null &&
+        request.auth.uid == uid;
+      allow delete: if esAdmin();
+    }
+
+    // Configuración del sitio (datos de pago, banner de promoción):
+    // lectura pública porque el checkout y el layout la necesitan.
+    match /configuracion/{documento} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    // Contenido de la portada: publicaciones de Instagram y logos de las
+    // marcas. Lectura pública, escritura solo admins.
+    match /instagram/{publicacionId} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    match /marcas/{marcaId} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    // Páginas legales (envíos, privacidad, términos, devoluciones).
+    // Lectura pública; solo los admins pueden editarlas.
+    match /legales/{paginaId} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    // Cupones. "get" es público para que el checkout pueda validar el
+    // código exacto que escribió el comprador, pero "list" queda solo
+    // para admins: así nadie puede enumerar la colección y descubrir
+    // cupones que todavía no se han anunciado.
+    match /cupones/{codigoCupon} {
+      allow get: if true;
+      allow list: if esAdmin();
+      allow write: if esAdmin();
+
+      // Un comprador puede sumar exactamente 1 al contador de usos y
+      // nada más. Las reglas verifican aquí (no en el navegador) que el
+      // cupón esté activo, no vencido y que no se pase de su límite,
+      // así que el tope se respeta aunque alguien manipule el cliente.
+      allow update: if request.auth != null &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usos']) &&
+        request.resource.data.usos == resource.data.usos + 1 &&
+        resource.data.activo == true &&
+        (resource.data.limiteUsos == null ||
+          request.resource.data.usos <= resource.data.limiteUsos) &&
+        (resource.data.fechaVencimiento == null ||
+          request.time < resource.data.fechaVencimiento);
+    }
+  }
+}

@@ -26,17 +26,20 @@
 	} from '$lib/pedidos';
 
 	import {
-		CODIGO_CUPON,
 		calcularDescuentoUSD,
-		esMetodoPagoElegibleParaCupon
+		registrarUsoCupon,
+		validarCupon,
+		type Cupon
 	} from '$lib/cupones';
 
 	import { ESTADOS_VENEZUELA } from '$lib/estadosVenezuela';
+	import type { ConfiguracionPagos } from '$lib/configuracion';
 
 	type CheckoutData = {
 		tasaBCV?: {
 			promedio?: number | null;
 		} | null;
+		configuracionPagos?: ConfiguracionPagos | null;
 	};
 
 	let {
@@ -216,19 +219,29 @@
 	let numeroPedido = $state('');
 
 	let codigoCupon = $state('');
-	let cuponAplicado = $state(false);
+	let cuponAplicado = $state<Cupon | null>(null);
 	let errorCupon = $state('');
+	let validandoCupon = $state(false);
 
-	const infoPago: Partial<Record<MetodoPago, string[]>> = {
-		pago_movil: [
-			'V-27854705',
-			'0412-5050043',
-			'Banco de Venezuela (0102)'
-		],
-		binance: ['juancjs71@gmail.com'],
-		zinli: ['juancjs71@gmail.com'],
-		zelle: ['juancjs71@gmail.com']
-	};
+	// Los datos de pago se administran desde el panel y llegan ya
+	// resueltos desde el servidor (con valores por defecto si todavía no
+	// se guardó nada), así que nunca se muestran vacíos.
+	const infoPago = $derived.by<Partial<Record<MetodoPago, string[]>>>(() => {
+		const configuracion = data?.configuracionPagos;
+
+		if (!configuracion) return {};
+
+		return {
+			pago_movil: [
+				configuracion.pagoMovilCedula,
+				configuracion.pagoMovilTelefono,
+				configuracion.pagoMovilBanco
+			].filter(Boolean),
+			binance: [configuracion.binanceCorreo].filter(Boolean),
+			zinli: [configuracion.zinliCorreo].filter(Boolean),
+			zelle: [configuracion.zelleCorreo].filter(Boolean)
+		};
+	});
 
 	function manejarSeleccionComprobante(evento: Event) {
 		comprobanteArchivo =
@@ -274,52 +287,46 @@
 		}
 	];
 
-	const metodoElegibleParaCupon = $derived(
-		esMetodoPagoElegibleParaCupon(metodoPago)
-	);
-
-	// Si el usuario cambia a un método sin descuento (pago móvil), el cupón deja de aplicar.
+	// Si el comprador cambia a un método donde el cupón aplicado ya no
+	// vale, se quita el descuento y se le avisa.
 	$effect(() => {
-		if (cuponAplicado && !metodoElegibleParaCupon) {
-			cuponAplicado = false;
-			errorCupon =
-				'El cupón MOON20 no aplica para pago móvil (bolívares). Se quitó el descuento.';
+		const cupon = cuponAplicado;
+
+		if (cupon && !cupon.metodosPago.includes(metodoPago)) {
+			cuponAplicado = null;
+			errorCupon = `El cupón ${cupon.codigo} no aplica para el método de pago que elegiste. Se quitó el descuento.`;
 		}
 	});
 
-	function aplicarCupon() {
+	async function aplicarCupon() {
 		errorCupon = '';
+		validandoCupon = true;
 
-		const codigo = codigoCupon.trim().toUpperCase();
+		try {
+			const resultado = await validarCupon(codigoCupon, metodoPago);
 
-		if (!codigo) {
-			errorCupon = 'Ingresa un código de cupón.';
-			return;
+			if (!resultado.valido) {
+				errorCupon = resultado.error;
+				return;
+			}
+
+			cuponAplicado = resultado.cupon;
+			codigoCupon = resultado.cupon.codigo;
+		} finally {
+			validandoCupon = false;
 		}
-
-		if (codigo !== CODIGO_CUPON) {
-			errorCupon = 'El código ingresado no es válido.';
-			return;
-		}
-
-		if (!metodoElegibleParaCupon) {
-			errorCupon =
-				'Este cupón solo aplica para pagos en $ (efectivo, Binance, Zelle o Zinli).';
-			return;
-		}
-
-		cuponAplicado = true;
-		codigoCupon = CODIGO_CUPON;
 	}
 
 	function quitarCupon() {
-		cuponAplicado = false;
+		cuponAplicado = null;
 		codigoCupon = '';
 		errorCupon = '';
 	}
 
 	const descuentoUSD = $derived(
-		cuponAplicado ? calcularDescuentoUSD($totalCarritoUSD) : 0
+		cuponAplicado
+			? calcularDescuentoUSD(cuponAplicado, $totalCarritoUSD)
+			: 0
 	);
 
 	const totalConDescuentoUSD = $derived(
@@ -332,13 +339,21 @@
 			: null
 	);
 
-	// El total en VES nunca refleja el descuento del cupón: el cupón
-	// solo aplica a pagos en $ (no a pago móvil / bolívares), así que
-	// este monto siempre es el equivalente completo, sin descontar.
+	// El descuento se aplica sobre el monto que la persona realmente va a
+	// pagar. Con pago móvil se cobra en bolívares, así que el cupón tiene
+	// que descontarse del total en VES; con los métodos en dólares se
+	// descuenta del total en USD y el monto en bolívares queda como
+	// referencia del precio completo.
+	const descuentoAplicaEnVES = $derived(
+		Boolean(cuponAplicado) && metodoPago === 'pago_movil'
+	);
+
 	const totalVES = $derived(
 		tasaBCV
 			? convertirUSDaVES(
-					$totalCarritoUSD,
+					descuentoAplicaEnVES
+						? totalConDescuentoUSD
+						: $totalCarritoUSD,
 					tasaBCV
 				)
 			: null
@@ -466,7 +481,7 @@ const totalUSDRedondeado =
 const totalVESRedondeado =
 	Math.round(totalVES * 100) / 100;
 
-const cuponFinal = cuponAplicado ? CODIGO_CUPON : null;
+const cuponFinal = cuponAplicado ? cuponAplicado.codigo : null;
 
 const entregaFinal = {
 	direccion: direccion.trim(),
@@ -502,6 +517,21 @@ const resultado = await crearPedido({
 });
 
 numeroPedido = resultado.numeroPedido;
+
+// Se cuenta el uso del cupón después de que el pedido quedó guardado,
+// para no gastar un uso si la compra falla. Si este contador fallara,
+// el pedido igual es válido, así que el error no se le muestra al
+// comprador.
+if (cuponFinal) {
+	try {
+		await registrarUsoCupon(cuponFinal);
+	} catch (errorCupon) {
+		console.error(
+			'El pedido se guardó, pero no se pudo contar el uso del cupón:',
+			errorCupon
+		);
+	}
+}
 
 try {
 	const respuestaCorreo = await fetch(
@@ -903,7 +933,8 @@ carrito.vaciar();
 						</h2>
 
 						<p class="mt-2 text-sm text-slate-500">
-							Válido para pagos en $ (efectivo, Binance, Zelle o Zinli) — no aplica para pago móvil.
+							Si tienes un código, escríbelo aquí. Cada cupón indica
+							en qué métodos de pago aplica.
 						</p>
 
 						{#if cuponAplicado}
@@ -918,10 +949,13 @@ carrito.vaciar();
 									/>
 									<div>
 										<p class="font-semibold text-sky-800">
-											Cupón {CODIGO_CUPON} aplicado
+											Cupón {cuponAplicado.codigo} aplicado
 										</p>
 										<p class="text-sm text-sky-700">
-											-20% sobre el total ({formatearUSD(descuentoUSD)})
+											{cuponAplicado.tipo === 'porcentaje'
+												? `-${cuponAplicado.valor}% sobre el total`
+												: 'Descuento aplicado'}
+											({formatearUSD(descuentoUSD)})
 										</p>
 									</div>
 								</div>
@@ -945,9 +979,10 @@ carrito.vaciar();
 								<button
 									type="button"
 									onclick={aplicarCupon}
-									class="h-12 shrink-0 rounded-xl bg-gray-500 px-6 font-semibold text-white transition hover:bg-slate-500"
+									disabled={validandoCupon}
+									class="h-12 shrink-0 rounded-xl bg-gray-500 px-6 font-semibold text-white transition hover:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
 								>
-									Aplicar
+									{validandoCupon ? 'Validando...' : 'Aplicar'}
 								</button>
 							</div>
 						{/if}
@@ -1104,7 +1139,7 @@ carrito.vaciar();
 						{#if cuponAplicado}
 							<div class="flex justify-between text-sky-700">
 								<span>
-									Descuento ({CODIGO_CUPON})
+									Descuento ({cuponAplicado.codigo})
 								</span>
 
 								<span>
@@ -1134,7 +1169,18 @@ carrito.vaciar();
 								Total VES
 							</span>
 
-							<strong class:text-slate-400={cuponAplicado} class:line-through={cuponAplicado} class:font-normal={cuponAplicado}>
+							<!-- Solo se tacha cuando el cupón NO alcanza a los
+							bolívares (métodos en $). Con pago móvil el
+							descuento sí se refleja aquí, así que este es el
+							monto real a pagar. -->
+							<strong
+								class:text-slate-400={cuponAplicado &&
+									!descuentoAplicaEnVES}
+								class:line-through={cuponAplicado &&
+									!descuentoAplicaEnVES}
+								class:font-normal={cuponAplicado &&
+									!descuentoAplicaEnVES}
+							>
 								{totalVES !== null
 									? formatearVES(
 											totalVES

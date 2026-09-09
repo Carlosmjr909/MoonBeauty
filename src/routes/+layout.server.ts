@@ -1,8 +1,14 @@
 import type { LayoutServerLoad } from './$types';
 import {
 	obtenerCategoriasPublicas,
+	obtenerConfiguracionSitio,
 	obtenerProductosPublicos
 } from '$lib/server/productos';
+import {
+	normalizarConfiguracionContacto,
+	normalizarConfiguracionPagos,
+	normalizarConfiguracionPortada
+} from '$lib/configuracion';
 
 export type TasaBCV = {
 	moneda: string;
@@ -66,21 +72,35 @@ async function cargarTasaBCV(
 }
 
 export const load: LayoutServerLoad = async ({ fetch, setHeaders }) => {
-	const [datosTasaBCV, productos, categorias] = await Promise.all([
-		cargarTasaBCV(fetch, setHeaders),
-		obtenerProductosPublicos().catch((error) => {
-			console.error('Error obteniendo productos:', error);
-			return [];
-		}),
-		obtenerCategoriasPublicas().catch((error) => {
-			console.error('Error obteniendo categorías:', error);
-			return [];
-		})
-	]);
+	const [datosTasaBCV, productos, categorias, configuracion] =
+		await Promise.all([
+			cargarTasaBCV(fetch, setHeaders),
+			obtenerProductosPublicos().catch((error) => {
+				console.error('Error obteniendo productos:', error);
+				return [];
+			}),
+			obtenerCategoriasPublicas().catch((error) => {
+				console.error('Error obteniendo categorías:', error);
+				return [];
+			}),
+			obtenerConfiguracionSitio().catch((error) => {
+				console.error('Error obteniendo la configuración del sitio:', error);
+				return {} as Record<string, Record<string, unknown>>;
+			})
+		]);
 
 	return {
 		...datosTasaBCV,
 		productos,
-		categorias
+		categorias,
+		// Si un documento todavía no existe, normalizar devuelve los
+		// valores por defecto, así que nunca llegan vacíos a las páginas.
+		configuracionPagos: normalizarConfiguracionPagos(configuracion.pagos),
+		configuracionPortada: normalizarConfiguracionPortada(
+			configuracion.portada
+		),
+		configuracionContacto: normalizarConfiguracionContacto(
+			configuracion.contacto
+		)
 	};
 };

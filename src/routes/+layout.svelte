@@ -18,6 +18,10 @@
 	import { injectSpeedInsights } from "@vercel/speed-insights/sveltekit";
 	import { dev } from "$app/environment";
 	import { injectAnalytics } from "@vercel/analytics/sveltekit";
+	import {
+		CONFIGURACION_CONTACTO_POR_DEFECTO,
+		type ConfiguracionContacto,
+	} from "$lib/configuracion";
 
 	injectAnalytics({ mode: dev ? "development" : "production" });
 
@@ -51,6 +55,25 @@
 				? (currentLayoutData.productos as Producto[])
 				: [];
 	});
+
+	// Datos de contacto del pie de página, administrables desde el panel.
+	const contacto = $derived(
+		(layoutData as { configuracionContacto?: ConfiguracionContacto })
+			?.configuracionContacto ?? CONFIGURACION_CONTACTO_POR_DEFECTO
+	);
+
+	const enlaceWhatsapp = $derived(`https://wa.me/${contacto.whatsappNumero}`);
+
+	// Banner promocional de arriba: su texto se administra desde el panel.
+	const bannerTexto = $derived(
+		(layoutData?.configuracionPagos as { bannerTexto?: string } | undefined)
+			?.bannerTexto ?? ''
+	);
+
+	const bannerActivo = $derived(
+		(layoutData?.configuracionPagos as { bannerActivo?: boolean } | undefined)
+			?.bannerActivo ?? false
+	);
 
 	let menuAbierto = $state(false);
 	let carritoAbierto = $state(false);
@@ -186,19 +209,19 @@
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
 <div class="sticky top-0 z-50">
-	<div class="cupon-marquee bg-slate-500/80 py-2 text-white">
-		<div class="cupon-marquee__track">
-			{#each Array(6) as _, copia (copia)}
-				<p
-					class="mx-10 shrink-0 whitespace-nowrap text-xs font-semibold sm:mx-14 sm:text-sm"
-				>
-					20% de descuento para pagos en $ con el código <strong
-						>MOON20</strong
-					>. Aplica para pagos en Efectivo $, Binance, Zelle y Zinli.
-				</p>
-			{/each}
+	{#if bannerActivo && bannerTexto}
+		<div class="cupon-marquee bg-slate-500/80 py-2 text-white">
+			<div class="cupon-marquee__track">
+				{#each Array(6) as _, copia (copia)}
+					<p
+						class="mx-10 shrink-0 whitespace-nowrap text-xs font-semibold sm:mx-14 sm:text-sm"
+					>
+						{bannerTexto}
+					</p>
+				{/each}
+			</div>
 		</div>
-	</div>
+	{/if}
 
 	<header class="bg-white/60 backdrop-blur-md px-4 sm:px-6 lg:px-16">
 		<div
@@ -567,9 +590,7 @@
 				<p class="font-Manrope text-3xl text-slate-700">MoonBeauty</p>
 
 				<p class="mt-3 max-w-sm text-sm leading-6 text-slate-500">
-					Descubre el brillo que nace desde adentro con nuestra
-					curaduría exclusiva de cosmética coreana, entregada
-					directamente en tu puerta.
+					{contacto.descripcion}
 				</p>
 
 				<nav
@@ -577,7 +598,7 @@
 					class="mt-5 flex items-center gap-3"
 				>
 					<a
-						href="https://www.instagram.com/moonbeauty.val/"
+						href={contacto.instagramUrl}
 						target="_blank"
 						rel="noreferrer"
 						aria-label="Instagram"
@@ -587,7 +608,7 @@
 					</a>
 
 					<a
-						href="https://wa.me/584125050043"
+						href={enlaceWhatsapp}
 						target="_blank"
 						rel="noreferrer"
 						aria-label="WhatsApp"
@@ -597,7 +618,7 @@
 					</a>
 
 					<a
-						href="mailto:moonbeautyval@gmail.com"
+						href="mailto:{contacto.correo}"
 						aria-label="Correo electrónico"
 						class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm transition hover:bg-sky-100 hover:text-sky-700"
 					>
@@ -619,7 +640,7 @@
 							width="19"
 							class="mt-0.5 shrink-0 text-slate-400"
 						/>
-						Valencia, Estado Carabobo, Venezuela
+						{contacto.direccion}
 					</li>
 
 					<li class="flex items-start gap-2">
@@ -629,12 +650,12 @@
 							class="mt-0.5 shrink-0 text-slate-400"
 						/>
 						<a
-							href="https://wa.me/584125050043"
+							href={enlaceWhatsapp}
 							target="_blank"
 							rel="noreferrer"
 							class="transition hover:text-sky-700 hover:underline"
 						>
-							+58 412-505 0043
+							{contacto.whatsappTexto}
 						</a>
 					</li>
 
@@ -644,7 +665,7 @@
 							width="19"
 							class="mt-0.5 shrink-0 text-slate-400"
 						/>
-						Todos los días · Respondemos por WhatsApp
+						{contacto.horario}
 					</li>
 				</ul>
 			</div>
@@ -726,15 +747,14 @@
 			</div>
 
 			<p class="text-sm text-slate-500">
-				© {new Date().getFullYear()} MoonBeauty. Luminous Serenity for your
-				skin.
+				© {new Date().getFullYear()} MoonBeauty. {contacto.copyright}
 			</p>
 		</div>
 	</div>
 </footer>
 
 <a
-	href="https://wa.me/584125050043?text=¡Hola! Estoy interesado en algunos productos de Moon Beauty. ¿Podrían asesorarme?"
+	href="{enlaceWhatsapp}?text=¡Hola! Estoy interesado en algunos productos de Moon Beauty. ¿Podrían asesorarme?"
 	target="_blank"
 	rel="noopener noreferrer"
 	class="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-black text-white shadow-2xl transition-all duration-300 hover:scale-110 hover:shadow-green-400/40"

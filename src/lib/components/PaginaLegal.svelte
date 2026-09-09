@@ -2,10 +2,16 @@
 	interface PropTypes {
 		titulo: string;
 		actualizado: string;
+		/**
+		 * Contenido ya convertido a HTML en el servidor. Se genera con
+		 * markdown-it configurado con html:false, así que solo puede
+		 * contener las etiquetas que produce el propio renderizador.
+		 */
+		html?: string;
 		children?: import("svelte").Snippet;
 	}
 
-	const { titulo, actualizado, children }: PropTypes = $props();
+	const { titulo, actualizado, html, children }: PropTypes = $props();
 </script>
 
 <main class="bg-white px-4 py-14 sm:px-6 lg:px-8">
@@ -28,7 +34,11 @@
 		<div
 			class="legal-contenido mt-10 space-y-6 text-base leading-7 text-slate-600"
 		>
-			{@render children?.()}
+			{#if html}
+				{@html html}
+			{:else}
+				{@render children?.()}
+			{/if}
 		</div>
 	</div>
 </main>

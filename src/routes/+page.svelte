@@ -1,10 +1,17 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onMount, untrack } from "svelte";
 	import Tarjeta from "$lib/components/tarjeta.svelte";
 	import Icon from "@iconify/svelte";
-	import { publicacionesInstagram } from "$lib/instagramPosts";
 
 	let { data } = $props();
+
+	// Las publicaciones de Instagram y los logos de marcas se administran
+	// desde el panel y llegan resueltos desde el servidor.
+	const publicacionesInstagram = $derived(data.publicacionesInstagram ?? []);
+	const logos = $derived(data.marcas ?? []);
+
+	// Textos editables del hero y de "Nuestra esencia".
+	const textos = $derived(data.configuracionPortada);
 
 	// Referencias para las animaciones de scroll de esta vista (una por
 	// sección, con efectos distintos entre sí para que no se repitan).
@@ -19,8 +26,10 @@
 
 	const INSTAGRAM_URL = "https://www.instagram.com/moonbeauty.val/";
 
-	const indiceInicialInstagram = Math.floor(
-		(publicacionesInstagram.length - 1) / 2,
+	// Solo se necesita el valor inicial, para arrancar el carrusel
+	// centrado; untrack deja claro que la lectura no debe ser reactiva.
+	const indiceInicialInstagram = untrack(() =>
+		Math.floor(((data.publicacionesInstagram ?? []).length - 1) / 2),
 	);
 
 	let pistaInstagram = $state<HTMLDivElement | null>(null);
@@ -166,19 +175,6 @@
 	}>({
 		elementoAnimado: null,
 	});
-
-	const logos = [
-		{ nombre: "Anua", alto: "82%" },
-		{ nombre: "Arencia", alto: "72%" },
-		{ nombre: "Beauty of joseon", alto: "100%" },
-		{ nombre: "Celimax", alto: "80%" },
-		{ nombre: "Dr. Althea", alto: "64%" },
-		{ nombre: "Medicube", alto: "74%" },
-		{ nombre: "Purito", alto: "92%" },
-		{ nombre: "Pyunkang Yul", alto: "100%" },
-		{ nombre: "Skin1004", alto: "100%" },
-		{ nombre: "Tocobo", alto: "60%" },
-	];
 
 	// Animaciones de scroll de la vista de inicio: cada sección aparece
 	// con un efecto distinto (no se repite el mismo en todas) a medida
@@ -381,25 +377,27 @@
 	
 
 	<div class="mx-auto w-full px-8 lg:px-12">
-		<p class="text-sky-200 font-Manrope text-lg">K-BEAUTY · MOON BEAUTY</p>
+		<p class="text-sky-200 font-Manrope text-lg">{textos.heroEtiqueta}</p>
+
+		<!-- whitespace-pre-line respeta los saltos de línea que se escriban
+		en el panel, que es lo que parte el título en dos renglones. -->
 		<p
-			class="font-Manrope my-4 text-5xl leading-none text-slate-600 sm:text-6xl md:text-7xl lg:text-8xl 2xl:text-9xl"
+			class="font-Manrope my-4 whitespace-pre-line text-5xl leading-none text-slate-600 sm:text-6xl md:text-7xl lg:text-8xl 2xl:text-9xl"
 		>
-			Tu piel,<br /> en su mejor era.
+			{textos.heroTitulo}
 		</p>
 
 		<p
 			class="mt-5 max-w-2xl font-Manrope text-lg text-slate-600 sm:text-xl md:text-2xl lg:text-3xl"
 		>
-			Skincare coreano seleccionado para elevar tu rutina diaria y darle a
-			tu piel el glow que se merece.
+			{textos.heroSubtitulo}
 		</p>
 
 		<a
 			class="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-sky-200 px-8 py-3 font-Manrope text-base font-semibold text-slate-600 transition duration-300 hover:-translate-y-1 hover:bg-slate-600 hover:text-white hover:shadow-lg sm:px-10 sm:text-lg lg:px-12"
 			href="/products"
 		>
-			Descrubir productos
+			{textos.heroBoton}
 		</a>
 	</div>
 </section>
@@ -487,7 +485,7 @@
 					class="flex h-24 w-40 shrink-0 items-center justify-center px-6 sm:h-28 sm:w-48 sm:px-8"
 				>
 					<img
-						src="/logos/{logo.nombre}.webp"
+						src={logo.imagen}
 						alt={logo.nombre}
 						class="w-auto max-w-full object-contain"
 						style="max-height: {logo.alto}"
@@ -728,13 +726,13 @@
 			<p
 				class="font-Manrope text-sm font-bold uppercase tracking-[0.2em] text-sky-700"
 			>
-				Nuestra esencia
+				{textos.esenciaEtiqueta}
 			</p>
 
 			<p
 				class="mt-3 font-Manrope text-3xl text-slate-700 sm:text-4xl lg:text-5xl"
 			>
-				Belleza, calma y cuidado
+				{textos.esenciaTitulo}
 			</p>
 		</div>
 
@@ -757,15 +755,13 @@
 						<p
 							class="mt-3 font-Manrope text-lg font-bold text-slate-700 sm:mt-5 sm:text-2xl lg:text-3xl"
 						>
-							La ciencia de la calma
+							{textos.esencia1Titulo}
 						</p>
 
 						<p
 							class="mt-2 text-xs leading-6 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7 lg:text-base"
 						>
-							Seleccionamos rituales coreanos que combinan
-							tecnología clínica avanzada con ingredientes
-							botánicos ancestrales.
+							{textos.esencia1Texto}
 						</p>
 					</div>
 
@@ -789,14 +785,13 @@
 				</div>
 
 				<p class="mt-3 font-Manrope text-base font-bold sm:mt-5 sm:text-2xl lg:text-3xl">
-					Curaduría exclusiva
+					{textos.esencia2Titulo}
 				</p>
 
 				<p
 					class="mt-2 max-w-xl text-xs leading-6 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7 lg:text-lg"
 				>
-					Solo seleccionamos marcas que cumplen con altos estándares
-					de K-Beauty, calidad, innovación y sostenibilidad.
+					{textos.esencia2Texto}
 				</p>
 			</article>
 
@@ -812,15 +807,13 @@
 				<p
 					class="mt-3 font-Manrope text-base font-bold text-slate-700 sm:mt-5 sm:text-2xl lg:text-3xl"
 				>
-					Envío directo
+					{textos.esencia3Titulo}
 				</p>
 
 				<p
 					class="mt-2 max-w-xl text-xs leading-6 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7 lg:text-lg"
 				>
-					Logística optimizada para que tu ritual no se detenga.
-					Productos cuidadosamente preparados hasta llegar a tu
-					puerta.
+					{textos.esencia3Texto}
 				</p>
 			</article>
 
@@ -841,22 +834,20 @@
 					class="relative flex h-full min-h-64 flex-col justify-end p-4 text-white sm:min-h-105 sm:p-10 lg:min-h-80 lg:max-w-xl lg:justify-center"
 				>
 					<p class="font-Manrope text-xl font-bold sm:text-4xl">
-						Luminous Serenity
+						{textos.esencia4Titulo}
 					</p>
 
 					<p
 						class="mt-2 text-xs leading-6 text-white/85 sm:mt-4 sm:text-base sm:leading-7 lg:text-lg"
 					>
-						Descubre el brillo que nace desde adentro con productos
-						diseñados para nutrir no solo tu piel, sino también tu
-						bienestar diario.
+						{textos.esencia4Texto}
 					</p>
 
 					<a
 						href="/products"
 						class="mt-4 inline-flex w-fit items-center justify-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-sky-100 sm:mt-6 sm:px-6 sm:py-3 sm:text-base"
 					>
-						Saber más
+						{textos.esencia4Boton}
 					</a>
 				</div>
 			</article>
