@@ -377,6 +377,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Moon Beauty · Skincare coreano en Venezuela</title>
+</svelte:head>
+
 <section
 	class="isolate relative flex min-h-[calc(100svh-5rem)] items-center justify-center overflow-hidden px-4 py-20 sm:px-6 lg:min-h-[calc(100svh-6rem)] lg:px-8"
 >

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from "svelte";
+	import Icon from "@iconify/svelte";
 	import {
 		agregarProducto,
 		actualizarCategoria,
@@ -12,8 +13,10 @@
 		guardarCategoria,
 		subirImagenCategoria,
 		subirImagenProducto,
+		renombrarCategoria,
 		type Categoria,
-		type Producto
+		type Producto,
+		type Tono
 	} from "$lib/inventario";
 
 	let productos = $state<Producto[]>([]);
@@ -53,6 +56,9 @@
 	let vistaPreviaImagenCategoria = $state<string | null>(null);
 	let inputImagenCategoria = $state<HTMLInputElement | null>(null);
 	let categoriaEditandoId = $state<string | null>(null);
+	/** Nombre con el que se abrió la edición, para detectar el renombrado. */
+	let nombreCategoriaOriginal = $state("");
+	let avisoCategoria = $state("");
 
 	function manejarSeleccionImagen(evento: Event) {
 		const archivo = (evento.target as HTMLInputElement).files?.[0] ?? null;
@@ -105,6 +111,7 @@
 
 	function prepararEdicionCategoria(categoria: Categoria) {
 		categoriaEditandoId = categoria.id;
+		nombreCategoriaOriginal = categoria.nombre;
 		formularioCategoria = {
 			nombre: categoria.nombre,
 			descripcion: categoria.descripcion,
@@ -150,6 +157,122 @@
 			opciones.push(tipoActual);
 		}
 		return opciones;
+	}
+
+	/* ---------------- Fotos adicionales y tonos ---------------- */
+
+	let productoEditandoMedios = $state<Producto | null>(null);
+	let galeriaEdicion = $state<string[]>([]);
+	let tonosEdicion = $state<Tono[]>([]);
+	let subiendoMedios = $state(false);
+	let guardandoMedios = $state(false);
+	let progresoMedios = $state("");
+	let inputGaleria = $state<HTMLInputElement | null>(null);
+	let inputTono = $state<HTMLInputElement | null>(null);
+
+	function abrirMedios(producto: Producto) {
+		productoEditandoMedios = producto;
+		galeriaEdicion = [...producto.imagenes];
+		tonosEdicion = producto.tonos.map((tono) => ({ ...tono }));
+		progresoMedios = "";
+		error = null;
+	}
+
+	function cerrarMedios() {
+		productoEditandoMedios = null;
+		galeriaEdicion = [];
+		tonosEdicion = [];
+		if (inputGaleria) inputGaleria.value = "";
+		if (inputTono) inputTono.value = "";
+	}
+
+	async function subirAGaleria(evento: Event) {
+		const archivos = Array.from(
+			(evento.target as HTMLInputElement).files ?? []
+		);
+		if (archivos.length === 0) return;
+
+		subiendoMedios = true;
+		error = null;
+
+		try {
+			for (const [indice, archivo] of archivos.entries()) {
+				progresoMedios = `Subiendo ${indice + 1} de ${archivos.length}...`;
+				galeriaEdicion = [
+					...galeriaEdicion,
+					await subirImagenProducto(archivo)
+				];
+			}
+		} catch (err) {
+			error =
+				err instanceof Error ? err.message : "No se pudo subir la foto.";
+		} finally {
+			subiendoMedios = false;
+			progresoMedios = "";
+			if (inputGaleria) inputGaleria.value = "";
+		}
+	}
+
+	async function subirTono(evento: Event) {
+		const archivo = (evento.target as HTMLInputElement).files?.[0];
+		if (!archivo) return;
+
+		subiendoMedios = true;
+		error = null;
+
+		try {
+			progresoMedios = "Subiendo la foto del tono...";
+			const url = await subirImagenProducto(archivo);
+			tonosEdicion = [
+				...tonosEdicion,
+				{ nombre: `Tono ${tonosEdicion.length + 1}`, color: "", imagen: url }
+			];
+		} catch (err) {
+			error =
+				err instanceof Error ? err.message : "No se pudo subir el tono.";
+		} finally {
+			subiendoMedios = false;
+			progresoMedios = "";
+			if (inputTono) inputTono.value = "";
+		}
+	}
+
+	function quitarDeGaleria(url: string) {
+		galeriaEdicion = galeriaEdicion.filter((imagen) => imagen !== url);
+	}
+
+	function quitarTono(indice: number) {
+		tonosEdicion = tonosEdicion.filter((_, i) => i !== indice);
+	}
+
+	async function guardarMedios() {
+		const producto = productoEditandoMedios;
+		if (!producto) return;
+
+		guardandoMedios = true;
+		error = null;
+
+		try {
+			await actualizarProducto(producto.id, {
+				imagenes: [...galeriaEdicion],
+				// Un tono sin nombre confundiría al comprador, así que se
+				// le pone uno por defecto antes de guardar.
+				tonos: tonosEdicion.map((tono, indice) => ({
+					nombre: tono.nombre.trim() || `Tono ${indice + 1}`,
+					color: tono.color.trim(),
+					imagen: tono.imagen
+				}))
+			});
+
+			cerrarMedios();
+		} catch (err) {
+			error =
+				err instanceof Error
+					? err.message
+					: "No se pudieron guardar las fotos.";
+		} finally {
+			guardandoMedios = false;
+		}
 	}
 
 	/** Categorías de un producto, contando las pendientes de guardar. */
@@ -254,6 +377,10 @@
 				descripcion: formulario.descripcion.trim(),
 				especificacion: formulario.especificacion.trim(),
 				imagen: urlImagen,
+				// Las fotos adicionales y los tonos se agregan después,
+				// desde el botón "Fotos y tonos" de cada producto.
+				imagenes: [],
+				tonos: [],
 				precio: Number(formulario.precio) || 0,
 				stock: Number(formulario.stock) || 0,
 				popular: formulario.popular,
@@ -354,8 +481,30 @@
 			}
 
 			if (categoriaEditandoId) {
+				const nombreNuevo = formularioCategoria.nombre.trim();
+
+				// Si le cambiaron el nombre, hay que actualizar también
+				// todos los productos que la usaban: guardan la categoría
+				// por su nombre, no por su id.
+				if (nombreNuevo !== nombreCategoriaOriginal) {
+					const migrados = await renombrarCategoria(
+						categoriaEditandoId,
+						nombreCategoriaOriginal,
+						nombreNuevo
+					);
+
+					avisoCategoria =
+						migrados > 0
+							? `Categoría renombrada. Se actualizaron ${migrados} producto${migrados === 1 ? "" : "s"}.`
+							: "Categoría renombrada.";
+
+					setTimeout(() => {
+						avisoCategoria = "";
+					}, 5000);
+				}
+
 				await actualizarCategoria(categoriaEditandoId, {
-					nombre: formularioCategoria.nombre.trim(),
+					nombre: nombreNuevo,
 					descripcion: formularioCategoria.descripcion.trim(),
 					imagen: imagenFinal
 				});
@@ -607,6 +756,14 @@
 		</div>
 
 		<form onsubmit={manejarGuardarCategoria} class="grid gap-4 md:grid-cols-2">
+			{#if avisoCategoria}
+				<div
+					class="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700 md:col-span-2"
+				>
+					{avisoCategoria}
+				</div>
+			{/if}
+
 			<div class="flex flex-col gap-1 md:col-span-2">
 				<label for="categoria-nombre" class="text-sm font-semibold text-slate-600">
 					Nombre de la categoría
@@ -615,9 +772,15 @@
 					id="categoria-nombre"
 					type="text"
 					bind:value={formularioCategoria.nombre}
-					disabled={Boolean(categoriaEditandoId)}
-					class="rounded-lg border border-slate-200 bg-white px-3 py-2 disabled:cursor-not-allowed disabled:bg-slate-100"
+					class="rounded-lg border border-slate-200 bg-white px-3 py-2"
 				/>
+
+				{#if categoriaEditandoId && formularioCategoria.nombre.trim() !== nombreCategoriaOriginal}
+					<p class="text-xs text-amber-700">
+						Al guardar, los productos que están en «{nombreCategoriaOriginal}»
+						pasarán a «{formularioCategoria.nombre.trim()}».
+					</p>
+				{/if}
 			</div>
 
 			<div class="flex flex-col gap-1 md:col-span-2">
@@ -881,6 +1044,16 @@
 									<div class="flex items-center gap-2">
 										<button
 											type="button"
+											onclick={() => abrirMedios(producto)}
+											class="whitespace-nowrap rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 transition hover:bg-sky-100"
+										>
+											Fotos y tonos
+											{#if producto.imagenes.length || producto.tonos.length}
+												({producto.imagenes.length + producto.tonos.length})
+											{/if}
+										</button>
+										<button
+											type="button"
 											onclick={() =>
 												manejarGuardarProducto(producto.id)}
 											disabled={!cambiosPorGuardar[producto.id]}
@@ -910,3 +1083,210 @@
 		{/if}
 	</div>
 </section>
+
+{#if productoEditandoMedios}
+	<div
+		class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4 backdrop-blur-sm"
+	>
+		<div class="my-8 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
+			<div class="flex items-start justify-between gap-3">
+				<div>
+					<p class="font-Manrope text-xl text-slate-700">
+						Fotos y tonos
+					</p>
+					<p class="text-sm text-slate-500">
+						{productoEditandoMedios.Nombre}
+					</p>
+				</div>
+
+				<button
+					type="button"
+					onclick={cerrarMedios}
+					aria-label="Cerrar"
+					class="text-slate-400 transition hover:text-slate-600"
+				>
+					<Icon icon="material-symbols:close-rounded" width="22" />
+				</button>
+			</div>
+
+			<!-- Foto principal -->
+			<div class="mt-5 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+				<img
+					src={productoEditandoMedios.imagen}
+					alt=""
+					class="h-16 w-16 rounded-lg object-cover"
+				/>
+				<div>
+					<p class="text-sm font-semibold text-slate-700">
+						Foto principal
+					</p>
+					<p class="text-xs text-slate-500">
+						Es la que se ve en el catálogo y al compartir el link.
+					</p>
+				</div>
+			</div>
+
+			<!-- Galería -->
+			<div class="mt-6">
+				<p class="text-sm font-semibold text-slate-600">
+					Fotos adicionales
+				</p>
+				<p class="mt-1 text-xs text-slate-500">
+					El cliente pasa entre ellas con las flechas en la ficha del
+					producto.
+				</p>
+
+				{#if galeriaEdicion.length > 0}
+					<div class="mt-3 flex flex-wrap gap-2">
+						{#each galeriaEdicion as imagen (imagen)}
+							<div class="relative">
+								<img
+									src={imagen}
+									alt=""
+									class="h-20 w-20 rounded-lg object-cover ring-1 ring-slate-200"
+								/>
+								<button
+									type="button"
+									aria-label="Quitar esta foto"
+									onclick={() => quitarDeGaleria(imagen)}
+									class="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow transition hover:bg-red-600"
+								>
+									<Icon
+										icon="material-symbols:close-rounded"
+										width="15"
+									/>
+								</button>
+							</div>
+						{/each}
+					</div>
+				{/if}
+
+				<input
+					type="file"
+					accept="image/*"
+					multiple
+					bind:this={inputGaleria}
+					onchange={subirAGaleria}
+					disabled={subiendoMedios}
+					class="mt-3 text-sm"
+				/>
+			</div>
+
+			<!-- Tonos -->
+			<div class="mt-8">
+				<p class="text-sm font-semibold text-slate-600">
+					Tonos o colores disponibles
+				</p>
+				<p class="mt-1 text-xs text-slate-500">
+					Aparecen como círculos debajo de la foto. Al tocar uno, se
+					muestra la foto de ese tono.
+				</p>
+
+				{#if tonosEdicion.length > 0}
+					<div class="mt-3 flex flex-col gap-3">
+						{#each tonosEdicion as tono, indice (tono.imagen)}
+							<div
+								class="flex items-center gap-3 rounded-xl border border-slate-200 p-3"
+							>
+								<img
+									src={tono.imagen}
+									alt=""
+									class="h-14 w-14 shrink-0 rounded-lg object-cover"
+								/>
+
+								<div class="flex min-w-0 flex-1 flex-col gap-2">
+									<input
+										type="text"
+										bind:value={tonosEdicion[indice].nombre}
+										placeholder="Nombre del tono"
+										class="rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+									/>
+
+									<label
+										class="flex items-center gap-2 text-xs text-slate-500"
+									>
+										Color del círculo
+										<input
+											type="color"
+											value={tono.color || "#cccccc"}
+											onchange={(evento) =>
+												(tonosEdicion[indice].color =
+													evento.currentTarget.value)}
+											class="h-7 w-12 rounded border border-slate-200"
+										/>
+										{#if tono.color}
+											<button
+												type="button"
+												onclick={() =>
+													(tonosEdicion[indice].color = "")}
+												class="text-slate-400 underline hover:text-slate-600"
+											>
+												usar la foto
+											</button>
+										{:else}
+											<span class="text-slate-400">
+												(sin color: se usa la foto)
+											</span>
+										{/if}
+									</label>
+								</div>
+
+								<button
+									type="button"
+									aria-label="Quitar este tono"
+									onclick={() => quitarTono(indice)}
+									class="shrink-0 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-100"
+								>
+									Quitar
+								</button>
+							</div>
+						{/each}
+					</div>
+				{/if}
+
+				<input
+					type="file"
+					accept="image/*"
+					bind:this={inputTono}
+					onchange={subirTono}
+					disabled={subiendoMedios}
+					class="mt-3 text-sm"
+				/>
+				<p class="mt-1 text-xs text-slate-400">
+					Sube la foto del producto en ese tono.
+				</p>
+			</div>
+
+			{#if progresoMedios}
+				<p class="mt-4 text-sm text-slate-500">{progresoMedios}</p>
+			{/if}
+
+			{#if error}
+				<div
+					class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
+				>
+					{error}
+				</div>
+			{/if}
+
+			<div class="mt-6 flex justify-end gap-3">
+				<button
+					type="button"
+					onclick={cerrarMedios}
+					class="h-11 rounded-full px-5 font-semibold text-slate-600 transition hover:bg-slate-100"
+				>
+					Cancelar
+				</button>
+
+				<button
+					type="button"
+					onclick={guardarMedios}
+					disabled={guardandoMedios || subiendoMedios}
+					class="h-11 rounded-full bg-slate-700 px-6 font-semibold text-white transition hover:bg-slate-600 disabled:opacity-60"
+				>
+					{guardandoMedios ? "Guardando..." : "Guardar"}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}

@@ -27,8 +27,10 @@
 
 	import {
 		calcularDescuentoUSD,
+		calcularDescuentoTotalUSD,
 		registrarUsoCupon,
 		validarCupon,
+		MAXIMO_CUPONES,
 		type Cupon
 	} from '$lib/cupones';
 
@@ -219,7 +221,7 @@
 	let numeroPedido = $state('');
 
 	let codigoCupon = $state('');
-	let cuponAplicado = $state<Cupon | null>(null);
+	let cuponesAplicados = $state<Cupon[]>([]);
 	let errorCupon = $state('');
 	let validandoCupon = $state(false);
 
@@ -287,15 +289,25 @@
 		}
 	];
 
-	// Si el comprador cambia a un método donde el cupón aplicado ya no
-	// vale, se quita el descuento y se le avisa.
+	// Si el comprador cambia a un método donde alguno de los cupones ya
+	// no vale, se quita solo ese y se le avisa.
 	$effect(() => {
-		const cupon = cuponAplicado;
+		const invalidos = cuponesAplicados.filter(
+			(cupon) => !cupon.metodosPago.includes(metodoPago)
+		);
 
-		if (cupon && !cupon.metodosPago.includes(metodoPago)) {
-			cuponAplicado = null;
-			errorCupon = `El cupón ${cupon.codigo} no aplica para el método de pago que elegiste. Se quitó el descuento.`;
-		}
+		if (invalidos.length === 0) return;
+
+		cuponesAplicados = cuponesAplicados.filter((cupon) =>
+			cupon.metodosPago.includes(metodoPago)
+		);
+
+		const codigos = invalidos.map((cupon) => cupon.codigo).join(' y ');
+
+		errorCupon =
+			invalidos.length === 1
+				? `El cupón ${codigos} no aplica para el método de pago que elegiste. Se quitó el descuento.`
+				: `Los cupones ${codigos} no aplican para el método de pago que elegiste. Se quitaron los descuentos.`;
 	});
 
 	async function aplicarCupon() {
@@ -303,31 +315,44 @@
 		validandoCupon = true;
 
 		try {
-			const resultado = await validarCupon(codigoCupon, metodoPago);
+			const resultado = await validarCupon(
+				codigoCupon,
+				metodoPago,
+				cuponesAplicados
+			);
 
 			if (!resultado.valido) {
 				errorCupon = resultado.error;
 				return;
 			}
 
-			cuponAplicado = resultado.cupon;
-			codigoCupon = resultado.cupon.codigo;
+			cuponesAplicados = [...cuponesAplicados, resultado.cupon];
+			codigoCupon = '';
 		} finally {
 			validandoCupon = false;
 		}
 	}
 
-	function quitarCupon() {
-		cuponAplicado = null;
-		codigoCupon = '';
+	function quitarCupon(codigo: string) {
+		cuponesAplicados = cuponesAplicados.filter(
+			(cupon) => cupon.codigo !== codigo
+		);
 		errorCupon = '';
 	}
 
-	const descuentoUSD = $derived(
-		cuponAplicado
-			? calcularDescuentoUSD(cuponAplicado, $totalCarritoUSD)
-			: 0
+	// Solo se puede sumar otro cupón si todavía hay espacio y alguno de
+	// los aplicados es combinable (o no hay ninguno aún).
+	const puedeSumarOtroCupon = $derived(
+		cuponesAplicados.length === 0 ||
+			(cuponesAplicados.length < MAXIMO_CUPONES &&
+				cuponesAplicados.some((cupon) => cupon.combinable))
 	);
+
+	const descuentoUSD = $derived(
+		calcularDescuentoTotalUSD(cuponesAplicados, $totalCarritoUSD)
+	);
+
+	const hayCupones = $derived(cuponesAplicados.length > 0);
 
 	const totalConDescuentoUSD = $derived(
 		Math.max(0, $totalCarritoUSD - descuentoUSD)
@@ -345,7 +370,7 @@
 	// descuenta del total en USD y el monto en bolívares queda como
 	// referencia del precio completo.
 	const descuentoAplicaEnVES = $derived(
-		Boolean(cuponAplicado) && metodoPago === 'pago_movil'
+		cuponesAplicados.length > 0 && metodoPago === 'pago_movil'
 	);
 
 	const totalVES = $derived(
@@ -481,7 +506,11 @@ const totalUSDRedondeado =
 const totalVESRedondeado =
 	Math.round(totalVES * 100) / 100;
 
-const cuponFinal = cuponAplicado ? cuponAplicado.codigo : null;
+// Si hay dos cupones se guardan juntos en el mismo campo, separados
+// por " + ", para que el pedido y el correo muestren ambos.
+const codigosCupones = cuponesAplicados.map((cupon) => cupon.codigo);
+const cuponFinal =
+	codigosCupones.length > 0 ? codigosCupones.join(' + ') : null;
 
 const entregaFinal = {
 	direccion: direccion.trim(),
@@ -518,16 +547,16 @@ const resultado = await crearPedido({
 
 numeroPedido = resultado.numeroPedido;
 
-// Se cuenta el uso del cupón después de que el pedido quedó guardado,
-// para no gastar un uso si la compra falla. Si este contador fallara,
-// el pedido igual es válido, así que el error no se le muestra al
-// comprador.
-if (cuponFinal) {
+// Se cuenta el uso de cada cupón después de que el pedido quedó
+// guardado, para no gastar un uso si la compra falla. Si este contador
+// fallara, el pedido igual es válido, así que el error no se le muestra
+// al comprador.
+for (const codigo of codigosCupones) {
 	try {
-		await registrarUsoCupon(cuponFinal);
+		await registrarUsoCupon(codigo);
 	} catch (errorCupon) {
 		console.error(
-			'El pedido se guardó, pero no se pudo contar el uso del cupón:',
+			`El pedido se guardó, pero no se pudo contar el uso del cupón ${codigo}:`,
 			errorCupon
 		);
 	}
@@ -680,12 +709,17 @@ carrito.vaciar();
 				</button>
 			</section>
 		{:else}
+			<!-- min-w-0 en el grid y en sus hijos: por defecto una celda de
+			grid no se encoge por debajo del ancho de su contenido, así que
+			un solo elemento ancho (el campo de archivo del comprobante)
+			estiraba toda la columna y obligaba a desplazar la pantalla
+			hacia los lados en el celular. -->
 			<div
-				class="grid gap-8 lg:grid-cols-[1fr_380px]"
+				class="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_380px]"
 			>
 				<form
 					onsubmit={finalizarCompra}
-					class="rounded-3xl bg-white p-6 shadow-sm sm:p-8"
+					class="min-w-0 rounded-3xl bg-white p-6 shadow-sm sm:p-8"
 				>
 					<p
 						class="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600"
@@ -937,39 +971,52 @@ carrito.vaciar();
 							en qué métodos de pago aplica.
 						</p>
 
-						{#if cuponAplicado}
+						{#each cuponesAplicados as cupon (cupon.codigo)}
 							<div
 								class="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-sky-300 bg-sky-50 p-4"
 							>
-								<div class="flex items-center gap-3">
+								<div class="flex min-w-0 items-center gap-3">
 									<Icon
 										icon="material-symbols:local-offer-outline"
 										width="24"
-										class="text-sky-700"
+										class="shrink-0 text-sky-700"
 									/>
-									<div>
+									<div class="min-w-0">
 										<p class="font-semibold text-sky-800">
-											Cupón {cuponAplicado.codigo} aplicado
+											Cupón {cupon.codigo} aplicado
 										</p>
 										<p class="text-sm text-sky-700">
-											{cuponAplicado.tipo === 'porcentaje'
-												? `-${cuponAplicado.valor}% sobre el total`
-												: 'Descuento aplicado'}
-											({formatearUSD(descuentoUSD)})
+											{cupon.tipo === 'porcentaje'
+												? `-${cupon.valor}% sobre el total`
+												: `-${formatearUSD(cupon.valor)} sobre el total`}
 										</p>
 									</div>
 								</div>
 
 								<button
 									type="button"
-									onclick={quitarCupon}
-									class="text-sm font-semibold text-sky-700 hover:underline"
+									onclick={() => quitarCupon(cupon.codigo)}
+									class="shrink-0 text-sm font-semibold text-sky-700 hover:underline"
 								>
 									Quitar
 								</button>
 							</div>
-						{:else}
-							<div class="mt-4 flex flex-col gap-2 sm:flex-row">
+						{/each}
+
+						{#if cuponesAplicados.length > 1}
+							<p class="mt-3 text-sm font-semibold text-sky-700">
+								Descuento total: {formatearUSD(descuentoUSD)}
+							</p>
+						{/if}
+
+						{#if puedeSumarOtroCupon}
+							{#if cuponesAplicados.length > 0}
+								<p class="mt-4 text-sm text-slate-500">
+									Puedes sumar un cupón más.
+								</p>
+							{/if}
+
+							<div class="mt-3 flex flex-col gap-2 sm:flex-row">
 								<input
 									bind:value={codigoCupon}
 									placeholder="Código de cupón"
@@ -1006,19 +1053,22 @@ carrito.vaciar();
 							referencia/confirmación — con uno de los dos alcanza.
 						</p>
 
-						<div class="mt-5 grid gap-4 sm:grid-cols-2">
-							<div class="flex flex-col gap-1">
+						<div class="mt-5 grid min-w-0 gap-4 sm:grid-cols-2">
+							<div class="flex min-w-0 flex-col gap-1">
 								<span class="text-sm text-slate-600">
 									Captura del comprobante (opcional)
 								</span>
 
+								<!-- w-full es imprescindible acá: un campo de
+								archivo trae un ancho propio grande y sin esto
+								desbordaba la pantalla en el celular. -->
 								<input
 									id="comprobante"
 									type="file"
 									accept="image/*,application/pdf"
 									bind:this={inputComprobante}
 									onchange={manejarSeleccionComprobante}
-									class="rounded-xl border border-slate-200 px-3 py-2 text-sm file:mr-3 file:rounded-full file:border-0 file:bg-slate-200 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-300"
+									class="w-full max-w-full rounded-xl border border-slate-200 px-3 py-2 text-sm file:mr-3 file:rounded-full file:border-0 file:bg-slate-200 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-300"
 								/>
 
 								{#if comprobanteArchivo}
@@ -1073,7 +1123,7 @@ carrito.vaciar();
 				</form>
 
 				<aside
-					class="h-fit rounded-3xl bg-white p-6 shadow-sm lg:sticky lg:top-28"
+					class="h-fit min-w-0 rounded-3xl bg-white p-6 shadow-sm lg:sticky lg:top-28"
 				>
 					<h2
 						class="font-Manrope text-2xl text-slate-700"
@@ -1129,24 +1179,34 @@ carrito.vaciar();
 								Subtotal USD
 							</span>
 
-							<span class:text-slate-400={cuponAplicado} class:line-through={cuponAplicado}>
+							<span
+								class:text-slate-400={hayCupones}
+								class:line-through={hayCupones}
+							>
 								{formatearUSD(
 									$totalCarritoUSD
 								)}
 							</span>
 						</div>
 
-						{#if cuponAplicado}
-							<div class="flex justify-between text-sky-700">
-								<span>
-									Descuento ({cuponAplicado.codigo})
+						<!-- Cada cupón se lista aparte, para que el comprador
+						vea de dónde sale cada descuento. -->
+						{#each cuponesAplicados as cupon (cupon.codigo)}
+							<div class="flex justify-between gap-2 text-sky-700">
+								<span class="min-w-0 truncate">
+									Descuento ({cupon.codigo})
 								</span>
 
-								<span>
-									-{formatearUSD(descuentoUSD)}
+								<span class="shrink-0">
+									-{formatearUSD(
+										calcularDescuentoUSD(
+											cupon,
+											$totalCarritoUSD
+										)
+									)}
 								</span>
 							</div>
-						{/if}
+						{/each}
 
 						<div
 							class="flex justify-between"
@@ -1174,11 +1234,11 @@ carrito.vaciar();
 							descuento sí se refleja aquí, así que este es el
 							monto real a pagar. -->
 							<strong
-								class:text-slate-400={cuponAplicado &&
+								class:text-slate-400={hayCupones &&
 									!descuentoAplicaEnVES}
-								class:line-through={cuponAplicado &&
+								class:line-through={hayCupones &&
 									!descuentoAplicaEnVES}
-								class:font-normal={cuponAplicado &&
+								class:font-normal={hayCupones &&
 									!descuentoAplicaEnVES}
 							>
 								{totalVES !== null

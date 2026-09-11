@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from "$app/state";
 	import { browser } from "$app/environment";
-	import { fly } from "svelte/transition";
+	import { fade, fly } from "svelte/transition";
+	import Icon from "@iconify/svelte";
 	import { cubicOut } from "svelte/easing";
 	import type { ScrollTrigger } from "gsap/ScrollTrigger";
 	import {
@@ -14,6 +15,7 @@
 	import Tarjeta from "$lib/components/tarjeta.svelte";
 	import {
 		categoriasDeProducto,
+		galeriaDeProducto,
 		productoEnCategoria,
 	} from "$lib/inventario";
 
@@ -100,6 +102,44 @@
 		}, 2500);
 	}
 
+	/* ---------------- Galería de fotos y tonos ---------------- */
+
+	// Todas las fotos: la principal, las de la galería y las de cada
+	// tono, sin repetir. Es por donde se mueven las flechas.
+	const galeria = $derived(product ? galeriaDeProducto(product) : []);
+	const tonos = $derived(product?.tonos ?? []);
+
+	let indiceImagen = $state(0);
+
+	// Al cambiar de producto se vuelve a la primera foto.
+	$effect(() => {
+		page.params.id;
+		indiceImagen = 0;
+	});
+
+	const imagenActual = $derived(
+		galeria[Math.min(indiceImagen, galeria.length - 1)] ??
+			product?.imagen ??
+			"",
+	);
+
+	function moverGaleria(direccion: -1 | 1) {
+		if (galeria.length === 0) return;
+
+		// Da la vuelta al llegar al final.
+		indiceImagen =
+			(indiceImagen + direccion + galeria.length) % galeria.length;
+	}
+
+	function elegirTono(tono: { imagen: string }) {
+		const indice = galeria.indexOf(tono.imagen);
+		if (indice >= 0) indiceImagen = indice;
+	}
+
+	const tonoActivo = $derived(
+		tonos.find((tono) => tono.imagen === imagenActual) ?? null,
+	);
+
 	let zoomActivo = $state(false);
 	let posicionX = $state(50);
 	let posicionY = $state(50);
@@ -178,6 +218,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>{product ? `${product.Nombre} · Moon Beauty` : "Producto | Moon Beauty"}</title>
+</svelte:head>
+
 <section class="bg-gray-50">
 	{#if product}
 	{#key product.id}
@@ -190,21 +234,109 @@
 		2xl:max-w-[1600px]"
 		>
 			<div
-				role="presentation"
-				class="relative aspect-4/5 w-full flex-1 cursor-zoom-in overflow-hidden rounded-3xl hover:border hover:border-black/40 sm:aspect-4/3 lg:aspect-auto lg:h-180"
-				onmousemove={moverZoom}
-				onmouseenter={activarZoom}
-				onmouseleave={desactivarZoom}
+				class="w-full flex-1"
 				in:fly={{ y: 24, duration: 600, easing: cubicOut }}
 			>
-				<img
-					src={product.imagen}
-					alt=""
-					draggable="false"
-					class="h-full w-full select-none object-cover transition-transform duration-200 ease-out"
-					class:scale-[2.5]={zoomActivo}
-					style:transform-origin={`${posicionX}% ${posicionY}%`}
-				/>
+				<div
+					role="presentation"
+					class="relative aspect-4/5 w-full cursor-zoom-in overflow-hidden rounded-3xl hover:border hover:border-black/40 sm:aspect-4/3 lg:aspect-auto lg:h-180"
+					onmousemove={moverZoom}
+					onmouseenter={activarZoom}
+					onmouseleave={desactivarZoom}
+				>
+					{#key imagenActual}
+						<img
+							src={imagenActual}
+							alt={product.Nombre}
+							draggable="false"
+							in:fade={{ duration: 220 }}
+							class="absolute inset-0 h-full w-full select-none object-cover transition-transform duration-200 ease-out"
+							class:scale-[2.5]={zoomActivo}
+							style:transform-origin={`${posicionX}% ${posicionY}%`}
+						/>
+					{/key}
+
+					{#if galeria.length > 1}
+						<button
+							type="button"
+							aria-label="Foto anterior"
+							onclick={() => moverGaleria(-1)}
+							class="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg transition hover:scale-110 hover:bg-white active:scale-95"
+						>
+							<Icon
+								icon="material-symbols:chevron-left-rounded"
+								width="28"
+							/>
+						</button>
+
+						<button
+							type="button"
+							aria-label="Foto siguiente"
+							onclick={() => moverGaleria(1)}
+							class="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg transition hover:scale-110 hover:bg-white active:scale-95"
+						>
+							<Icon
+								icon="material-symbols:chevron-right-rounded"
+								width="28"
+							/>
+						</button>
+
+						<div
+							class="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-1.5"
+						>
+							{#each galeria as _, indice}
+								<button
+									type="button"
+									aria-label="Ver foto {indice + 1}"
+									onclick={() => (indiceImagen = indice)}
+									class="h-2 w-2 rounded-full transition {indice ===
+									indiceImagen
+										? 'bg-white'
+										: 'bg-white/50 hover:bg-white/80'}"
+								></button>
+							{/each}
+						</div>
+					{/if}
+				</div>
+
+				{#if tonos.length > 0}
+					<div class="mt-5">
+						<p class="text-sm font-semibold text-slate-600">
+							Tonos disponibles{tonoActivo
+								? `: ${tonoActivo.nombre}`
+								: ""}
+						</p>
+
+						<div class="mt-3 flex flex-wrap gap-3">
+							{#each tonos as tono (tono.imagen)}
+								{@const activo = tonoActivo === tono}
+								<button
+									type="button"
+									onclick={() => elegirTono(tono)}
+									title={tono.nombre}
+									aria-label="Ver el tono {tono.nombre}"
+									aria-pressed={activo}
+									class="h-11 w-11 overflow-hidden rounded-full ring-2 ring-offset-2 transition hover:scale-110 {activo
+										? 'ring-slate-700'
+										: 'ring-slate-200'}"
+								>
+									{#if tono.color}
+										<span
+											class="block h-full w-full"
+											style:background-color={tono.color}
+										></span>
+									{:else}
+										<img
+											src={tono.imagen}
+											alt=""
+											class="h-full w-full object-cover"
+										/>
+									{/if}
+								</button>
+							{/each}
+						</div>
+					</div>
+				{/if}
 			</div>
 
 			<div

@@ -33,6 +33,7 @@
 		valor: 20,
 		metodosPago: [...METODOS_PAGO_EN_DIVISAS] as MetodoPago[],
 		activo: true,
+		combinable: false,
 		limiteUsos: "" as number | "",
 		fechaVencimiento: "",
 	};
@@ -68,6 +69,7 @@
 			valor: cupon.valor,
 			metodosPago: [...cupon.metodosPago],
 			activo: cupon.activo,
+			combinable: cupon.combinable,
 			limiteUsos: cupon.limiteUsos ?? "",
 			fechaVencimiento: cupon.fechaVencimiento
 				? new Date(cupon.fechaVencimiento).toISOString().slice(0, 10)
@@ -104,6 +106,7 @@
 				valor: Number(formulario.valor),
 				metodosPago: formulario.metodosPago,
 				activo: formulario.activo,
+				combinable: formulario.combinable,
 				limiteUsos:
 					formulario.limiteUsos === "" ||
 					Number(formulario.limiteUsos) <= 0
@@ -429,6 +432,23 @@
 			Cupón activo
 		</label>
 
+		<label class="mt-3 flex items-start gap-2 text-sm text-slate-600">
+			<input
+				type="checkbox"
+				bind:checked={formulario.combinable}
+				class="mt-0.5 h-4 w-4"
+			/>
+			<span>
+				Se puede combinar con otro cupón
+				<span class="block text-xs text-slate-400">
+					Para juntar dos cupones en un pedido, al menos uno de los
+					dos debe tener esto marcado. Así se pueden sumar
+					promociones a tu cupón general, pero no dos promociones
+					entre sí.
+				</span>
+			</span>
+		</label>
+
 		<div class="mt-6 flex flex-wrap gap-3">
 			<button
 				type="submit"
@@ -527,6 +547,11 @@
 											new Date(cupon.fechaVencimiento),
 										)
 									: "No vence"}
+							</li>
+							<li>
+								{cupon.combinable
+									? "Se puede combinar con otro cupón"
+									: "No se combina con otros cupones"}
 							</li>
 							<li>
 								Métodos: {cupon.metodosPago

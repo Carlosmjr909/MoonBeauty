@@ -1,4 +1,9 @@
 import { adminDb } from '$lib/server/firebase-admin';
+import {
+	normalizarImagenes,
+	normalizarTonos,
+	type Tono
+} from '$lib/inventario';
 
 export type ProductoPublico = {
 	id: string;
@@ -11,6 +16,10 @@ export type ProductoPublico = {
 	descripcion: string;
 	especificacion: string;
 	imagen: string;
+	/** Fotos adicionales de la galería. */
+	imagenes: string[];
+	/** Tonos disponibles, cada uno con su foto. */
+	tonos: Tono[];
 	precio: number;
 	stock: number;
 	popular: boolean;
@@ -49,6 +58,8 @@ export async function obtenerProductosPublicos(): Promise<ProductoPublico[]> {
 			descripcion: String(datos.descripcion ?? ''),
 			especificacion: String(datos.especificacion ?? ''),
 			imagen: String(datos.imagen ?? ''),
+			imagenes: normalizarImagenes(datos.imagenes),
+			tonos: normalizarTonos(datos.tonos),
 			precio: Number(datos.precio ?? 0),
 			stock: Number(datos.stock ?? 0),
 			popular: Boolean(datos.popular ?? false),

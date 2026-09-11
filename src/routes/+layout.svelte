@@ -1,6 +1,5 @@
 <script lang="ts">
 	import "./layout.css";
-	import favicon from "$lib/assets/favicon.svg";
 	import Icon from "@iconify/svelte";
 	import { cantidadCarrito } from "$lib/cart";
 	import { usuario, autenticacionCargando } from "$lib/auth";
@@ -22,6 +21,7 @@
 		CONFIGURACION_CONTACTO_POR_DEFECTO,
 		type ConfiguracionContacto,
 	} from "$lib/configuracion";
+	import { SEO_POR_DEFECTO, SITIO_URL, type DatosSeo } from "$lib/seo";
 
 	injectAnalytics({ mode: dev ? "development" : "production" });
 
@@ -54,6 +54,45 @@
 			: Array.isArray(currentLayoutData?.productos)
 				? (currentLayoutData.productos as Producto[])
 				: [];
+	});
+
+	// Vista previa al compartir: cada página puede aportar sus propios
+	// datos devolviendo "seo" desde su load; si no, se usan los del sitio.
+	const seo = $derived({
+		...SEO_POR_DEFECTO,
+		...((page.data as { seo?: Partial<DatosSeo> })?.seo ?? {})
+	});
+
+	// Siempre el dominio real, para que las vistas previas no apunten a
+	// una URL de preview de Vercel si se comparte desde una.
+	const urlCanonica = $derived(`${SITIO_URL}${page.url.pathname}`);
+
+	// Datos estructurados: le dicen a Google cuál es el nombre, el logo
+	// oficial y las redes de la tienda. Es lo que usa para mostrar el
+	// logo de la marca en los resultados de búsqueda.
+	const datosOrganizacion = $derived.by(() => {
+		const json = JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'OnlineStore',
+			name: 'Moon Beauty',
+			url: SITIO_URL,
+			logo: `${SITIO_URL}/favicon-512.png`,
+			image: `${SITIO_URL}/og-imagen.jpg`,
+			description: SEO_POR_DEFECTO.descripcion,
+			email: contacto.correo,
+			telephone: `+${contacto.whatsappNumero}`,
+			address: {
+				'@type': 'PostalAddress',
+				addressLocality: 'Valencia',
+				addressRegion: 'Carabobo',
+				addressCountry: 'VE'
+			},
+			sameAs: [contacto.instagramUrl].filter(Boolean)
+		});
+
+		// Se escapa "<" para que un texto del panel no pueda cerrar la
+		// etiqueta <script> e inyectar contenido.
+		return json.replaceAll('<', '\\u003c');
 	});
 
 	// Datos de contacto del pie de página, administrables desde el panel.
@@ -206,7 +245,40 @@
 	}
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head>
+	<!-- Los iconos se referencian por URL fija, no importados: Vite
+	incrusta los archivos chicos como "data:" y Google necesita una URL
+	real y rastreable para poder mostrar el icono junto al resultado. -->
+	<link rel="icon" href="/favicon.ico" sizes="48x48" />
+	<link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192" />
+	<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+	<!-- El <title> lo pone cada página, así no se duplica. -->
+	<meta name="description" content={seo.descripcion} />
+	<link rel="canonical" href={urlCanonica} />
+
+	<!-- Vista previa al compartir el link (WhatsApp, Facebook, Instagram,
+	Telegram). Se declaran acá, en el layout, para que salgan una sola vez
+	en toda la app: cada página aporta sus datos desde su "load". -->
+	<meta property="og:type" content={seo.tipo} />
+	<meta property="og:site_name" content="Moon Beauty" />
+	<meta property="og:locale" content="es_VE" />
+	<meta property="og:title" content={seo.titulo} />
+	<meta property="og:description" content={seo.descripcion} />
+	<meta property="og:url" content={urlCanonica} />
+	<meta property="og:image" content={seo.imagen} />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
+	<meta property="og:image:alt" content={seo.titulo} />
+
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={seo.titulo} />
+	<meta name="twitter:description" content={seo.descripcion} />
+	<meta name="twitter:image" content={seo.imagen} />
+
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+	{@html `<script type="application/ld+json">${datosOrganizacion}</scr` + `ipt>`}
+</svelte:head>
 
 <div class="sticky top-0 z-50">
 	{#if bannerActivo && bannerTexto}

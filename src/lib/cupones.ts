@@ -30,12 +30,22 @@ export type Cupon = {
 	/** Métodos de pago en los que aplica. */
 	metodosPago: MetodoPago[];
 	activo: boolean;
+	/**
+	 * Si este cupón puede usarse junto a otro. Para combinar dos cupones
+	 * basta con que uno de los dos sea combinable: así se pueden sumar
+	 * promociones puntuales al cupón general, pero no dos promociones
+	 * entre sí.
+	 */
+	combinable: boolean;
 	/** Tope de usos; null significa ilimitado. */
 	limiteUsos: number | null;
 	usos: number;
 	/** Milisegundos desde epoch; null significa sin vencimiento. */
 	fechaVencimiento: number | null;
 };
+
+/** Máximo de cupones que se pueden aplicar a un mismo pedido. */
+export const MAXIMO_CUPONES = 2;
 
 export type NuevoCupon = Omit<Cupon, 'usos'>;
 
@@ -72,6 +82,7 @@ function convertirCupon(id: string, datos: Record<string, unknown>): Cupon {
 			? (datos.metodosPago as MetodoPago[])
 			: [],
 		activo: Boolean(datos.activo),
+		combinable: Boolean(datos.combinable ?? false),
 		limiteUsos:
 			limite === null || limite === undefined ? null : Number(limite),
 		usos: Number(datos.usos ?? 0),
@@ -142,6 +153,7 @@ export async function guardarCupon(cupon: NuevoCupon) {
 			valor: cupon.valor,
 			metodosPago: cupon.metodosPago,
 			activo: cupon.activo,
+			combinable: cupon.combinable,
 			limiteUsos: cupon.limiteUsos,
 			fechaVencimiento: cupon.fechaVencimiento
 				? Timestamp.fromMillis(cupon.fechaVencimiento)
@@ -171,12 +183,24 @@ export type ResultadoValidacion =
  */
 export async function validarCupon(
 	codigoIngresado: string,
-	metodoPago: MetodoPago
+	metodoPago: MetodoPago,
+	yaAplicados: Cupon[] = []
 ): Promise<ResultadoValidacion> {
 	const codigo = normalizarCodigo(codigoIngresado);
 
 	if (!codigo) {
 		return { valido: false, error: 'Ingresa un código de cupón.' };
+	}
+
+	if (yaAplicados.length >= MAXIMO_CUPONES) {
+		return {
+			valido: false,
+			error: `Solo puedes usar ${MAXIMO_CUPONES} cupones en el mismo pedido.`
+		};
+	}
+
+	if (yaAplicados.some((aplicado) => aplicado.codigo === codigo)) {
+		return { valido: false, error: 'Ese cupón ya está aplicado.' };
 	}
 
 	let snapshot;
@@ -218,7 +242,36 @@ export async function validarCupon(
 		};
 	}
 
+	// Para juntar dos cupones, al menos uno tiene que ser combinable.
+	const incompatible = yaAplicados.find(
+		(aplicado) => !aplicado.combinable && !cupon.combinable
+	);
+
+	if (incompatible) {
+		return {
+			valido: false,
+			error: `El cupón ${cupon.codigo} no se puede combinar con ${incompatible.codigo}.`
+		};
+	}
+
 	return { valido: true, cupon };
+}
+
+/** Suma el descuento de todos los cupones aplicados. */
+export function calcularDescuentoTotalUSD(
+	cupones: Cupon[],
+	totalUSD: number
+): number {
+	if (!Number.isFinite(totalUSD) || totalUSD <= 0) return 0;
+
+	// Cada cupón se calcula sobre el total original (no en cascada), que
+	// es lo que espera el comprador al ver "20% + $5".
+	const suma = cupones.reduce(
+		(acumulado, cupon) => acumulado + calcularDescuentoUSD(cupon, totalUSD),
+		0
+	);
+
+	return Math.round(Math.min(suma, totalUSD) * 100) / 100;
 }
 
 export function calcularDescuentoUSD(cupon: Cupon, totalUSD: number): number {
