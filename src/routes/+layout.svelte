@@ -236,14 +236,36 @@
 		});
 	});
 
-	// Popup de "crea tu cuenta": aparece en cualquier página (no solo en
-	// el checkout), a los 5s de entrar, mientras no haya una sesión real
-	// iniciada. Una sesión anónima de invitado (de una compra anterior)
-	// también cuenta como "currentUser" para Firebase, así que hay que
-	// descartarla explícitamente o el popup nunca se mostraría de nuevo
-	// una vez que alguien ya compró como invitado en este navegador.
-	onMount(() => {
-		if (auth.currentUser && !auth.currentUser.isAnonymous) return;
+	// Popup de "crea tu cuenta": aparece a los 5s, en cualquier página
+	// menos el checkout, y solo si no hay una sesión real iniciada.
+	//
+	// Va en un $effect y no en onMount porque Firebase restaura la sesión
+	// de forma asíncrona: al montar, "currentUser" todavía es null aunque
+	// la persona esté identificada. Leyéndolo una sola vez ahí, el aviso
+	// terminaba saliéndole a gente que ya tenía su cuenta abierta. Con el
+	// estado reactivo, además, si inicia sesión mientras el aviso está
+	// visible, se cierra solo.
+	//
+	// Una sesión anónima de invitado (de una compra anterior) también
+	// cuenta como "currentUser" para Firebase, así que hay que
+	// descartarla explícitamente o el aviso nunca volvería a mostrarse a
+	// quien ya compró como invitado en este navegador.
+	$effect(() => {
+		// En el checkout no se muestra: taparía el formulario justo
+		// cuando la persona está terminando su compra.
+		if (page.url.pathname.startsWith("/checkout")) {
+			mostrarPopupCuenta = false;
+			return;
+		}
+
+		// Mientras Firebase no termine de resolver la sesión, no se
+		// decide nada: este efecto se vuelve a ejecutar al saberlo.
+		if ($autenticacionCargando) return;
+
+		if ($usuario && !$usuario.isAnonymous) {
+			mostrarPopupCuenta = false;
+			return;
+		}
 
 		try {
 			if (sessionStorage.getItem("popupCuentaCerrado")) return;
