@@ -1,3 +1,15 @@
-# allow crawling everything by default
 User-agent: *
-Disallow:
+
+# El catálogo completo es público.
+Allow: /
+
+# Páginas privadas o sin sentido en un buscador: el panel, la cuenta
+# del cliente y los pasos de compra.
+Disallow: /admin
+Disallow: /account
+Disallow: /checkout
+Disallow: /login
+Disallow: /create_account
+Disallow: /forgot-password
+
+Sitemap: https://www.moonbeautyval.com/sitemap.xml

@@ -65,7 +65,20 @@
 
 	// Siempre el dominio real, para que las vistas previas no apunten a
 	// una URL de preview de Vercel si se comparte desde una.
-	const urlCanonica = $derived(`${SITIO_URL}${page.url.pathname}`);
+	//
+	// Se conserva "categoria" porque cada categoría es una página propia
+	// que vale la pena que Google indexe por separado. El resto de
+	// parámetros se descarta, para que un enlace con datos de campaña no
+	// se cuente como una página distinta.
+	const urlCanonica = $derived.by(() => {
+		const categoria = page.url.searchParams.get('categoria');
+
+		const base = `${SITIO_URL}${page.url.pathname}`;
+
+		return categoria
+			? `${base}?categoria=${encodeURIComponent(categoria)}`
+			: base;
+	});
 
 	// Datos estructurados: le dicen a Google cuál es el nombre, el logo
 	// oficial y las redes de la tienda. Es lo que usa para mostrar el
