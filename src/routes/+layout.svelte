@@ -95,6 +95,21 @@
 		return json.replaceAll('<', '\\u003c');
 	});
 
+	const esPortada = $derived(page.url.pathname === '/');
+
+	// Nombre del sitio: es lo que Google muestra encima de la dirección
+	// en los resultados. Sin esto usa el dominio pelado
+	// ("moonbeautyval.com"). Google solo lo lee de la portada.
+	const datosSitio = $derived(
+		JSON.stringify({
+			'@context': 'https://schema.org',
+			'@type': 'WebSite',
+			name: 'Moon Beauty',
+			alternateName: 'MoonBeauty',
+			url: SITIO_URL
+		}).replaceAll('<', '\\u003c')
+	);
+
 	// Datos de contacto del pie de página, administrables desde el panel.
 	const contacto = $derived(
 		(layoutData as { configuracionContacto?: ConfiguracionContacto })
@@ -278,14 +293,24 @@
 
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 	{@html `<script type="application/ld+json">${datosOrganizacion}</scr` + `ipt>`}
+
+	{#if esPortada}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html `<script type="application/ld+json">${datosSitio}</scr` + `ipt>`}
+	{/if}
 </svelte:head>
 
 <div class="sticky top-0 z-50">
 	{#if bannerActivo && bannerTexto}
 		<div class="cupon-marquee bg-slate-500/80 py-2 text-white">
+			<!-- El texto se repite 6 veces para que la cinta se desplace
+			sin cortes, pero las copias se marcan como decorativas: así un
+			lector de pantalla lo anuncia una sola vez, y los buscadores no
+			lo toman como contenido repetido de la página. -->
 			<div class="cupon-marquee__track">
 				{#each Array(6) as _, copia (copia)}
 					<p
+						aria-hidden={copia > 0 ? "true" : undefined}
 						class="mx-10 shrink-0 whitespace-nowrap text-xs font-semibold sm:mx-14 sm:text-sm"
 					>
 						{bannerTexto}
