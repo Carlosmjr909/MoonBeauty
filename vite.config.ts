@@ -35,19 +35,42 @@ export default defineConfig({
 				mode: 'auto',
 				directives: {
 					'default-src': ['self'],
-					'script-src': ['self', 'https://apis.google.com'],
+					// maps.googleapis.com: el selector de ubicación del
+					// checkout. Solo se contacta si hay una clave de Maps
+					// configurada; sin ella, el mapa ni se muestra.
+					'script-src': [
+						'self',
+						'https://apis.google.com',
+						'https://maps.googleapis.com'
+					],
 					// Varios componentes usan estilos inline dinámicos
 					// (transform-origin del zoom, alturas de logos, padding
 					// del carrusel), así que style-src necesita
 					// unsafe-inline. El riesgo es mucho menor que en
 					// script-src (no permite ejecutar JS).
-					'style-src': ['self', 'unsafe-inline'],
+					// fonts.googleapis.com lo pide el SDK de Maps.
+					'style-src': [
+						'self',
+						'unsafe-inline',
+						'https://fonts.googleapis.com'
+					],
 					// "data:" es necesario porque Vite inserta el favicon.svg
 					// del sitio como data URI (es más chico que su umbral de
 					// inlineado); no es un permiso genérico para cualquier
 					// imagen externa.
-					'img-src': ['self', 'data:', 'https://firebasestorage.googleapis.com'],
-					'font-src': ['self'],
+					// Los mapas se arman con muchas imágenes sueltas servidas
+					// desde estos dominios, y "blob:" lo usa el propio SDK.
+					'img-src': [
+						'self',
+						'data:',
+						'blob:',
+						'https://firebasestorage.googleapis.com',
+						'https://maps.googleapis.com',
+						'https://maps.gstatic.com',
+						'https://*.googleapis.com',
+						'https://*.ggpht.com'
+					],
+					'font-src': ['self', 'https://fonts.gstatic.com'],
 					'media-src': ['self', 'https://firebasestorage.googleapis.com'],
 					'connect-src': [
 						'self',
@@ -60,7 +83,8 @@ export default defineConfig({
 						'https://identitytoolkit.googleapis.com',
 						'https://securetoken.googleapis.com',
 						'https://firestore.googleapis.com',
-						'https://firebasestorage.googleapis.com'
+						'https://firebasestorage.googleapis.com',
+						'https://maps.googleapis.com'
 					],
 					'frame-src': ['https://moonbeauty-9ba8f.firebaseapp.com'],
 					'object-src': ['none'],

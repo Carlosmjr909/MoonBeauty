@@ -16,6 +16,7 @@ import { db, storage } from '$lib/firebase';
 
 const COLECCION_INSTAGRAM = 'instagram';
 const COLECCION_MARCAS = 'marcas';
+const COLECCION_TESTIMONIOS = 'testimonios';
 
 export type TipoPublicacion = 'imagen' | 'video';
 
@@ -222,4 +223,95 @@ export async function eliminarMarca(marca: Marca) {
 	} catch (error) {
 		console.error('No se pudo borrar el logo de la marca:', error);
 	}
+}
+
+/* --------------------------- Testimonios --------------------------- */
+
+export type Testimonio = {
+	id: string;
+	nombre: string;
+	texto: string;
+	/** Puntuación de 1 a 5. */
+	estrellas: number;
+	orden: number;
+};
+
+export function normalizarEstrellas(valor: unknown): number {
+	const numero = Math.round(Number(valor ?? 5));
+
+	if (!Number.isFinite(numero)) return 5;
+
+	return Math.min(5, Math.max(1, numero));
+}
+
+function convertirTestimonio(
+	id: string,
+	datos: Record<string, unknown>
+): Testimonio {
+	return {
+		id,
+		nombre: String(datos.nombre ?? '').trim(),
+		texto: String(datos.texto ?? '').trim(),
+		estrellas: normalizarEstrellas(datos.estrellas),
+		orden: Number(datos.orden ?? 0)
+	};
+}
+
+export function escucharTestimonios(
+	callback: (testimonios: Testimonio[]) => void,
+	alError?: (error: Error) => void
+) {
+	const referencia = query(
+		collection(db, COLECCION_TESTIMONIOS),
+		orderBy('orden')
+	);
+
+	return onSnapshot(
+		referencia,
+		(snapshot) => {
+			callback(
+				snapshot.docs.map((docSnap) =>
+					convertirTestimonio(docSnap.id, docSnap.data())
+				)
+			);
+		},
+		(error) => {
+			console.error('Error escuchando testimonios:', error);
+			alError?.(error);
+		}
+	);
+}
+
+export async function agregarTestimonio(testimonio: {
+	nombre: string;
+	texto: string;
+	estrellas: number;
+	orden: number;
+}) {
+	if (!testimonio.nombre.trim()) {
+		throw new Error('El nombre de quien deja el testimonio es obligatorio.');
+	}
+
+	if (!testimonio.texto.trim()) {
+		throw new Error('El texto del testimonio no puede quedar vacío.');
+	}
+
+	await addDoc(collection(db, COLECCION_TESTIMONIOS), {
+		nombre: testimonio.nombre.trim(),
+		texto: testimonio.texto.trim(),
+		estrellas: normalizarEstrellas(testimonio.estrellas),
+		orden: testimonio.orden,
+		fechaCreacion: serverTimestamp()
+	});
+}
+
+export async function actualizarTestimonio(
+	id: string,
+	cambios: Partial<Omit<Testimonio, 'id'>>
+) {
+	await updateDoc(doc(db, COLECCION_TESTIMONIOS, id), cambios);
+}
+
+export async function eliminarTestimonio(id: string) {
+	await deleteDoc(doc(db, COLECCION_TESTIMONIOS, id));
 }

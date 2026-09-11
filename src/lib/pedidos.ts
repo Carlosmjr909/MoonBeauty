@@ -46,6 +46,31 @@ export type EntregaPedido = {
 	} | null;
 };
 
+/** Cómo recibe el pedido el comprador. */
+export type TipoEntrega = 'delivery' | 'envio_nacional';
+
+export type EmpresaEnvio = 'mrw' | 'zoom' | 'tealca';
+
+/**
+ * Datos para enviar por empresa de encomienda. El flete lo paga quien
+ * recibe al retirar en la agencia ("cobro a destino"), así que acá solo
+ * se guarda a quién y a qué agencia va.
+ */
+export type EnvioNacionalPedido = {
+	empresa: EmpresaEnvio;
+	nombreCompleto: string;
+	/** Cédula o RIF: las agencias lo exigen para entregar. */
+	documento: string;
+	telefono: string;
+	agencia: {
+		calle: string;
+		avenida: string;
+		parroquia: string;
+		ciudad: string;
+		estado: string;
+	};
+};
+
 export type ComprobantePago = {
 	url?: string | null;
 	referencia?: string | null;
@@ -92,7 +117,9 @@ export type PedidoAdmin = {
 
 export type CrearPedidoInput = {
 	contacto: ContactoPedido;
+	tipoEntrega: TipoEntrega;
 	entrega: EntregaPedido;
+	envioNacional?: EnvioNacionalPedido | null;
 	metodoPago: MetodoPago;
 	comprobantePago: ComprobantePago;
 	items: ItemPedido[];
@@ -180,6 +207,8 @@ export async function crearPedido(
 				telefono: input.contacto.telefono
 			},
 
+			tipoEntrega: input.tipoEntrega,
+
 			entrega: {
 				direccion: input.entrega.direccion,
 				casaApartamento: input.entrega.casaApartamento ?? '',
@@ -188,6 +217,8 @@ export async function crearPedido(
 				estado: input.entrega.estado,
 				ubicacionMapa: input.entrega.ubicacionMapa ?? null
 			},
+
+			envioNacional: input.envioNacional ?? null,
 
 			metodoPago: input.metodoPago,
 			comprobantePago: {

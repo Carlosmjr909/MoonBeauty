@@ -92,6 +92,14 @@ export type ConfiguracionContacto = {
 	direccion: string;
 	horario: string;
 	copyright: string;
+	/** Enlace al perfil del negocio en Google, para ver las reseñas. */
+	googlePerfilUrl: string;
+	/**
+	 * Enlace que abre directamente el cuadro para escribir una reseña.
+	 * Google no permite publicar reseñas desde otro sitio: lo único
+	 * posible es llevar a la persona a su propia interfaz.
+	 */
+	googleResenaUrl: string;
 };
 
 export const CONFIGURACION_CONTACTO_POR_DEFECTO: ConfiguracionContacto = {
@@ -103,7 +111,9 @@ export const CONFIGURACION_CONTACTO_POR_DEFECTO: ConfiguracionContacto = {
 	correo: 'moonbeautyval@gmail.com',
 	direccion: 'Valencia, Estado Carabobo, Venezuela',
 	horario: 'Todos los días · Respondemos por WhatsApp',
-	copyright: 'Luminous Serenity for your skin.'
+	copyright: 'Luminous Serenity for your skin.',
+	googlePerfilUrl: 'https://share.google/ZH6ApMIzQLYrrhGG1',
+	googleResenaUrl: ''
 };
 
 /* --------------------------- Utilidades --------------------------- */

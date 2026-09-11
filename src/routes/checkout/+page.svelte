@@ -22,7 +22,9 @@
 		asegurarSesion,
 		crearPedido,
 		subirComprobantePago,
-		type MetodoPago
+		type EmpresaEnvio,
+		type MetodoPago,
+		type TipoEntrega
 	} from '$lib/pedidos';
 
 	import {
@@ -35,13 +37,17 @@
 	} from '$lib/cupones';
 
 	import { ESTADOS_VENEZUELA } from '$lib/estadosVenezuela';
-	import type { ConfiguracionPagos } from '$lib/configuracion';
+	import type {
+		ConfiguracionContacto,
+		ConfiguracionPagos
+	} from '$lib/configuracion';
 
 	type CheckoutData = {
 		tasaBCV?: {
 			promedio?: number | null;
 		} | null;
 		configuracionPagos?: ConfiguracionPagos | null;
+		configuracionContacto?: ConfiguracionContacto | null;
 	};
 
 	let {
@@ -54,12 +60,41 @@
 	let correo = $state('');
 	let telefono = $state('');
 
+	// Cómo recibe el pedido: entrega a domicilio o encomienda nacional.
+	let tipoEntrega = $state<TipoEntrega>('delivery');
+
 	let direccion = $state('');
 	let casaApartamento = $state('');
 	let ciudad = $state('');
 	let codigoPostal = $state('');
 	let estadoEntrega = $state('');
 	let ubicacionMapa = $state<{ lat: number; lng: number } | null>(null);
+
+	/* ------------------- Envío nacional por encomienda ------------------- */
+
+	const EMPRESAS_ENVIO: Array<{
+		valor: EmpresaEnvio;
+		nombre: string;
+		logo: string;
+	}> = [
+		{ valor: 'mrw', nombre: 'MRW', logo: '/envios/mrw.png' },
+		{ valor: 'zoom', nombre: 'Zoom', logo: '/envios/zoom.png' },
+		{ valor: 'tealca', nombre: 'Tealca', logo: '/envios/tealca.png' }
+	];
+
+	let empresaEnvio = $state<EmpresaEnvio | ''>('');
+	let envioNombre = $state('');
+	let envioDocumento = $state('');
+	let envioTelefono = $state('');
+	let agenciaCalle = $state('');
+	let agenciaAvenida = $state('');
+	let agenciaParroquia = $state('');
+	let agenciaCiudad = $state('');
+	let agenciaEstado = $state('');
+
+	// Si el logo de la empresa todavía no se subió, se muestra el nombre
+	// en su lugar para que el selector siga siendo usable.
+	let logosFallidos = $state<Record<string, boolean>>({});
 
 	// Selector de ubicación con Google Maps: solo aparece si hay una API
 	// key configurada (PUBLIC_GOOGLE_MAPS_API_KEY). Si no, el formulario
@@ -384,6 +419,12 @@
 			: null
 	);
 
+	// Enlace para dejar reseña en Google; si no está configurado en el
+	// panel, simplemente no se muestra nada.
+	const enlaceResena = $derived(
+		data?.configuracionContacto?.googleResenaUrl ?? ''
+	);
+
 	const whatsappEmpresa = $derived(
 		env.PUBLIC_COMPANY_WHATSAPP ?? ''
 	);
@@ -431,11 +472,36 @@
 			return;
 		}
 
-		if (!direccion.trim() || !ciudad.trim() || !estadoEntrega.trim()) {
-			error =
-				'Completa la dirección, ciudad y estado de entrega (o marca la ubicación en el mapa).';
+		if (tipoEntrega === 'delivery') {
+			if (!direccion.trim() || !ciudad.trim() || !estadoEntrega.trim()) {
+				error =
+					'Completa la dirección, ciudad y estado de entrega (o marca la ubicación en el mapa).';
 
-			return;
+				return;
+			}
+		} else {
+			if (!empresaEnvio) {
+				error = 'Elige la empresa de envío (MRW, Zoom o Tealca).';
+				return;
+			}
+
+			if (
+				!envioNombre.trim() ||
+				!envioDocumento.trim() ||
+				!envioTelefono.trim()
+			) {
+				error =
+					'Completa el nombre, la cédula o RIF y el teléfono de quien retira el pedido.';
+
+				return;
+			}
+
+			if (!agenciaCiudad.trim() || !agenciaEstado.trim()) {
+				error =
+					'Indica al menos la ciudad y el estado de la agencia donde retiras.';
+
+				return;
+			}
 		}
 
 		if ($carrito.length === 0) {
@@ -512,14 +578,49 @@ const codigosCupones = cuponesAplicados.map((cupon) => cupon.codigo);
 const cuponFinal =
 	codigosCupones.length > 0 ? codigosCupones.join(' + ') : null;
 
-const entregaFinal = {
-	direccion: direccion.trim(),
-	casaApartamento: casaApartamento.trim(),
-	ciudad: ciudad.trim(),
-	codigoPostal: codigoPostal.trim(),
-	estado: estadoEntrega.trim(),
-	ubicacionMapa
-};
+const envioNacionalFinal =
+	tipoEntrega === 'envio_nacional' && empresaEnvio
+		? {
+				empresa: empresaEnvio,
+				nombreCompleto: envioNombre.trim(),
+				documento: envioDocumento.trim(),
+				telefono: envioTelefono.trim(),
+				agencia: {
+					calle: agenciaCalle.trim(),
+					avenida: agenciaAvenida.trim(),
+					parroquia: agenciaParroquia.trim(),
+					ciudad: agenciaCiudad.trim(),
+					estado: agenciaEstado.trim()
+				}
+			}
+		: null;
+
+// Con envío nacional, la dirección del pedido es la de la agencia:
+// así el correo y el panel muestran a dónde va, sin campos vacíos.
+const entregaFinal =
+	tipoEntrega === 'envio_nacional' && envioNacionalFinal
+		? {
+				direccion: [
+					envioNacionalFinal.agencia.calle,
+					envioNacionalFinal.agencia.avenida,
+					envioNacionalFinal.agencia.parroquia
+				]
+					.filter(Boolean)
+					.join(', '),
+				casaApartamento: '',
+				ciudad: envioNacionalFinal.agencia.ciudad,
+				codigoPostal: '',
+				estado: envioNacionalFinal.agencia.estado,
+				ubicacionMapa: null
+			}
+		: {
+				direccion: direccion.trim(),
+				casaApartamento: casaApartamento.trim(),
+				ciudad: ciudad.trim(),
+				codigoPostal: codigoPostal.trim(),
+				estado: estadoEntrega.trim(),
+				ubicacionMapa
+			};
 
 const comprobanteFinal = {
 	url: comprobanteUrl,
@@ -533,7 +634,9 @@ const resultado = await crearPedido({
 		telefono: telefono.trim()
 	},
 
+	tipoEntrega,
 	entrega: entregaFinal,
+	envioNacional: envioNacionalFinal,
 	metodoPago,
 	comprobantePago: comprobanteFinal,
 	items,
@@ -578,7 +681,9 @@ try {
 				nombre: nombre.trim(),
 				correo: correo.trim(),
 				telefono: telefono.trim(),
+				tipoEntrega,
 				entrega: entregaFinal,
+				envioNacional: envioNacionalFinal,
 				metodoPago,
 				comprobantePago: comprobanteFinal,
 				items,
@@ -700,6 +805,35 @@ carrito.vaciar();
 					</p>
 				{/if}
 
+				<!-- Reseña: totalmente opcional, en segundo plano para no
+				competir con el paso importante, que es coordinar el pago
+				por WhatsApp. -->
+				{#if enlaceResena}
+					<div class="mt-8 border-t border-slate-200 pt-6">
+						<p class="text-sm text-slate-500">
+							¿Nos dejas una reseña? Nos ayuda muchísimo.
+						</p>
+
+						<a
+							href={enlaceResena}
+							target="_blank"
+							rel="noreferrer"
+							class="mt-3 inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-300 transition hover:bg-slate-50"
+						>
+							<Icon
+								icon="material-symbols:star-rounded"
+								width="20"
+								class="text-amber-400"
+							/>
+							Déjanos una reseña
+						</a>
+
+						<p class="mt-2 text-xs text-slate-400">
+							Es opcional y se abre en Google.
+						</p>
+					</div>
+				{/if}
+
 				<button
 					type="button"
 					onclick={() => goto('/products')}
@@ -798,10 +932,77 @@ carrito.vaciar();
 						<h2
 							class="text-xl font-semibold text-slate-700"
 						>
-							2. Entrega
+							2. ¿Cómo lo recibes?
 						</h2>
 
-						<p class="mt-2 text-sm text-slate-500">
+						<div class="mt-4 grid gap-3 sm:grid-cols-2">
+							<label
+								class="cursor-pointer rounded-2xl border p-4 transition"
+								class:border-sky-400={tipoEntrega === 'delivery'}
+								class:bg-sky-50={tipoEntrega === 'delivery'}
+							>
+								<input
+									class="sr-only"
+									type="radio"
+									name="tipoEntrega"
+									value="delivery"
+									bind:group={tipoEntrega}
+								/>
+
+								<Icon
+									icon="material-symbols:home-outline-rounded"
+									width="26"
+									class="text-slate-600"
+								/>
+
+								<span
+									class="mt-2 block font-semibold text-slate-700"
+								>
+									Entrega
+								</span>
+
+								<span class="mt-1 block text-xs text-slate-500">
+									Te lo llevamos a tu dirección.
+								</span>
+							</label>
+
+							<label
+								class="cursor-pointer rounded-2xl border p-4 transition"
+								class:border-sky-400={tipoEntrega === 'envio_nacional'}
+								class:bg-sky-50={tipoEntrega === 'envio_nacional'}
+							>
+								<input
+									class="sr-only"
+									type="radio"
+									name="tipoEntrega"
+									value="envio_nacional"
+									bind:group={tipoEntrega}
+								/>
+
+								<Icon
+									icon="material-symbols:local-shipping-outline-rounded"
+									width="26"
+									class="text-slate-600"
+								/>
+
+								<span
+									class="mt-2 block font-semibold text-slate-700"
+								>
+									Envío a nivel nacional
+								</span>
+
+								<span class="mt-1 block text-xs font-semibold text-sky-700">
+									Cobro a destino
+								</span>
+
+								<span class="mt-1 block text-xs text-slate-500">
+									El flete lo pagas al retirar en la agencia.
+								</span>
+							</label>
+						</div>
+
+						{#if tipoEntrega === 'delivery'}
+						<p class="mt-5 text-sm text-slate-500">
 							Dinos dónde te llevamos el pedido.
 						</p>
 
@@ -904,6 +1105,159 @@ carrito.vaciar();
 								/>
 							</label>
 						</div>
+						{:else}
+							<!-- Envío nacional por encomienda -->
+							<div
+								class="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-4"
+							>
+								<p class="text-sm font-semibold text-sky-800">
+									Cobro a destino
+								</p>
+								<p class="mt-1 text-sm text-sky-700">
+									El costo del envío no se cobra acá: lo pagas
+									directamente en la agencia al retirar tu pedido.
+								</p>
+							</div>
+
+							<p class="mt-6 text-sm font-semibold text-slate-600">
+								Empresa de envío
+							</p>
+
+							<div class="mt-3 grid grid-cols-3 gap-3">
+								{#each EMPRESAS_ENVIO as empresa}
+									<label
+										class="flex cursor-pointer items-center justify-center rounded-2xl border p-3 transition"
+										class:border-sky-400={empresaEnvio === empresa.valor}
+										class:bg-sky-50={empresaEnvio === empresa.valor}
+									>
+										<input
+											class="sr-only"
+											type="radio"
+											name="empresaEnvio"
+											value={empresa.valor}
+											bind:group={empresaEnvio}
+										/>
+
+										{#if logosFallidos[empresa.valor]}
+											<span
+												class="font-Manrope text-base font-bold text-slate-700"
+											>
+												{empresa.nombre}
+											</span>
+										{:else}
+											<img
+												src={empresa.logo}
+												alt={empresa.nombre}
+												onerror={() =>
+													(logosFallidos[empresa.valor] = true)}
+												class="h-9 w-full object-contain"
+											/>
+										{/if}
+									</label>
+								{/each}
+							</div>
+
+							<p class="mt-6 text-sm text-slate-500">
+								Datos de quien retira el pedido en la agencia.
+							</p>
+
+							<div class="mt-4 grid gap-4 sm:grid-cols-2">
+								<label class="sm:col-span-2">
+									<span class="mb-2 block text-sm text-slate-600">
+										Nombre completo
+									</span>
+									<input
+										bind:value={envioNombre}
+										class="h-12 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-sky-300"
+									/>
+								</label>
+
+								<label>
+									<span class="mb-2 block text-sm text-slate-600">
+										Cédula de identidad o RIF
+									</span>
+									<input
+										bind:value={envioDocumento}
+										placeholder="V-12345678"
+										class="h-12 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-sky-300"
+									/>
+								</label>
+
+								<label>
+									<span class="mb-2 block text-sm text-slate-600">
+										Teléfono
+									</span>
+									<input
+										type="tel"
+										bind:value={envioTelefono}
+										class="h-12 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-sky-300"
+									/>
+								</label>
+							</div>
+
+							<p class="mt-6 text-sm font-semibold text-slate-600">
+								Dirección de la agencia
+							</p>
+
+							<div class="mt-3 grid gap-4 sm:grid-cols-2">
+								<label>
+									<span class="mb-2 block text-sm text-slate-600">
+										Calle
+									</span>
+									<input
+										bind:value={agenciaCalle}
+										class="h-12 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-sky-300"
+									/>
+								</label>
+
+								<label>
+									<span class="mb-2 block text-sm text-slate-600">
+										Avenida
+									</span>
+									<input
+										bind:value={agenciaAvenida}
+										class="h-12 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-sky-300"
+									/>
+								</label>
+
+								<label>
+									<span class="mb-2 block text-sm text-slate-600">
+										Parroquia
+									</span>
+									<input
+										bind:value={agenciaParroquia}
+										class="h-12 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-sky-300"
+									/>
+								</label>
+
+								<label>
+									<span class="mb-2 block text-sm text-slate-600">
+										Ciudad
+									</span>
+									<input
+										bind:value={agenciaCiudad}
+										class="h-12 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-sky-300"
+									/>
+								</label>
+
+								<label class="sm:col-span-2">
+									<span class="mb-2 block text-sm text-slate-600">
+										Estado
+									</span>
+									<select
+										bind:value={agenciaEstado}
+										class="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 outline-none focus:border-sky-300"
+									>
+										<option value="" disabled selected={!agenciaEstado}>
+											Selecciona un estado
+										</option>
+										{#each ESTADOS_VENEZUELA as estadoOpcion}
+											<option value={estadoOpcion}>{estadoOpcion}</option>
+										{/each}
+									</select>
+								</label>
+							</div>
+						{/if}
 					</section>
 
 					<section class="mt-10">

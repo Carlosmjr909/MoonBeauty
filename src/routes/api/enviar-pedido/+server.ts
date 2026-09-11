@@ -28,11 +28,27 @@ type ComprobantePago = {
 	referencia?: string | null;
 };
 
+type EnvioNacional = {
+	empresa: string;
+	nombreCompleto: string;
+	documento: string;
+	telefono: string;
+	agencia: {
+		calle: string;
+		avenida: string;
+		parroquia: string;
+		ciudad: string;
+		estado: string;
+	};
+};
+
 type DatosPedido = {
 	numeroPedido: string;
 	nombre: string;
 	correo: string;
 	telefono: string;
+	tipoEntrega?: string;
+	envioNacional?: EnvioNacional | null;
 	entrega: EntregaPedido;
 	metodoPago: string;
 	comprobantePago?: ComprobantePago;
@@ -85,7 +101,41 @@ function filaDescuento(datos: DatosPedido): string {
 	`;
 }
 
+const NOMBRES_EMPRESA_ENVIO: Record<string, string> = {
+	mrw: 'MRW',
+	zoom: 'Zoom',
+	tealca: 'Tealca'
+};
+
 function filaEntrega(datos: DatosPedido): string {
+	// Envío por encomienda: lo que importa es a qué agencia va y quién
+	// retira, no una dirección de domicilio.
+	if (datos.tipoEntrega === 'envio_nacional' && datos.envioNacional) {
+		const envio = datos.envioNacional;
+		const empresa =
+			NOMBRES_EMPRESA_ENVIO[envio.empresa] ?? envio.empresa;
+
+		const direccionAgencia = [
+			envio.agencia.calle,
+			envio.agencia.avenida,
+			envio.agencia.parroquia
+		]
+			.map((parte) => parte?.trim())
+			.filter(Boolean)
+			.join(', ');
+
+		return `
+		<h3 style="margin-top: 16px;">Envío a nivel nacional (cobro a destino)</h3>
+		<p><strong>Empresa:</strong> ${escaparHtml(empresa)}</p>
+		<p><strong>Quien retira:</strong> ${escaparHtml(envio.nombreCompleto)}</p>
+		<p><strong>Cédula / RIF:</strong> ${escaparHtml(envio.documento)}</p>
+		<p><strong>Teléfono:</strong> ${escaparHtml(envio.telefono)}</p>
+		${direccionAgencia ? `<p><strong>Agencia:</strong> ${escaparHtml(direccionAgencia)}</p>` : ''}
+		<p><strong>Ciudad:</strong> ${escaparHtml(envio.agencia.ciudad)}</p>
+		<p><strong>Estado:</strong> ${escaparHtml(envio.agencia.estado)}</p>
+	`;
+	}
+
 	const entrega = datos.entrega;
 	if (!entrega) return '';
 
@@ -93,7 +143,7 @@ function filaEntrega(datos: DatosPedido): string {
 	const codigoPostal = entrega.codigoPostal?.trim();
 
 	return `
-		<h3 style="margin-top: 16px;">Entrega</h3>
+		<h3 style="margin-top: 16px;">Entrega a domicilio</h3>
 		<p><strong>Dirección:</strong> ${escaparHtml(entrega.direccion)}</p>
 		${casaApartamento ? `<p><strong>Casa/Apartamento:</strong> ${escaparHtml(casaApartamento)}</p>` : ''}
 		<p><strong>Ciudad:</strong> ${escaparHtml(entrega.ciudad)}</p>

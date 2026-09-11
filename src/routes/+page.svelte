@@ -13,6 +13,15 @@
 	// Textos editables del hero y de "Nuestra esencia".
 	const textos = $derived(data.configuracionPortada);
 
+	// Testimonios y enlaces al perfil de Google, todos administrables.
+	const testimonios = $derived(data.testimonios ?? []);
+	const enlaceResena = $derived(
+		data.configuracionContacto?.googleResenaUrl ?? "",
+	);
+	const enlacePerfilGoogle = $derived(
+		data.configuracionContacto?.googlePerfilUrl ?? "",
+	);
+
 	// Referencias para las animaciones de scroll de esta vista (una por
 	// sección, con efectos distintos entre sí para que no se repitan).
 	let encabezadoFavoritos = $state<HTMLDivElement | null>(null);
@@ -21,6 +30,8 @@
 	let encabezadoInstagramTexto = $state<HTMLDivElement | null>(null);
 	let botonInstagramSeguir = $state<HTMLAnchorElement | null>(null);
 	let carruselInstagramWrap = $state<HTMLDivElement | null>(null);
+	let encabezadoTestimonios = $state<HTMLDivElement | null>(null);
+	let grillaTestimonios = $state<HTMLDivElement | null>(null);
 	let encabezadoEsencia = $state<HTMLDivElement | null>(null);
 	let grillaEsencia = $state<HTMLDivElement | null>(null);
 
@@ -314,6 +325,47 @@
 					},
 				}),
 			);
+		}
+
+		// Testimonios: el encabezado sube con fade y las tarjetas
+		// aparecen escalonadas, una detrás de otra.
+		if (encabezadoTestimonios) {
+			animaciones.push(
+				gsap.from(encabezadoTestimonios, {
+					opacity: 0,
+					y: 30,
+					duration: 0.7,
+					ease: "power3.out",
+					scrollTrigger: {
+						trigger: encabezadoTestimonios,
+						start: "top 88%",
+						once: true,
+					},
+				}),
+			);
+		}
+
+		if (grillaTestimonios) {
+			const tarjetas = Array.from(
+				grillaTestimonios.children,
+			) as HTMLElement[];
+
+			if (tarjetas.length) {
+				animaciones.push(
+					gsap.from(tarjetas, {
+						opacity: 0,
+						y: 40,
+						duration: 0.7,
+						ease: "power3.out",
+						stagger: 0.12,
+						scrollTrigger: {
+							trigger: grillaTestimonios,
+							start: "top 88%",
+							once: true,
+						},
+					}),
+				);
+			}
 		}
 
 		// "Nuestra esencia": el título cae desde arriba y las 4 tarjetas
@@ -730,6 +782,97 @@
 		{/if}
 	</div>
 </section>
+
+{#if testimonios.length > 0 || enlaceResena}
+	<section class="bg-white py-12 sm:py-16 lg:py-20 2xl:py-24">
+		<div
+			class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[1600px]"
+		>
+			<div
+				bind:this={encabezadoTestimonios}
+				class="mx-auto mb-10 max-w-3xl text-center lg:mb-14"
+			>
+				<p
+					class="font-Manrope text-sm font-bold uppercase tracking-[0.2em] text-sky-700"
+				>
+					Lo que dicen de nosotras
+				</p>
+
+				<p
+					class="mt-3 font-Manrope text-3xl text-slate-700 sm:text-4xl lg:text-5xl"
+				>
+					Clientas que ya brillan
+				</p>
+			</div>
+
+			{#if testimonios.length > 0}
+				<div
+					bind:this={grillaTestimonios}
+					class="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3"
+				>
+					{#each testimonios as testimonio (testimonio.id)}
+						<article
+							class="flex h-full flex-col rounded-2xl bg-slate-50 p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl sm:p-8"
+						>
+							<div
+								class="flex gap-0.5 text-amber-400"
+								aria-label="{testimonio.estrellas} de 5 estrellas"
+							>
+								{#each Array(5) as _, indice}
+									<Icon
+										icon={indice < testimonio.estrellas
+											? "material-symbols:star-rounded"
+											: "material-symbols:star-outline-rounded"}
+										width="20"
+									/>
+								{/each}
+							</div>
+
+							<p
+								class="mt-4 flex-1 text-sm leading-7 text-slate-600 sm:text-base"
+							>
+								{testimonio.texto}
+							</p>
+
+							<p
+								class="mt-5 font-Manrope font-bold text-slate-700"
+							>
+								{testimonio.nombre}
+							</p>
+						</article>
+					{/each}
+				</div>
+			{/if}
+
+			<div
+				class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
+			>
+				{#if enlaceResena}
+					<a
+						href={enlaceResena}
+						target="_blank"
+						rel="noreferrer"
+						class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sky-200 px-8 py-3 font-Manrope text-base font-semibold text-slate-600 transition duration-300 hover:-translate-y-1 hover:bg-slate-600 hover:text-white sm:w-auto"
+					>
+						<Icon icon="material-symbols:star-rounded" width="20" />
+						Déjanos tu reseña
+					</a>
+				{/if}
+
+				{#if enlacePerfilGoogle}
+					<a
+						href={enlacePerfilGoogle}
+						target="_blank"
+						rel="noreferrer"
+						class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-8 py-3 font-Manrope text-base font-semibold text-slate-600 ring-1 ring-slate-300 transition duration-300 hover:bg-slate-100 sm:w-auto"
+					>
+						Ver todas en Google
+					</a>
+				{/if}
+			</div>
+		</div>
+	</section>
+{/if}
 
 <section class="bg-slate-50 py-12 sm:py-16 lg:py-20 2xl:py-24">
 	<div

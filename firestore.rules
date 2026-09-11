@@ -72,6 +72,13 @@ service cloud.firestore {
       allow write: if esAdmin();
     }
 
+    // Testimonios de clientes que se muestran en la portada. Los carga
+    // el admin desde el panel: no se escriben desde la tienda.
+    match /testimonios/{testimonioId} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
     // Cupones. "get" es público para que el checkout pueda validar el
     // código exacto que escribió el comprador, pero "list" queda solo
     // para admins: así nadie puede enumerar la colección y descubrir

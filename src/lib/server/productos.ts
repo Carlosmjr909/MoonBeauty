@@ -130,6 +130,34 @@ export async function obtenerPublicacionesInstagram(): Promise<
 	});
 }
 
+export type TestimonioPublico = {
+	id: string;
+	nombre: string;
+	texto: string;
+	estrellas: number;
+};
+
+export async function obtenerTestimonios(): Promise<TestimonioPublico[]> {
+	const snapshot = await adminDb
+		.collection('testimonios')
+		.orderBy('orden')
+		.get();
+
+	return snapshot.docs.map((doc) => {
+		const datos = doc.data();
+		const estrellas = Math.round(Number(datos.estrellas ?? 5));
+
+		return {
+			id: doc.id,
+			nombre: String(datos.nombre ?? ''),
+			texto: String(datos.texto ?? ''),
+			estrellas: Number.isFinite(estrellas)
+				? Math.min(5, Math.max(1, estrellas))
+				: 5
+		};
+	});
+}
+
 export async function obtenerMarcas(): Promise<MarcaPublica[]> {
 	const snapshot = await adminDb.collection('marcas').orderBy('orden').get();
 

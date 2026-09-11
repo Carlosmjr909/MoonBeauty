@@ -240,6 +240,16 @@
 			etiqueta: "Frase final del pie de página",
 			ayuda: "Va después de “© 2026 MoonBeauty.”",
 		},
+		{
+			clave: "googlePerfilUrl",
+			etiqueta: "Google — enlace a tu perfil",
+			ayuda: "Para el botón “Ver todas en Google”. Lo copias desde Google Maps con el botón Compartir.",
+		},
+		{
+			clave: "googleResenaUrl",
+			etiqueta: "Google — enlace para dejar reseña",
+			ayuda: "Lo consigues en tu Perfil de Empresa de Google, en “Pedir reseñas”. Si lo dejas vacío, los botones de reseña no aparecen.",
+		},
 	];
 
 	const camposActuales = $derived(
