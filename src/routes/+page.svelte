@@ -346,26 +346,23 @@
 		}
 
 		if (grillaTestimonios) {
-			const tarjetas = Array.from(
-				grillaTestimonios.children,
-			) as HTMLElement[];
-
-			if (tarjetas.length) {
-				animaciones.push(
-					gsap.from(tarjetas, {
-						opacity: 0,
-						y: 40,
-						duration: 0.7,
-						ease: "power3.out",
-						stagger: 0.12,
-						scrollTrigger: {
-							trigger: grillaTestimonios,
-							start: "top 88%",
-							once: true,
-						},
-					}),
-				);
-			}
+			// Se anima el bloque entero y no tarjeta por tarjeta: en
+			// móvil las tarjetas viven dentro de un carrusel horizontal,
+			// y animarlas por separado deja a las de la derecha (fuera de
+			// la vista) atrapadas a media opacidad.
+			animaciones.push(
+				gsap.from(grillaTestimonios, {
+					opacity: 0,
+					y: 40,
+					duration: 0.7,
+					ease: "power3.out",
+					scrollTrigger: {
+						trigger: grillaTestimonios,
+						start: "top 92%",
+						once: true,
+					},
+				}),
+			);
 		}
 
 		// "Nuestra esencia": el título cae desde arriba y las 4 tarjetas
@@ -415,7 +412,30 @@
 			}
 		}
 
+				// ScrollTrigger calcula al arrancar en qué punto de la página
+				// está cada sección. Varias imágenes de esta vista (los logos
+				// de marcas, las fotos de Instagram) se cargan de forma
+				// diferida y estiran la página después, así que esos puntos
+				// quedaban desfasados: las secciones de más abajo no llegaban
+				// a dispararse nunca y se quedaban a media opacidad.
+				//
+				// Observando el alto real de la página se recalculan en cuanto
+				// cambia, sin importar qué lo haya provocado.
+				let pendiente: ReturnType<typeof setTimeout> | null = null;
+
+				const observador = new ResizeObserver(() => {
+					if (pendiente) clearTimeout(pendiente);
+					// Se agrupan los cambios seguidos en un solo recálculo.
+					pendiente = setTimeout(() => {
+						ScrollTrigger.refresh();
+					}, 250);
+				});
+
+				observador.observe(document.body);
+
 				limpiar = () => {
+					if (pendiente) clearTimeout(pendiente);
+					observador.disconnect();
 					animaciones.forEach((tween) => tween.scrollTrigger?.kill());
 					triggersEsencia.forEach((trigger) => trigger.kill());
 				};
@@ -806,13 +826,16 @@
 			</div>
 
 			{#if testimonios.length > 0}
+				<!-- En celular es una sola fila que se desplaza con el dedo
+				(se ven dos testimonios a la vez); desde sm: vuelve a ser
+				una cuadrícula normal. -->
 				<div
 					bind:this={grillaTestimonios}
-					class="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3"
+					class="pista-scroll -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-4 pb-2 [-webkit-overflow-scrolling:touch] sm:mx-0 sm:grid sm:snap-none sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 md:grid-cols-2 lg:grid-cols-3"
 				>
 					{#each testimonios as testimonio (testimonio.id)}
 						<article
-							class="flex h-full flex-col rounded-2xl bg-slate-50 p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl sm:p-8"
+							class="flex w-[calc((100%-0.75rem)/2)] shrink-0 snap-start flex-col rounded-2xl bg-slate-50 p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:h-full sm:w-auto sm:shrink sm:rounded-3xl sm:p-8"
 						>
 							<div
 								class="flex gap-0.5 text-amber-400"
