@@ -343,14 +343,14 @@
 				class="w-full lg:w-1/2 lg:pt-4 flex flex-col"
 				in:fly={{ y: 24, duration: 600, delay: 150, easing: cubicOut }}
 			>
-				<p
+				<h1
 					class="font-Manrope text-3xl leading-tight text-gray-600
 			sm:text-4xl
 			lg:text-5xl
 			2xl:text-6xl"
 				>
 					{product.Nombre}
-				</p>
+				</h1>
 
 				{#if product.especificacion}
 					<p

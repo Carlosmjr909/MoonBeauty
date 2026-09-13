@@ -145,9 +145,9 @@
 <section class="bg-slate-50 px-5 py-12 sm:px-8 lg:px-14">
 	<div class="mx-auto max-w-7xl">
 		<div class="mb-8">
-			<p class="font-Manrope text-3xl text-slate-800 sm:text-4xl lg:text-5xl">
+			<h1 class="font-Manrope text-3xl text-slate-800 sm:text-4xl lg:text-5xl">
 				Categorías
-			</p>
+			</h1>
 			<p class="mt-2 text-sm text-slate-500 sm:text-base">
 				Explora por categoría y encuentra el cuidado ideal para tu rutina.
 			</p>

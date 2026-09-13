@@ -1,0 +1,464 @@
+{
+  "summary": {
+    "health_score": 52,
+    "business_type": "E-commerce (K-Beauty skincare) — hybrid with local delivery layer (Valencia + Naguanagua, Carabobo, Venezuela), WhatsApp-coordinated checkout, no walk-in storefront",
+    "top_findings": [
+      "Zero <h1> on 123 of 127 live pages (home, /products, /categorias, all 12 category pages, all 108 product pages). A fix is already written in the working tree for the 4 highest-traffic templates but is uncommitted and undeployed — production is still missing it as of this audit.",
+      "Zero Product/Offer structured data on all 108 product pages — no price, availability, or brand markup anywhere, which blocks Google price/availability rich results, Shopping surfaces, and AI shopping answers (ChatGPT, Perplexity, Bing Copilot, Google AI Overviews) entirely.",
+      "Confirmed factual data-integrity bug on /products/1: a TOCOBO Cotton Soft Sun Stick page displays a Dr. Althea facial-mist description verbatim, in the body copy, meta description, and WhatsApp share preview. Needs a human edit in the admin panel — not something to auto-fix.",
+      "No business-legitimacy or local-service content exists anywhere on the site: zero mentions of 'Naguanagua' across all 127 pages, no About/Nosotros page, no dedicated delivery-zone page. The one place this information lives (the checkout flow) is disallowed in robots.txt and structurally invisible to search/AI crawlers.",
+      "A placeholder developer page is live and indexable at /contacts ('Esta es la ruta de contactos', no <title> element) — a trust liability on a store that asks for prepayment via Zelle/Binance/Zinli."
+    ],
+    "quick_wins": [
+      "Commit and deploy the <h1> fix already sitting in the working tree (home, /products, /categorias, product detail) — zero new code needed, just ship it.",
+      "Ship the word-boundary truncation fix for recortar() in src/lib/seo.ts — already patched during this audit session, fixes mid-word cutoffs on 116 of 127 meta descriptions with a single function change.",
+      "Fix the grammar error in the /privacidad meta description ('cómo los proteges' → 'cómo los protegemos') — already patched during this audit session.",
+      "Add the existing Google Business Profile URL (already stored in configuracion.ts as googlePerfilUrl) to the OnlineStore JSON-LD sameAs array — zero new data required.",
+      "Render the existing descripcionCategoria() text as a visible intro paragraph on the 12 /products?categoria=X pages instead of only in the meta tag — the copy already exists, it's just not displayed."
+    ]
+  },
+  "categories": [
+    {
+      "name": "Technical SEO",
+      "score": 68,
+      "what_works": [
+        "Real SSR confirmed (is_spa: false) — title, price (USD+VES), stock, description, and category listings all present in raw HTML with zero JS execution required",
+        "Sitemap discovery, robots.txt syntax, and canonicalization (self-referencing, absolute, https+www) are all correct on every page type sampled",
+        "Security headers are hardened and confirmed live in production: CSP (nonce-based), HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, COOP, CORP, plus a correctly-formed security.txt",
+        "404 handling for genuinely unmapped routes works correctly",
+        "Meta description and title uniqueness verified: 127/127 distinct, 0 duplicates — the recent per-page SEO work is real"
+      ],
+      "findings": [
+        {
+          "title": "Sitewide missing <h1> on every commerce template",
+          "severity": "Critical",
+          "description": "Zero <h1> tags exist on home, /products, /categorias, all 12 category listing pages, and all 108 product pages. The only heading elements present are the empty-cart drawer's <h2>/<h3> ('Tu carrito' / 'Tu carrito está vacío'). Only the 4 static legal pages have a correct heading outline. A fix has already been written to the source for home, /products, /categorias, and the product detail template, verified via svelte-check (0 errors) and live on a local dev server — but it is uncommitted and has not been deployed; the bug is still live on moonbeautyval.com as of this audit.",
+          "recommendation": "Commit and deploy the existing fix. Confirm in production that the hero headline (home), listing/category title, and product name are each wrapped in a single semantic <h1> that doesn't compete with the cart-drawer headings."
+        },
+        {
+          "title": "Soft 404 on invalid /products/{id} URLs",
+          "severity": "High",
+          "description": "Any mistyped or removed product ID returns HTTP 200 with a self-referencing canonical, valid OnlineStore JSON-LD, and no noindex — while genuinely undefined routes correctly return 404. This is specific to the /products/[id] load logic not throwing on a missed Firestore lookup.",
+          "recommendation": "In the /products/[id] server load function, throw a SvelteKit error(404) when the Firestore document doesn't exist."
+        },
+        {
+          "title": "Zero images carry width/height attributes (CLS risk)",
+          "severity": "High",
+          "description": "All 50 sampled <img> tags on the homepage, and the same pattern on category/product pages, omit width/height or an equivalent aspect-ratio reservation, most critically on the large above-the-fold hero and product-carousel images.",
+          "recommendation": "Add explicit width/height (or aspect-ratio via CSS) to every <img>, prioritizing the hero image and the first row of product cards."
+        },
+        {
+          "title": "Product images served fully uncacheable",
+          "severity": "High",
+          "description": "Firebase Storage product photos are served with Cache-Control: private, max-age=0, forcing a full re-download of every product photo on every page view, including repeat visits and internal navigation.",
+          "recommendation": "Serve product images through a caching layer (Firebase Hosting rewrite, CDN/image-proxy, or Vercel Image Optimization) with public, max-age=<long>, immutable — the Firebase Storage URLs are already content-addressed via their token param, so aggressive caching is safe."
+        },
+        {
+          "title": "Gated/private routes return 200 with no noindex signal",
+          "severity": "Medium",
+          "description": "/admin, /account, /checkout, /login, /create_account, /forgot-password all return HTTP 200 to unauthenticated requests and rely solely on robots.txt Disallow, which blocks crawling but not indexing of a discovered URL.",
+          "recommendation": "Add X-Robots-Tag: noindex (or an equivalent meta tag) on these six routes as defense-in-depth."
+        },
+        {
+          "title": "No Product/Offer structured data or BreadcrumbList on product pages",
+          "severity": "Medium",
+          "description": "Every one of the 108 product pages carries only the sitewide OnlineStore block — no price/availability rich-result eligibility, and no breadcrumb markup anywhere despite a clear category-to-product hierarchy.",
+          "recommendation": "See the Schema category for the full implementation — cross-referenced here because it's also a technical crawlability/rich-result gap."
+        },
+        {
+          "title": "Unoptimized, uncompressed Firebase-hosted images and no preconnect hints",
+          "severity": "Medium",
+          "description": "Product photos are direct phone-camera uploads (e.g. 128KB JPEGs with filenames like IMG_3854.jpeg) with no resizing or modern-format conversion, and there's no preconnect/preload for the firebasestorage.googleapis.com origin that serves the LCP-candidate image on every page.",
+          "recommendation": "Run uploads through a resize/convert step producing WebP/AVIF variants; add <link rel=preconnect> for the Firebase Storage origin."
+        },
+        {
+          "title": "Mobile tap targets below recommended minimum, and a two-hop apex-HTTP redirect chain",
+          "severity": "Low",
+          "description": "Multiple header icons and carousel controls measure 25-32px (guideline is ~44px); some pagination dots are as small as 7x7px. Separately, http://moonbeautyval.com/ takes two 308 hops to reach the canonical https://www host instead of one.",
+          "recommendation": "Pad tappable areas to >=44px; consolidate the apex-HTTP redirect into a single 308 rule."
+        },
+        {
+          "title": "No IndexNow implementation, no lastmod in sitemap, Content-Type missing charset",
+          "severity": "Low",
+          "description": "Low-priority housekeeping items: no IndexNow key file (Google, the dominant engine here, doesn't consume it anyway); sitemap.xml has no <lastmod> on any URL; HTML responses omit '; charset=utf-8' from the Content-Type header (the in-document meta charset covers browsers correctly).",
+          "recommendation": "Optional cleanup, not urgent given the actual risk is low for this site's audience and crawler mix."
+        }
+      ]
+    },
+    {
+      "name": "Content Quality",
+      "score": 52,
+      "what_works": [
+        "127/127 unique titles and meta descriptions, templated_ratio 0.0 — the recent per-page metadata work is genuinely unique, not templated",
+        "108/108 unique product descriptions, no spun or duplicated copy",
+        "/categorias carries 485 words of genuine, differentiated, domain-expert K-Beauty copy — the best content on the site and proof the store can produce real E-E-A-T content",
+        "The 4 legal pages are specific, dated (2026-09-02), and business-accurate — the site's strongest trust asset",
+        "Product image and brand-logo alt text is specific and useful"
+      ],
+      "findings": [
+        {
+          "title": "Wrong product description on a live product page (factual inaccuracy)",
+          "severity": "Critical",
+          "description": "/products/1 is a TOCOBO Cotton Soft Sun Stick (confirmed against the raw Firestore document) but its description, meta description, and og:description all describe a completely different product: a Dr. Althea two-phase facial mist. This propagates into the page's meta description and WhatsApp link preview — the channel this business uses for checkout.",
+          "recommendation": "Replace the description in the admin panel with correct TOCOBO Cotton Soft Sun Stick copy, then do a human skim of the ~20 oldest products by creation date (the likely root-cause pattern) for similar copy/paste errors. An automated brand/keyword heuristic across all 108 products was tried during this audit and found unreliable (too many false positives from English-name/Spanish-description translation pairs) — this needs human review, not an automated fix."
+        },
+        {
+          "title": "Placeholder developer page is live, indexable, and has no <title>",
+          "severity": "Critical",
+          "description": "https://www.moonbeautyval.com/contacts returns HTTP 200 with its entire body reading 'Esta es la ruta de contactos.' No <title>, falls back to the site-default meta description, not linked from nav/footer but fully crawlable and discoverable by contact-intent searches.",
+          "recommendation": "Either build it into a real contact page or delete the route entirely. Do not just noindex it — 'contacts' is the natural landing URL for contact-intent queries and the business would benefit from a real page there."
+        },
+        {
+          "title": "116 of 127 meta descriptions (91%) were cut off mid-word",
+          "severity": "High",
+          "description": "The recortar() truncation helper in src/lib/seo.ts cut at a hard character count with no word-boundary logic, producing SERP snippets like 'Se absorbe rápidamen…' and 'envíos a toda Venezue…'. This has been fixed during this audit session (word-boundary-aware truncation) but the fix is not yet deployed.",
+          "recommendation": "Deploy the already-patched recortar() function. No further code work needed."
+        },
+        {
+          "title": "No <h1> on 123 of 127 live pages",
+          "severity": "High",
+          "description": "Only the 4 legal pages have a correct <h1>. A fix already exists in the working tree for the other four templates (home, /products, /categorias, product detail) but is uncommitted and undeployed.",
+          "recommendation": "Cross-referenced with the Technical SEO and On-Page categories — commit and deploy the existing fix."
+        },
+        {
+          "title": "No About page, and no business-legitimacy content anywhere",
+          "severity": "High",
+          "description": "There is no /sobre-nosotros or equivalent in the sitemap or navigation. The homepage's 'Nuestra esencia' block ends with a 'Saber más' link that points to /products instead of an actual about page. Nowhere on 127 pages does the site say who runs it, how sourcing/authenticity works, or give a business registration identifier — a real gap for a store asking for Zelle/Binance prepayment from unfamiliar customers.",
+          "recommendation": "Write one page (~400-600 words) covering who runs the store, how curation/sourcing works, delivery areas, and a full contact block; point 'Saber más' at it; add the business email to the footer."
+        },
+        {
+          "title": "The 12 category pages carry zero unique on-page copy",
+          "severity": "High",
+          "description": "Each /products?categoria=X page is 95-98% token-identical to /products by content, differing only in the label 'Categoría: {name}'. The category description that exists in descripcionCategoria() is used only in the meta tag, never rendered on the page.",
+          "recommendation": "Render the existing category description as a visible intro paragraph under a real <h1> on each category page — the content already exists, it just needs to be displayed."
+        },
+        {
+          "title": "Product pages are thin, with no store-original value-add",
+          "severity": "High",
+          "description": "Median unique product copy is 82 words (49 of 108 pages under 80 words). Missing on every product page: ingredient list, mode of use, skin-type guidance, and the brand name (shown on listing cards but not on the detail page itself).",
+          "recommendation": "Prioritize: (1) ingredient list + modo de uso per product — also the highest-value addition for AI answer engines; (2) show brand on the detail page; (3) a short store-voice note per product."
+        },
+        {
+          "title": "Category meta descriptions contradict what /categorias actually displays",
+          "severity": "Medium",
+          "description": "The hardcoded descripcionCategoria() strings in src/lib/seo.ts differ from the richer, Firestore-sourced descriptions actually rendered as cards on /categorias, so the SERP snippet promises text that doesn't match the destination page.",
+          "recommendation": "Make the Firestore category description the single source for the /categorias card, the category page meta description, and the new visible intro paragraph; keep descripcionCategoria() only as a fallback."
+        },
+        {
+          "title": "Machine-translation artifacts, grammar errors, and difficult readability in product copy",
+          "severity": "Medium",
+          "description": "Concrete examples: literal 'Powered by' → 'Alimentado por', untranslated English left in body copy ('mantén tu piel sana y glowy'), and one confirmed grammar error in /privacidad's meta description ('cómo los proteges' instead of 'protegemos', already fixed this session). Fernández-Huerta readability across all 108 product descriptions averages 49.6 (difficult), with 53 of 108 scoring below 50.",
+          "recommendation": "Copy-edit the ~9 products with untranslated English and split long sentences; the legal pages (hand-written, most readable content on the site) are the model to follow."
+        },
+        {
+          "title": "Returns policy references ingredient lists the site never publishes",
+          "severity": "Medium",
+          "description": "/cambios-y-devoluciones tells shoppers to check ingredient lists before buying, but no product page lists ingredients — a trust inconsistency.",
+          "recommendation": "Resolved automatically once ingredient lists are added to product pages (see the thin-content fix above)."
+        },
+        {
+          "title": "Brand suffix concatenated into 18 descriptions; 8 product titles exceed 60 characters",
+          "severity": "Medium",
+          "description": "'Moon Beauty' is repeated in both title and description body on /products, /categorias, and the 12 category pages, spending SERP character budget on the store's own name. The longest product title is 83 characters and will be cut in search results.",
+          "recommendation": "Trim the brand-suffix repetition from descriptions and shorten titles over 60 characters."
+        },
+        {
+          "title": "Testimonials, coupon marquee, Instagram alt text, and freshness signals",
+          "severity": "Low",
+          "description": "Only 3 undated testimonials with no purchase context; the coupon marquee duplicates ~114 words at the top of every page's extractable text; all 14 Instagram carousel images share identical alt text; no date/freshness signal exists anywhere except the 4 legal pages.",
+          "recommendation": "Low-cost cleanup items — not urgent, but each is a one-line or one-field fix."
+        }
+      ]
+    },
+    {
+      "name": "On-Page SEO",
+      "score": 48,
+      "what_works": [
+        "Title tags are unique, reasonably sized (18-56 chars on non-product pages), and self-canonicalized correctly on every page type including the 12 query-string category URLs",
+        "Category filter URLs correctly preserve their own canonical while stripping other query params, and render a genuinely distinct, smaller product subset server-side",
+        "Out-of-stock handling shows a clear 'Agotado' badge, disables add-to-cart, returns HTTP 200, and stays in the sitemap — avoiding soft-404s while preserving link equity"
+      ],
+      "findings": [
+        {
+          "title": "No <h1> anywhere on the 123 commercial pages",
+          "severity": "Critical",
+          "description": "The single most important on-page structural signal is missing from home, every category listing, and every one of the 108 product pages. A fix already exists in the working tree, verified with svelte-check and a local dev server, but is not yet committed or deployed.",
+          "recommendation": "Commit and deploy — this is the highest-leverage, lowest-effort item in the entire audit."
+        },
+        {
+          "title": "Product titles and headings omit the brand name",
+          "severity": "High",
+          "description": "Sampled titles read 'Hand Cream · Moon Beauty' or 'Cotton Soft Sun Stick · Moon Beauty' with no brand token, even though K-beauty demand is overwhelmingly brand-led ('tocobo cotton soft sun stick', 'medicube pdrn'). Only 22 of 108 product pages mention a known brand anywhere in the main content, despite the listing cards displaying brand correctly.",
+          "recommendation": "Render brand as an eyebrow label above the product name, include it in <title> ('TOCOBO Cotton Soft Sun Stick · Moon Beauty'), and in the image alt text — one data field already available, four surfaces to add it to."
+        },
+        {
+          "title": "Category titles omit the query modifiers buyers actually search",
+          "severity": "Medium",
+          "description": "Titles like 'Protector solar | Moon Beauty' or 'Serums o Ampollas | Moon Beauty' contain neither 'coreano' nor 'Venezuela', even though the meta descriptions correctly do — and titles carry more ranking weight than descriptions.",
+          "recommendation": "Adjust category titles to a pattern like 'Protector Solar Coreano | Comprar en Venezuela · Moon Beauty'."
+        },
+        {
+          "title": "No breadcrumb navigation, visually or as schema, anywhere on the site",
+          "severity": "Medium",
+          "description": "Product pages link back to their category via a single 'Ver todo' button only. No BreadcrumbList markup exists on any page type.",
+          "recommendation": "Add a simple Home / Products / Category / Product breadcrumb component plus matching BreadcrumbList JSON-LD (see Schema category)."
+        },
+        {
+          "title": "Category pages use query-string URLs; mixed product ID schemes",
+          "severity": "Low",
+          "description": "/products?categoria=X works correctly but a path-based structure (/categorias/protector-solar) would be more conventional and shareable, particularly over WhatsApp. Product URLs mix short legacy numeric IDs with 20-character Firestore hash IDs.",
+          "recommendation": "Not urgent given the current implementation is technically sound — worth scheduling as a medium-term improvement, not a fix-now item."
+        },
+        {
+          "title": "Raw whitespace inside <title> on /products and the 12 category pages",
+          "severity": "Low",
+          "description": "Emitted markup includes literal newlines/tabs inside the <title> tag on this one route template; cosmetic since browsers normalize whitespace, but adds noise for text-extraction pipelines.",
+          "recommendation": "Trim the Svelte <svelte:head> title interpolation on the /products route."
+        }
+      ]
+    },
+    {
+      "name": "Schema / Structured Data",
+      "score": 35,
+      "what_works": [
+        "The two structured-data blocks that do exist — sitewide OnlineStore and homepage-only WebSite — are valid, well-formed JSON-LD with no rendering discrepancies between source and live output",
+        "OnlineStore already includes name, url, logo, image, description, email, telephone, and a locality-level PostalAddress — meeting Google's Logo rich-result requirements"
+      ],
+      "findings": [
+        {
+          "title": "Product/Offer schema missing on all 108 product pages",
+          "severity": "High",
+          "description": "No Product, Offer, AggregateOffer, or Brand markup exists anywhere in the product template. All the required data (name, brand, image, USD price, availability state) is already present in the SSR HTML and just needs to be emitted as JSON-LD.",
+          "recommendation": "Add a Product JSON-LD block in the product page's <svelte:head> using the same inline-script escaping pattern already used in +layout.svelte. Emit USD as the primary Offer currency; do not also encode a VES price in schema since that rate fluctuates daily. Do not add aggregateRating/review — the homepage testimonials are manually curated, not per-product reviews, and fabricating review schema risks a manual action."
+        },
+        {
+          "title": "sameAs omits the Google Business Profile URL that already exists in code",
+          "severity": "Medium",
+          "description": "configuracion.ts already defines a googlePerfilUrl used on-page for the 'Ver todas en Google' button, but it's never added to the OnlineStore JSON-LD's sameAs array (only Instagram is listed).",
+          "recommendation": "Add contacto.googlePerfilUrl to the sameAs array alongside Instagram — a one-line, zero-new-data fix."
+        },
+        {
+          "title": "No local-service signals on the existing store entity",
+          "severity": "Medium",
+          "description": "No areaServed, geo, openingHoursSpecification, or paymentAccepted on the OnlineStore block, despite this being a hybrid local-delivery business with all of that data already available elsewhere in the codebase (configuracion.ts).",
+          "recommendation": "Enrich the existing OnlineStore block rather than adding a competing LocalBusiness type — add areaServed (Valencia, Naguanagua), priceRange, currenciesAccepted, and paymentAccepted."
+        },
+        {
+          "title": "No BreadcrumbList anywhere on the site",
+          "severity": "Medium",
+          "description": "No breadcrumb schema exists on product or category pages despite a clear Home -> Category -> Product hierarchy.",
+          "recommendation": "Add BreadcrumbList JSON-LD to product pages (highest value, pairs with the Product schema work) and category pages."
+        },
+        {
+          "title": "No @id linking OnlineStore and WebSite into one entity graph; GBP sameAs link is a redirect, not canonical",
+          "severity": "Low",
+          "description": "Minor entity-graph hygiene gaps — giving OnlineStore an @id and referencing it as WebSite's publisher would let Google merge the two nodes explicitly instead of inferring the relationship.",
+          "recommendation": "Cosmetic; not required for either block to validate or function."
+        }
+      ]
+    },
+    {
+      "name": "Performance (Core Web Vitals)",
+      "score": 41,
+      "what_works": [
+        "CLS passes on all three pages tested (0.002-0.017) — the one Core Web Vital in good shape site-wide",
+        "TTFB is within a reasonable range for SSR + database reads (650-800ms), though there's room to improve via edge caching"
+      ],
+      "findings": [
+        {
+          "title": "/products catalog eagerly loads all 108 products' images with no lazy-loading or pagination",
+          "severity": "Critical",
+          "description": "109 image requests totaling 7.98MB load immediately on page load regardless of viewport position — zero images have loading=\"lazy\", width/height, or srcset. Result: LCP 7.7s, TBT 1,860ms, a 36/100 Lighthouse performance score on this page (mobile, lab data).",
+          "recommendation": "Add loading=\"lazy\" to every product-grid image except the first visible row; serve resized thumbnails instead of full-resolution Firebase Storage originals; consider pagination or virtualization for a 108-item grid."
+        },
+        {
+          "title": "Firebase Storage used as a raw, unresized file host for all product/marketing imagery site-wide",
+          "severity": "Critical",
+          "description": "This is the systemic root cause behind poor LCP on every template. Every Firebase-hosted image is flagged by Lighthouse as larger than needed for its displayed size — an estimated 2MB+ of wasted image bytes on the homepage alone.",
+          "recommendation": "Introduce a resize/convert step (Firebase Extension, Cloud Function, or CDN transform) so imagery is served at the resolution actually needed, in WebP/AVIF."
+        },
+        {
+          "title": "Homepage ships 4.6MB / 91 requests including an 846KB autoplay-adjacent video before first paint",
+          "severity": "High",
+          "description": "LCP is 19.1s, the worst of the three pages tested. An Instagram Reel .mp4 loads on page load even though its poster image is already fetched separately.",
+          "recommendation": "Set the reel video to preload=\"none\" and fetch the .mp4 only on user interaction (play click)."
+        },
+        {
+          "title": "Custom web font blocks text render and is the largest single CLS contributor",
+          "severity": "High",
+          "description": "Manrope-Regular.ttf (~95-97KB) is not preloaded and is served as .ttf rather than .woff2, contributing 0.015 of the homepage's total 0.017 CLS score.",
+          "recommendation": "Convert to WOFF2, add <link rel=preload as=\"font\">, and ensure font-display: swap or optional."
+        },
+        {
+          "title": "Heavy client-side hydration produces long main-thread tasks on every template",
+          "severity": "High",
+          "description": "Up to 18 long tasks per page (some exceeding 800ms); one JS chunk (~158-175KB) is 85-87% unused on the pages where it loads.",
+          "recommendation": "Code-split GSAP/carousel logic to only load where used; audit the oversized chunk for dead code."
+        },
+        {
+          "title": "Firebase Auth iframe and Google Sign-In SDK load unconditionally on every page",
+          "severity": "Medium",
+          "description": "289KB + 122KB load on every page view even though no sign-in UI is active on initial load.",
+          "recommendation": "Defer Firebase Auth initialization until the user actually opens the login/account popup."
+        },
+        {
+          "title": "Render-blocking shared CSS and no preconnect hints for the dominant external origin",
+          "severity": "Medium",
+          "description": "A single ~60KB stylesheet blocks render on every template; zero preconnected origins exist despite heavy reliance on firebasestorage.googleapis.com and icon APIs.",
+          "recommendation": "Extract critical CSS per template; add preconnect for firebasestorage.googleapis.com at minimum."
+        }
+      ]
+    },
+    {
+      "name": "AI Search Readiness (GEO)",
+      "score": 50,
+      "what_works": [
+        "The site is technically wide open to every AI crawler tested (OAI-SearchBot, Claude-SearchBot, PerplexityBot, Googlebot, bingbot, Applebot) — all received an identical, fully-rendered 200 response with no cloaking or throttling",
+        "Full SSR with no hydration dependency — every crawler gets the complete document with prices, stock states, and NAP in the initial HTML",
+        "A Google Knowledge Graph entity already exists for the business (kgmid /g/11ntskjjk6) — most businesses this size do not have one",
+        "Product body descriptions are substantive and factual (median 95 words, real active-ingredient names) — 39 of 108 already sit in the ideal 100-167 word citation range"
+      ],
+      "findings": [
+        {
+          "title": "Zero Product/Offer structured data on all 108 product pages",
+          "severity": "Critical",
+          "description": "The single highest-impact GEO defect — AI Overviews' shopping surfaces, ChatGPT shopping, Bing Copilot product answers, and Perplexity's product cards have nothing to attach to, even though every required field is already rendered in the page.",
+          "recommendation": "Cross-referenced with the Schema category — same fix serves both."
+        },
+        {
+          "title": "No <h1> on any commercial page; the only extractable heading is the shopping cart",
+          "severity": "Critical",
+          "description": "Passage-ranking systems used by AI Overviews and Perplexity segment a document by heading hierarchy to decide what a passage is about. With no headings, every commercial page is one undifferentiated blob, and the one labeled section describes the cart drawer.",
+          "recommendation": "Same fix as the Technical/On-Page h1 finding — commit and deploy the existing patch."
+        },
+        {
+          "title": "Product brand is absent from detail pages, titles, and meta descriptions",
+          "severity": "Critical",
+          "description": "Only 22 of 108 product pages mention a known brand in the main content, even though the data exists and renders correctly on listing cards. An LLM cannot cite 'Hand Cream' as a resolvable entity, and cannot match the page to brand+product queries — the dominant K-beauty query form.",
+          "recommendation": "Render brand as an eyebrow label, in <title>, in image alt, and as Product.brand in the schema fix — one data field, four surfaces."
+        },
+        {
+          "title": "No factual entity statement anywhere; 'Naguanagua' appears zero times sitewide",
+          "severity": "High",
+          "description": "The homepage's self-description is entirely atmospheric ('La ciencia de la calma', 'Luminous Serenity') with no extractable sentence stating what the business is, where it operates, or how delivery works. There is no About/Nosotros/FAQ/blog page anywhere in the sitemap.",
+          "recommendation": "Add a factual 134-167 word About passage (ideal citation length) on the homepage and a dedicated page, naming Valencia and Naguanagua, the delivery-only model, WhatsApp ordering, and the brand roster — mirror the same facts into the schema's areaServed."
+        },
+        {
+          "title": "The 12 category pages have citation-grade copy stranded on the wrong URL",
+          "severity": "High",
+          "description": "/categorias has genuinely excellent, factual category copy, but the 12 topically-focused ?categoria= URLs that actually target searches like 'protector solar coreano' have no prose at all.",
+          "recommendation": "Render the existing category description as an intro paragraph on each category page — near-zero cost, same field already in the data."
+        },
+        {
+          "title": "All 108 product meta descriptions are mechanically truncated mid-word",
+          "severity": "High",
+          "description": "Length distribution is min 159 / median 160 / max 160 characters — every single one is a hard character-count slice, not a written description. This makes snippets unquotable for engines that seed summaries from the meta description. Fixed during this audit session (word-boundary truncation) but not yet deployed.",
+          "recommendation": "Deploy the already-patched recortar() function."
+        },
+        {
+          "title": "Almost no off-site entity corroboration beyond Instagram",
+          "severity": "High",
+          "description": "sameAs lists only Instagram. No YouTube (the single strongest correlate with AI citation per available research), no Wikipedia, no LinkedIn. The Google Business Profile, which already has a Knowledge Graph entity, is never referenced in the site's own schema.",
+          "recommendation": "Add the GBP URL to sameAs immediately (trivial); consider repurposing existing Instagram video content as YouTube Shorts for a stronger, more citable video surface (medium effort, highest ceiling)."
+        },
+        {
+          "title": "No BreadcrumbList/ItemList/CollectionPage schema; inconsistent entity naming across surfaces",
+          "severity": "Medium",
+          "description": "The business is referred to as 'Moon Beauty', 'MoonBeauty', and 'Moon Beauty Val' across different surfaces (title, footer, GBP), raising the risk an AI engine fails to reconcile the site with its existing Knowledge Graph entity.",
+          "recommendation": "Pick one canonical name ('Moon Beauty'), keep the others as alternateName values, and always pair with 'Valencia, Venezuela' in titles and prose for disambiguation."
+        },
+        {
+          "title": "No FAQ content; existing answers defer to WhatsApp and are unextractable",
+          "severity": "Medium",
+          "description": "/envios never names either delivery zone and defers cost/timing to WhatsApp coordination — an AI engine asked about delivery cost or coverage has nothing to extract.",
+          "recommendation": "Add a /preguntas-frecuentes page with FAQPage schema covering delivery zones, timing ranges, payment methods, and authenticity — FAQPage rich results are deprecated in Google Search but the markup is still consumed by AI/LLM extraction pipelines."
+        },
+        {
+          "title": "llms.txt and RSL licensing absent",
+          "severity": "Low",
+          "description": "Both confirmed 404. Correctly deprioritized: Google Search ignores llms.txt, and no major AI engine has documented consuming it for retrieval either.",
+          "recommendation": "No action needed at this site's current scale; revisit only if a substantial editorial/blog corpus is built."
+        }
+      ]
+    },
+    {
+      "name": "Images",
+      "score": 65,
+      "what_works": [
+        "Product cards and product detail hero images use the product name as alt text — descriptive, not generic",
+        "Brand logos use the brand name as alt text",
+        "Purely decorative images are correctly marked (empty alt + aria-hidden on the hero background; empty alt on color-swatch thumbnails whose parent button already carries an aria-label)",
+        "Product/category imagery is served as WebP; OG/share images were deliberately redone as JPG/PNG specifically because WhatsApp doesn't render WebP previews — a correct, intentional tradeoff"
+      ],
+      "findings": [
+        {
+          "title": "All Instagram carousel images share identical alt text",
+          "severity": "Medium",
+          "description": "Every photo across the homepage's ~20+ Instagram carousel posts uses the same alt, 'Publicación de Moon Beauty en Instagram', regardless of the actual photo content — a screen-reader user hears identical announcements for every image, and Google Images gets no differentiating signal.",
+          "recommendation": "Cheapest fix: append a photo index to disambiguate ('foto 2 de 4'). Better: add an optional per-post alt/descripcion field in the admin panel and fall back to the generic text only when empty."
+        },
+        {
+          "title": "No width/height attributes on <img> tags site-wide",
+          "severity": "Low",
+          "description": "CSS aspect-ratio classes are used consistently, so this is unlikely to be causing real CLS in practice (confirmed: CLS passes site-wide per the Performance category) — flagged as hygiene, not a measured defect.",
+          "recommendation": "Low priority; the dedicated performance measurements should be treated as authoritative over this static check."
+        }
+      ]
+    }
+  ],
+  "action_plan": {
+    "phases": [
+      {
+        "name": "Phase 1: Critical Fixes",
+        "timeframe": "Week 1",
+        "items": [
+          "Commit and deploy the already-written <h1> fix for home, /products, /categorias, and the product detail template (verified locally, zero errors, not yet in production)",
+          "Deploy the already-patched recortar() word-boundary truncation fix and the /privacidad grammar fix (both patched during this audit session, uncommitted)",
+          "Correct the /products/1 description in the admin panel (currently shows Dr. Althea mist copy on a TOCOBO sun stick page) and do a human skim of the ~20 oldest products for similar copy/paste errors",
+          "Delete or build out the placeholder /contacts route ('Esta es la ruta de contactos', no <title>, live and indexable)",
+          "Fix the /products/[id] soft-404: throw error(404) when a Firestore lookup misses instead of rendering a 200 'Producto no encontrado' page"
+        ]
+      },
+      {
+        "name": "Phase 2: High-Impact Improvements",
+        "timeframe": "Weeks 2-3",
+        "items": [
+          "Add Product/Offer JSON-LD to all 108 product pages (name, brand, image, USD price, availability, url) — all required data is already rendered in the page",
+          "Surface product brand on detail pages, in <title>, and in image alt text (data already exists on listing cards, just not on the detail route)",
+          "Render the existing category descriptions as visible intro paragraphs on the 12 /products?categoria=X pages, and give each a real <h1>",
+          "Add the existing Google Business Profile URL to the OnlineStore JSON-LD sameAs array",
+          "Fix image delivery from Firebase Storage: add loading=\"lazy\" to below-the-fold product grid images and introduce a resize/WebP step for uploads — the single biggest performance win available",
+          "Reposition or delay the mobile newsletter popup so it never covers the homepage's primary CTA or the product-detail purchase block",
+          "Add BreadcrumbList schema to product and category pages"
+        ]
+      },
+      {
+        "name": "Phase 3: Content & Authority",
+        "timeframe": "Month 2",
+        "items": [
+          "Write and publish an About/Nosotros page (~400-600 words) covering who runs the store, sourcing/authenticity, and delivery areas; point the homepage's 'Saber más' link at it instead of /products",
+          "Add a factual delivery-zones page or expand /envios to explicitly name Valencia and Naguanagua, timing ranges, and payment methods — this content currently exists only inside the robots-disallowed checkout flow",
+          "Add ingredient lists and 'modo de uso' guidance to product pages, starting with the highest-traffic SKUs",
+          "Copy-edit the ~9 products with untranslated English artifacts and the longest-sentence outliers",
+          "Add a /preguntas-frecuentes page with FAQPage schema",
+          "Pursue realistic, low-cost backlink/citation opportunities: authorized-retailer listings from the 10 K-beauty brands already carried, Venezuelan business directories, and K-beauty community/micro-influencer outreach"
+        ]
+      },
+      {
+        "name": "Phase 4: Monitoring & Iteration",
+        "timeframe": "Ongoing",
+        "items": [
+          "Confirm sitemap.xml is submitted and shows 'Success' with ~127 discovered URLs in Google Search Console",
+          "Re-run PageSpeed Insights/CrUX once the rate limit resets to replace this audit's lab-only Lighthouse data with real-user field data",
+          "Monitor Google Business Profile review velocity against the 18-day freshness rule; add aggregateRating schema once review volume supports it",
+          "Re-check Common Crawl domain presence in 2-3 quarters as the site accumulates external links",
+          "Compare this audit's drift baseline (captured 2026-09-13) against future audits to track regressions"
+        ]
+      }
+    ]
+  },
+  "artifacts": {
+    "findings_dir": "findings/",
+    "screenshots_dir": "screenshots/"
+  }
+}

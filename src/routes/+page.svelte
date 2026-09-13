@@ -468,12 +468,14 @@
 		<p class="text-sky-200 font-Manrope text-lg">{textos.heroEtiqueta}</p>
 
 		<!-- whitespace-pre-line respeta los saltos de línea que se escriban
-		en el panel, que es lo que parte el título en dos renglones. -->
-		<p
+		en el panel, que es lo que parte el título en dos renglones.
+		Es un <h1> (no un <p>) a propósito: es el título principal de la
+		portada y antes no había ningún <h1> en toda la página. -->
+		<h1
 			class="font-Manrope my-4 whitespace-pre-line text-5xl leading-none text-slate-600 sm:text-6xl md:text-7xl lg:text-8xl 2xl:text-9xl"
 		>
 			{textos.heroTitulo}
-		</p>
+		</h1>
 
 		<p
 			class="mt-5 max-w-2xl font-Manrope text-lg text-slate-600 sm:text-xl md:text-2xl lg:text-3xl"

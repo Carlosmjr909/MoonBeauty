@@ -9,7 +9,7 @@ export const load: PageServerLoad = async () => {
 		seo: {
 			titulo: `${pagina.titulo} | Moon Beauty`,
 			descripcion:
-				'Política de privacidad de Moon Beauty: qué datos recopilamos, cómo los usamos y cómo los proteges al comprar o crear una cuenta.'
+				'Política de privacidad de Moon Beauty: qué datos recopilamos, cómo los usamos y cómo los protegemos al comprar o crear una cuenta.'
 		}
 	};
 };

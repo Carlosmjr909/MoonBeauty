@@ -54,7 +54,10 @@ export function recortar(texto: string, maximo = 160): string {
 
 	if (limpio.length <= maximo) return limpio;
 
-	return `${limpio.slice(0, maximo - 1).trimEnd()}…`;
+	const corte = limpio.slice(0, maximo - 1);
+	const ultimoEspacio = corte.lastIndexOf(' ');
+
+	return `${corte.slice(0, ultimoEspacio > 0 ? ultimoEspacio : corte.length).trimEnd()}…`;
 }
 
 /**

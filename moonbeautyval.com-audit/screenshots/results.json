@@ -1,0 +1,1370 @@
+{
+  "home": {
+    "desktop": {
+      "url": "https://www.moonbeautyval.com/",
+      "viewport": "desktop",
+      "atf_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\home_desktop_atf.png",
+      "overflow": {
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "bodyScrollWidth": 1920
+      },
+      "has_horizontal_overflow": false,
+      "popup_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\home_desktop_popup.png",
+      "modal_candidates": [
+        {
+          "tag": "DIV",
+          "cls": "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-2xl bg-sky-200/80 p-5 shadow-2xl ring-1 ring-slate-200 sm:inset-x",
+          "visible": true,
+          "rect": {
+            "x": 1320,
+            "y": 876,
+            "w": 576,
+            "h": 180
+          },
+          "zIndex": "50"
+        }
+      ],
+      "full_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\home_desktop_full.png"
+    },
+    "mobile": {
+      "url": "https://www.moonbeautyval.com/",
+      "viewport": "mobile",
+      "atf_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\home_mobile_atf.png",
+      "overflow": {
+        "scrollWidth": 375,
+        "clientWidth": 375,
+        "bodyScrollWidth": 375
+      },
+      "has_horizontal_overflow": false,
+      "popup_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\home_mobile_popup.png",
+      "modal_candidates": [
+        {
+          "tag": "DIV",
+          "cls": "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-2xl bg-sky-200/80 p-5 shadow-2xl ring-1 ring-slate-200 sm:inset-x",
+          "visible": true,
+          "rect": {
+            "x": 16,
+            "y": 596,
+            "w": 343,
+            "h": 200
+          },
+          "zIndex": "50"
+        }
+      ],
+      "full_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\home_mobile_full.png",
+      "small_tap_targets": [
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 193,
+          "y": 52
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 241,
+          "y": 60
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 274,
+          "y": 60
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 120,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 295,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 469,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 643,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 817,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 991,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 1166,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 1340,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 1514,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 1688,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 1863,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 42,
+          "h": 42,
+          "x": 2037,
+          "y": 1227
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 37,
+          "y": 2137
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": -414,
+          "y": 2135
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": -295,
+          "y": 2135
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": -237,
+          "y": 2135
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": -118,
+          "y": 2135
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": -61,
+          "y": 2135
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 58,
+          "y": 2135
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 112,
+          "y": 2004
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 227,
+          "y": 2255
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 32,
+          "h": 32,
+          "x": 296,
+          "y": 2017
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 32,
+          "h": 32,
+          "x": 400,
+          "y": 2245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 32,
+          "h": 32,
+          "x": 472,
+          "y": 2017
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 32,
+          "h": 32,
+          "x": 576,
+          "y": 2245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 32,
+          "h": 32,
+          "x": 648,
+          "y": 2017
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 32,
+          "h": 32,
+          "x": 753,
+          "y": 2245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 32,
+          "h": 32,
+          "x": 825,
+          "y": 2017
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 32,
+          "h": 32,
+          "x": 929,
+          "y": 2245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 299,
+          "y": 2137
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 7,
+          "h": 7,
+          "x": 126,
+          "y": 2321
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 7,
+          "h": 7,
+          "x": 141,
+          "y": 2321
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 7,
+          "h": 7,
+          "x": 155,
+          "y": 2321
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 22,
+          "h": 7,
+          "x": 170,
+          "y": 2321
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 7,
+          "h": 7,
+          "x": 198,
+          "y": 2321
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 7,
+          "h": 7,
+          "x": 213,
+          "y": 2321
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 7,
+          "h": 7,
+          "x": 227,
+          "y": 2321
+        }
+      ],
+      "body_font_size": "16px"
+    }
+  },
+  "products": {
+    "desktop": {
+      "url": "https://www.moonbeautyval.com/products",
+      "viewport": "desktop",
+      "atf_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\products_desktop_atf.png",
+      "overflow": {
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "bodyScrollWidth": 1920
+      },
+      "has_horizontal_overflow": false,
+      "popup_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\products_desktop_popup.png",
+      "modal_candidates": [
+        {
+          "tag": "DIV",
+          "cls": "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-2xl bg-sky-200/80 p-5 shadow-2xl ring-1 ring-slate-200 sm:inset-x",
+          "visible": true,
+          "rect": {
+            "x": 1320,
+            "y": 876,
+            "w": 576,
+            "h": 180
+          },
+          "zIndex": "50"
+        }
+      ],
+      "full_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\products_desktop_full.png"
+    },
+    "mobile": {
+      "url": "https://www.moonbeautyval.com/products",
+      "viewport": "mobile",
+      "atf_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\products_mobile_atf.png",
+      "overflow": {
+        "scrollWidth": 375,
+        "clientWidth": 375,
+        "bodyScrollWidth": 375
+      },
+      "has_horizontal_overflow": false,
+      "popup_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\products_mobile_popup.png",
+      "modal_candidates": [
+        {
+          "tag": "DIV",
+          "cls": "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-2xl bg-sky-200/80 p-5 shadow-2xl ring-1 ring-slate-200 sm:inset-x",
+          "visible": true,
+          "rect": {
+            "x": 16,
+            "y": 596,
+            "w": 343,
+            "h": 200
+          },
+          "zIndex": "50"
+        }
+      ],
+      "full_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\products_mobile_full.png",
+      "small_tap_targets": [
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 193,
+          "y": 52
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 241,
+          "y": 60
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 274,
+          "y": 60
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Filtros",
+          "w": 100,
+          "h": 38,
+          "x": 20,
+          "y": 240
+        },
+        {
+          "tag": "A",
+          "text": "Hand Cream",
+          "w": 162,
+          "h": 28,
+          "x": 20,
+          "y": 552
+        },
+        {
+          "tag": "A",
+          "text": "Madeca Cream",
+          "w": 162,
+          "h": 28,
+          "x": 154,
+          "y": 1454
+        },
+        {
+          "tag": "A",
+          "text": "Noni Mist 50ml",
+          "w": 162,
+          "h": 28,
+          "x": -20,
+          "y": 5504
+        },
+        {
+          "tag": "A",
+          "text": "Bean Eye Cream",
+          "w": 162,
+          "h": 28,
+          "x": 154,
+          "y": 7244
+        },
+        {
+          "tag": "A",
+          "text": "Reedle Shot 100",
+          "w": 162,
+          "h": 28,
+          "x": -20,
+          "y": 15745
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 686,
+          "y": 28
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 20,
+          "h": 20,
+          "x": 327,
+          "y": 608
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 16,
+          "y": 23264
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 64,
+          "y": 23264
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 112,
+          "y": 23264
+        },
+        {
+          "tag": "A",
+          "text": "+58 412-505 0043",
+          "w": 115,
+          "h": 20,
+          "x": 43,
+          "y": 23417
+        },
+        {
+          "tag": "A",
+          "text": "Pol\u00edticas de Env\u00edo",
+          "w": 112,
+          "h": 19,
+          "x": 16,
+          "y": 23555
+        },
+        {
+          "tag": "A",
+          "text": "Cambios y Devoluciones",
+          "w": 157,
+          "h": 19,
+          "x": 16,
+          "y": 23587
+        },
+        {
+          "tag": "A",
+          "text": "T\u00e9rminos y Condiciones",
+          "w": 154,
+          "h": 19,
+          "x": 16,
+          "y": 23619
+        },
+        {
+          "tag": "A",
+          "text": "Pol\u00edtica de Privacidad",
+          "w": 136,
+          "h": 19,
+          "x": 16,
+          "y": 23651
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "w": 343,
+          "h": 21,
+          "x": 16,
+          "y": 23788
+        }
+      ],
+      "body_font_size": "16px"
+    }
+  },
+  "category-protector-solar": {
+    "desktop": {
+      "url": "https://www.moonbeautyval.com/products?categoria=Protector%20solar",
+      "viewport": "desktop",
+      "atf_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\category-protector-solar_desktop_atf.png",
+      "overflow": {
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "bodyScrollWidth": 1920
+      },
+      "has_horizontal_overflow": false,
+      "popup_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\category-protector-solar_desktop_popup.png",
+      "modal_candidates": [
+        {
+          "tag": "DIV",
+          "cls": "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-2xl bg-sky-200/80 p-5 shadow-2xl ring-1 ring-slate-200 sm:inset-x",
+          "visible": true,
+          "rect": {
+            "x": 1320,
+            "y": 876,
+            "w": 576,
+            "h": 180
+          },
+          "zIndex": "50"
+        }
+      ],
+      "full_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\category-protector-solar_desktop_full.png"
+    },
+    "mobile": {
+      "url": "https://www.moonbeautyval.com/products?categoria=Protector%20solar",
+      "viewport": "mobile",
+      "atf_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\category-protector-solar_mobile_atf.png",
+      "overflow": {
+        "scrollWidth": 375,
+        "clientWidth": 375,
+        "bodyScrollWidth": 375
+      },
+      "has_horizontal_overflow": false,
+      "popup_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\category-protector-solar_mobile_popup.png",
+      "modal_candidates": [
+        {
+          "tag": "DIV",
+          "cls": "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-2xl bg-sky-200/80 p-5 shadow-2xl ring-1 ring-slate-200 sm:inset-x",
+          "visible": true,
+          "rect": {
+            "x": 16,
+            "y": 596,
+            "w": 343,
+            "h": 200
+          },
+          "zIndex": "50"
+        }
+      ],
+      "full_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\category-protector-solar_mobile_full.png",
+      "small_tap_targets": [
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 193,
+          "y": 52
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 241,
+          "y": 60
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 274,
+          "y": 60
+        },
+        {
+          "tag": "A",
+          "text": "\u2190\nVer todos los productos",
+          "w": 208,
+          "h": 38,
+          "x": 20,
+          "y": 240
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Filtros",
+          "w": 100,
+          "h": 38,
+          "x": 240,
+          "y": 240
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 686,
+          "y": 28
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 20,
+          "h": 20,
+          "x": 327,
+          "y": 608
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 16,
+          "y": 2211
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 64,
+          "y": 2211
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 112,
+          "y": 2211
+        },
+        {
+          "tag": "A",
+          "text": "+58 412-505 0043",
+          "w": 115,
+          "h": 20,
+          "x": 43,
+          "y": 2364
+        },
+        {
+          "tag": "A",
+          "text": "Pol\u00edticas de Env\u00edo",
+          "w": 112,
+          "h": 19,
+          "x": 16,
+          "y": 2502
+        },
+        {
+          "tag": "A",
+          "text": "Cambios y Devoluciones",
+          "w": 157,
+          "h": 19,
+          "x": 16,
+          "y": 2534
+        },
+        {
+          "tag": "A",
+          "text": "T\u00e9rminos y Condiciones",
+          "w": 154,
+          "h": 19,
+          "x": 16,
+          "y": 2566
+        },
+        {
+          "tag": "A",
+          "text": "Pol\u00edtica de Privacidad",
+          "w": 136,
+          "h": 19,
+          "x": 16,
+          "y": 2598
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "w": 343,
+          "h": 21,
+          "x": 16,
+          "y": 2735
+        }
+      ],
+      "body_font_size": "16px"
+    }
+  },
+  "product-detail": {
+    "desktop": {
+      "url": "https://www.moonbeautyval.com/products/0GJ7WCWLCHvisN1gqEuo",
+      "viewport": "desktop",
+      "atf_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\product-detail_desktop_atf.png",
+      "overflow": {
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "bodyScrollWidth": 1920
+      },
+      "has_horizontal_overflow": false,
+      "popup_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\product-detail_desktop_popup.png",
+      "modal_candidates": [
+        {
+          "tag": "DIV",
+          "cls": "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-2xl bg-sky-200/80 p-5 shadow-2xl ring-1 ring-slate-200 sm:inset-x",
+          "visible": true,
+          "rect": {
+            "x": 1320,
+            "y": 876,
+            "w": 576,
+            "h": 180
+          },
+          "zIndex": "50"
+        }
+      ],
+      "full_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\product-detail_desktop_full.png"
+    },
+    "mobile": {
+      "url": "https://www.moonbeautyval.com/products/0GJ7WCWLCHvisN1gqEuo",
+      "viewport": "mobile",
+      "atf_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\product-detail_mobile_atf.png",
+      "overflow": {
+        "scrollWidth": 375,
+        "clientWidth": 375,
+        "bodyScrollWidth": 375
+      },
+      "has_horizontal_overflow": false,
+      "popup_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\product-detail_mobile_popup.png",
+      "modal_candidates": [
+        {
+          "tag": "DIV",
+          "cls": "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-2xl bg-sky-200/80 p-5 shadow-2xl ring-1 ring-slate-200 sm:inset-x",
+          "visible": true,
+          "rect": {
+            "x": 16,
+            "y": 596,
+            "w": 343,
+            "h": 200
+          },
+          "zIndex": "50"
+        }
+      ],
+      "full_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\product-detail_mobile_full.png",
+      "small_tap_targets": [
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 193,
+          "y": 52
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 241,
+          "y": 60
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 274,
+          "y": 60
+        },
+        {
+          "tag": "BUTTON",
+          "text": "\u2212",
+          "w": 53,
+          "h": 32,
+          "x": 25,
+          "y": 1271
+        },
+        {
+          "tag": "BUTTON",
+          "text": "+",
+          "w": 54,
+          "h": 32,
+          "x": 118,
+          "y": 1271
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 686,
+          "y": 28
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 20,
+          "h": 20,
+          "x": 327,
+          "y": 608
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 16,
+          "y": 2187
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 64,
+          "y": 2187
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 112,
+          "y": 2187
+        },
+        {
+          "tag": "A",
+          "text": "+58 412-505 0043",
+          "w": 115,
+          "h": 20,
+          "x": 43,
+          "y": 2340
+        },
+        {
+          "tag": "A",
+          "text": "Pol\u00edticas de Env\u00edo",
+          "w": 112,
+          "h": 19,
+          "x": 16,
+          "y": 2478
+        },
+        {
+          "tag": "A",
+          "text": "Cambios y Devoluciones",
+          "w": 157,
+          "h": 19,
+          "x": 16,
+          "y": 2510
+        },
+        {
+          "tag": "A",
+          "text": "T\u00e9rminos y Condiciones",
+          "w": 154,
+          "h": 19,
+          "x": 16,
+          "y": 2542
+        },
+        {
+          "tag": "A",
+          "text": "Pol\u00edtica de Privacidad",
+          "w": 136,
+          "h": 19,
+          "x": 16,
+          "y": 2574
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "w": 343,
+          "h": 21,
+          "x": 16,
+          "y": 2711
+        }
+      ],
+      "body_font_size": "16px"
+    }
+  },
+  "checkout": {
+    "desktop": {
+      "url": "https://www.moonbeautyval.com/checkout",
+      "viewport": "desktop",
+      "atf_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\checkout_desktop_atf.png",
+      "overflow": {
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "bodyScrollWidth": 1920
+      },
+      "has_horizontal_overflow": false,
+      "full_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\checkout_desktop_full.png"
+    },
+    "mobile": {
+      "url": "https://www.moonbeautyval.com/checkout",
+      "viewport": "mobile",
+      "atf_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\checkout_mobile_atf.png",
+      "overflow": {
+        "scrollWidth": 375,
+        "clientWidth": 375,
+        "bodyScrollWidth": 375
+      },
+      "has_horizontal_overflow": false,
+      "full_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\checkout_mobile_full.png",
+      "small_tap_targets": [
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 193,
+          "y": 52
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 241,
+          "y": 60
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 274,
+          "y": 60
+        },
+        {
+          "tag": "INPUT",
+          "text": "delivery",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 712
+        },
+        {
+          "tag": "INPUT",
+          "text": "entrega_naguanagua",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 856
+        },
+        {
+          "tag": "INPUT",
+          "text": "envio_nacional",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 1000
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Elegir ubicaci\u00f3n en el mapa",
+          "w": 233,
+          "h": 38,
+          "x": 40,
+          "y": 1192
+        },
+        {
+          "tag": "INPUT",
+          "text": "efectivo",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 1642
+        },
+        {
+          "tag": "INPUT",
+          "text": "pago_movil",
+          "w": 1,
+          "h": 1,
+          "x": 210,
+          "y": 1642
+        },
+        {
+          "tag": "INPUT",
+          "text": "binance",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 1752
+        },
+        {
+          "tag": "INPUT",
+          "text": "zelle",
+          "w": 1,
+          "h": 1,
+          "x": 210,
+          "y": 1752
+        },
+        {
+          "tag": "INPUT",
+          "text": "zinli",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 1862
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 686,
+          "y": 28
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 16,
+          "y": 3116
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 64,
+          "y": 3116
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 112,
+          "y": 3116
+        },
+        {
+          "tag": "A",
+          "text": "+58 412-505 0043",
+          "w": 115,
+          "h": 20,
+          "x": 43,
+          "y": 3269
+        },
+        {
+          "tag": "A",
+          "text": "Pol\u00edticas de Env\u00edo",
+          "w": 112,
+          "h": 19,
+          "x": 16,
+          "y": 3407
+        },
+        {
+          "tag": "A",
+          "text": "Cambios y Devoluciones",
+          "w": 157,
+          "h": 19,
+          "x": 16,
+          "y": 3439
+        },
+        {
+          "tag": "A",
+          "text": "T\u00e9rminos y Condiciones",
+          "w": 154,
+          "h": 19,
+          "x": 16,
+          "y": 3471
+        },
+        {
+          "tag": "A",
+          "text": "Pol\u00edtica de Privacidad",
+          "w": 136,
+          "h": 19,
+          "x": 16,
+          "y": 3503
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "w": 343,
+          "h": 21,
+          "x": 16,
+          "y": 3640
+        }
+      ],
+      "body_font_size": "16px"
+    },
+    "mobile390": {
+      "url": "https://www.moonbeautyval.com/checkout",
+      "viewport": "mobile390",
+      "atf_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\checkout_mobile390_atf.png",
+      "overflow": {
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "bodyScrollWidth": 390
+      },
+      "has_horizontal_overflow": false,
+      "full_screenshot": "C:/Users/HP/Desktop/MoonBeauty/moonbeautyval.com-audit/screenshots\\checkout_mobile390_full.png",
+      "small_tap_targets": [
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 208,
+          "y": 52
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 256,
+          "y": 60
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 25,
+          "h": 25,
+          "x": 289,
+          "y": 60
+        },
+        {
+          "tag": "INPUT",
+          "text": "delivery",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 712
+        },
+        {
+          "tag": "INPUT",
+          "text": "entrega_naguanagua",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 856
+        },
+        {
+          "tag": "INPUT",
+          "text": "envio_nacional",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 1000
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Elegir ubicaci\u00f3n en el mapa",
+          "w": 233,
+          "h": 38,
+          "x": 40,
+          "y": 1192
+        },
+        {
+          "tag": "INPUT",
+          "text": "efectivo",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 1642
+        },
+        {
+          "tag": "INPUT",
+          "text": "pago_movil",
+          "w": 1,
+          "h": 1,
+          "x": 217,
+          "y": 1642
+        },
+        {
+          "tag": "INPUT",
+          "text": "binance",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 1752
+        },
+        {
+          "tag": "INPUT",
+          "text": "zelle",
+          "w": 1,
+          "h": 1,
+          "x": 217,
+          "y": 1752
+        },
+        {
+          "tag": "INPUT",
+          "text": "zinli",
+          "w": 1,
+          "h": 1,
+          "x": 56,
+          "y": 1862
+        },
+        {
+          "tag": "BUTTON",
+          "text": "",
+          "w": 40,
+          "h": 40,
+          "x": 716,
+          "y": 28
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 16,
+          "y": 3116
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 64,
+          "y": 3116
+        },
+        {
+          "tag": "A",
+          "text": "",
+          "w": 36,
+          "h": 36,
+          "x": 112,
+          "y": 3116
+        },
+        {
+          "tag": "A",
+          "text": "+58 412-505 0043",
+          "w": 115,
+          "h": 20,
+          "x": 43,
+          "y": 3269
+        },
+        {
+          "tag": "A",
+          "text": "Pol\u00edticas de Env\u00edo",
+          "w": 112,
+          "h": 19,
+          "x": 16,
+          "y": 3407
+        },
+        {
+          "tag": "A",
+          "text": "Cambios y Devoluciones",
+          "w": 157,
+          "h": 19,
+          "x": 16,
+          "y": 3439
+        },
+        {
+          "tag": "A",
+          "text": "T\u00e9rminos y Condiciones",
+          "w": 154,
+          "h": 19,
+          "x": 16,
+          "y": 3471
+        },
+        {
+          "tag": "A",
+          "text": "Pol\u00edtica de Privacidad",
+          "w": 136,
+          "h": 19,
+          "x": 16,
+          "y": 3503
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "w": 358,
+          "h": 21,
+          "x": 16,
+          "y": 3640
+        }
+      ],
+      "body_font_size": "16px"
+    }
+  }
+}

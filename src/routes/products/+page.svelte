@@ -143,9 +143,9 @@
 	<div class="mx-auto max-w-7xl">
 		<div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 			<div>
-				<p class="font-Manrope text-3xl text-slate-800 sm:text-4xl lg:text-5xl">
+				<h1 class="font-Manrope text-3xl text-slate-800 sm:text-4xl lg:text-5xl">
 					Productos
-				</p>
+				</h1>
 				<p class="mt-2 text-sm text-slate-500 sm:text-base">
 					{#if categoriaSeleccionada}
 						Categoría: <span class="font-semibold text-slate-700">{categoriaSeleccionada}</span>
