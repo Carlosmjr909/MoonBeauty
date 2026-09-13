@@ -30,5 +30,18 @@ export const load: PageServerLoad = async () => {
 		})
 	]);
 
-	return { publicacionesInstagram, marcas, testimonios };
+	return {
+		publicacionesInstagram,
+		marcas,
+		testimonios,
+		// Descripción propia de la portada: menciona la marca y la
+		// ubicación, a diferencia de /products o de cada categoría, que
+		// hablan del catálogo. SEO_POR_DEFECTO queda como respaldo
+		// genérico para páginas sin descripción propia.
+		seo: {
+			titulo: 'Moon Beauty · Skincare coreano en Venezuela',
+			descripcion:
+				'Moon Beauty: tienda venezolana de skincare coreano en Valencia, Carabobo. Marcas K-Beauty seleccionadas, delivery y envíos a toda Venezuela.'
+		}
+	};
 };

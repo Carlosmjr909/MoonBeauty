@@ -142,8 +142,13 @@ function filaEntrega(datos: DatosPedido): string {
 	const casaApartamento = entrega.casaApartamento?.trim();
 	const codigoPostal = entrega.codigoPostal?.trim();
 
+	const titulo =
+		datos.tipoEntrega === 'entrega_naguanagua'
+			? 'Entrega (Naguanagua, sin costo adicional)'
+			: 'Delivery (coordinar monto por WhatsApp)';
+
 	return `
-		<h3 style="margin-top: 16px;">Entrega a domicilio</h3>
+		<h3 style="margin-top: 16px;">${titulo}</h3>
 		<p><strong>Dirección:</strong> ${escaparHtml(entrega.direccion)}</p>
 		${casaApartamento ? `<p><strong>Casa/Apartamento:</strong> ${escaparHtml(casaApartamento)}</p>` : ''}
 		<p><strong>Ciudad:</strong> ${escaparHtml(entrega.ciudad)}</p>

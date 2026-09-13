@@ -132,7 +132,11 @@
 </script>
 
 <svelte:head>
-	<title>Productos | Moon Beauty</title>
+	<title>
+		{categoriaSeleccionada
+			? `${categoriaSeleccionada} | Moon Beauty`
+			: 'Productos | Moon Beauty'}
+	</title>
 </svelte:head>
 
 <section class="bg-slate-50 px-5 py-12 sm:px-8 lg:px-14">

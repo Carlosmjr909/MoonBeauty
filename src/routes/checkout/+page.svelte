@@ -60,7 +60,8 @@
 	let correo = $state('');
 	let telefono = $state('');
 
-	// Cómo recibe el pedido: entrega a domicilio o encomienda nacional.
+	// Cómo recibe el pedido: delivery en Valencia, entrega gratis en
+	// Naguanagua, o encomienda nacional.
 	let tipoEntrega = $state<TipoEntrega>('delivery');
 
 	let direccion = $state('');
@@ -69,6 +70,20 @@
 	let codigoPostal = $state('');
 	let estadoEntrega = $state('');
 	let ubicacionMapa = $state<{ lat: number; lng: number } | null>(null);
+
+	// El delivery y la entrega gratis están cada uno restringidos a una
+	// sola ciudad, así que no hace falta pedirla: se fija sola al elegir
+	// la modalidad, y así el pedido y el correo siempre muestran la
+	// zona correcta sin depender de que la persona la escriba bien.
+	$effect(() => {
+		if (tipoEntrega === 'delivery') {
+			ciudad = 'Valencia';
+			estadoEntrega = 'Carabobo';
+		} else if (tipoEntrega === 'entrega_naguanagua') {
+			ciudad = 'Naguanagua';
+			estadoEntrega = 'Carabobo';
+		}
+	});
 
 	/* ------------------- Envío nacional por encomienda ------------------- */
 
@@ -146,17 +161,13 @@
 
 		if (calle) direccion = calle;
 
-		const ciudadEncontrada =
-			buscar('locality') || buscar('administrative_area_level_2');
-		if (ciudadEncontrada) ciudad = ciudadEncontrada;
-
-		const estadoEncontrado = buscar('administrative_area_level_1');
-		if (estadoEncontrado) {
-			const coincidencia = ESTADOS_VENEZUELA.find(
-				(e) => e.toLowerCase() === estadoEncontrado.toLowerCase()
-			);
-			estadoEntrega = coincidencia ?? estadoEncontrado;
-		}
+		// Ciudad y estado ya no se toman de acá: tanto el delivery como
+		// la entrega gratis están restringidos a una sola zona (Valencia
+		// o Naguanagua), fijada al elegir la modalidad. Si se dejaran
+		// tomar del punto marcado en el mapa, alguien podría terminar con
+		// un pedido que dice "Naguanagua" pero con un pin en otro
+		// municipio, o pisar la zona fija con lo que devuelva el
+		// geocodificador.
 
 		const postal = buscar('postal_code');
 		if (postal) codigoPostal = postal;
@@ -472,10 +483,10 @@
 			return;
 		}
 
-		if (tipoEntrega === 'delivery') {
-			if (!direccion.trim() || !ciudad.trim() || !estadoEntrega.trim()) {
+		if (tipoEntrega === 'delivery' || tipoEntrega === 'entrega_naguanagua') {
+			if (!direccion.trim()) {
 				error =
-					'Completa la dirección, ciudad y estado de entrega (o marca la ubicación en el mapa).';
+					'Completa la dirección de entrega (o marca la ubicación en el mapa).';
 
 				return;
 			}
@@ -595,8 +606,10 @@ const envioNacionalFinal =
 			}
 		: null;
 
-// Con envío nacional, la dirección del pedido es la de la agencia:
-// así el correo y el panel muestran a dónde va, sin campos vacíos.
+// Con envío nacional, la dirección del pedido es la de la agencia (y con
+// delivery/entrega, ciudad y estado ya vienen fijados solos según la
+// zona elegida): así el correo y el panel muestran a dónde va, sin
+// campos vacíos.
 const entregaFinal =
 	tipoEntrega === 'envio_nacional' && envioNacionalFinal
 		? {
@@ -935,7 +948,7 @@ carrito.vaciar();
 							2. ¿Cómo lo recibes?
 						</h2>
 
-						<div class="mt-4 grid gap-3 sm:grid-cols-2">
+						<div class="mt-4 grid gap-3 sm:grid-cols-3">
 							<label
 								class="cursor-pointer rounded-2xl border p-4 transition"
 								class:border-sky-400={tipoEntrega === 'delivery'}
@@ -958,11 +971,49 @@ carrito.vaciar();
 								<span
 									class="mt-2 block font-semibold text-slate-700"
 								>
-									Entrega
+									Delivery
+								</span>
+
+								<span class="mt-1 block text-xs font-semibold text-sky-700">
+									En toda Valencia
 								</span>
 
 								<span class="mt-1 block text-xs text-slate-500">
-									Te lo llevamos a tu dirección.
+									El monto se coordina por WhatsApp.
+								</span>
+							</label>
+
+							<label
+								class="cursor-pointer rounded-2xl border p-4 transition"
+								class:border-sky-400={tipoEntrega === 'entrega_naguanagua'}
+								class:bg-sky-50={tipoEntrega === 'entrega_naguanagua'}
+							>
+								<input
+									class="sr-only"
+									type="radio"
+									name="tipoEntrega"
+									value="entrega_naguanagua"
+									bind:group={tipoEntrega}
+								/>
+
+								<Icon
+									icon="material-symbols:location-on-outline-rounded"
+									width="26"
+									class="text-slate-600"
+								/>
+
+								<span
+									class="mt-2 block font-semibold text-slate-700"
+								>
+									Entrega
+								</span>
+
+								<span class="mt-1 block text-xs font-semibold text-sky-700">
+									Sin costo adicional
+								</span>
+
+								<span class="mt-1 block text-xs text-slate-500">
+									Solo disponible en Naguanagua.
 								</span>
 							</label>
 
@@ -1001,9 +1052,11 @@ carrito.vaciar();
 							</label>
 						</div>
 
-						{#if tipoEntrega === 'delivery'}
+						{#if tipoEntrega === 'delivery' || tipoEntrega === 'entrega_naguanagua'}
 						<p class="mt-5 text-sm text-slate-500">
-							Dinos dónde te llevamos el pedido.
+							{tipoEntrega === 'delivery'
+								? 'Dinos dónde te llevamos el pedido, dentro de Valencia.'
+								: 'Dinos dónde te llevamos el pedido, dentro de Naguanagua.'}
 						</p>
 
 						{#if GOOGLE_MAPS_API_KEY}
@@ -1065,37 +1118,6 @@ carrito.vaciar();
 
 							<label>
 								<span class="mb-2 block text-sm text-slate-600">
-									Ciudad
-								</span>
-
-								<input
-									bind:value={ciudad}
-									required
-									class="h-12 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-sky-300"
-								/>
-							</label>
-
-							<label>
-								<span class="mb-2 block text-sm text-slate-600">
-									Estado
-								</span>
-
-								<select
-									bind:value={estadoEntrega}
-									required
-									class="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 outline-none focus:border-sky-300"
-								>
-									<option value="" disabled selected={!estadoEntrega}>
-										Selecciona un estado
-									</option>
-									{#each ESTADOS_VENEZUELA as estadoOpcion}
-										<option value={estadoOpcion}>{estadoOpcion}</option>
-									{/each}
-								</select>
-							</label>
-
-							<label>
-								<span class="mb-2 block text-sm text-slate-600">
 									Código postal (opcional)
 								</span>
 
@@ -1104,6 +1126,15 @@ carrito.vaciar();
 									class="h-12 w-full rounded-xl border border-slate-200 px-4 outline-none focus:border-sky-300"
 								/>
 							</label>
+
+							<!-- Ciudad y estado no se piden: cada modalidad está
+							restringida a una sola zona, así que ya quedaron
+							fijados solos al elegirla (ver el $effect de arriba). -->
+							<p
+								class="sm:col-span-2 -mt-1 text-xs text-slate-400"
+							>
+								Zona de entrega: {ciudad}, {estadoEntrega}.
+							</p>
 						</div>
 						{:else}
 							<!-- Envío nacional por encomienda -->

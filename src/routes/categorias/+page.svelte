@@ -3,6 +3,7 @@
 	import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 	import Categoria from '$lib/components/categoria.svelte';
 	import { categoriasDeProducto } from '$lib/inventario';
+	import { descripcionCategoria } from '$lib/seo';
 
 	// gsap y gsap/ScrollTrigger no traen "type": "module" en su package.json
 	// y en el servidor (SSR en Vercel) Node no logra resolverlos bien vía
@@ -82,19 +83,6 @@
 
 		return [...mapa.values()];
 	});
-
-	function descripcionCategoria(tipo: string) {
-		switch (tipo.toLowerCase()) {
-			case 'protector solar':
-				return 'Protección diaria con fórmulas ligeras, confortables y preparadas para pieles sensibles y con cobertura de alto nivel.';
-			case 'balsamo labial':
-				return 'Bálsamos y tintes para labios con hidratación intensa, brillo y un acabado suave, natural y cuidado constante.';
-			case 'mascarilla facial':
-				return 'Mascarillas y tratamientos faciales para calmar, hidratar y revitalizar la piel con una rutina efectiva.';
-			default:
-				return 'Productos pensados para mantener la piel fresca, cuidada y con un look luminoso y saludable.';
-		}
-	}
 
 	// Entrada diagonal en cascada para las tarjetas de categoría. Las que
 	// ya están a la vista al entrar animan de inmediato; el resto va

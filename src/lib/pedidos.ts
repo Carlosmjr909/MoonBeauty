@@ -46,8 +46,13 @@ export type EntregaPedido = {
 	} | null;
 };
 
-/** Cómo recibe el pedido el comprador. */
-export type TipoEntrega = 'delivery' | 'envio_nacional';
+/**
+ * Cómo recibe el pedido el comprador:
+ * - delivery: a domicilio en Valencia, monto coordinado por WhatsApp.
+ * - entrega_naguanagua: a domicilio en Naguanagua, sin costo adicional.
+ * - envio_nacional: por encomienda, cobro a destino.
+ */
+export type TipoEntrega = 'delivery' | 'entrega_naguanagua' | 'envio_nacional';
 
 export type EmpresaEnvio = 'mrw' | 'zoom' | 'tealca';
 
