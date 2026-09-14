@@ -17,21 +17,12 @@ function anchoPermitido(ancho: number): AnchoImagenOptimizada {
 }
 
 /**
- * Una imagen es optimizable si es una foto de Firebase Storage (dominio
- * permitido en "images.domains", vite.config.ts) o una ruta local que
- * empieza en "/" (los estáticos de /static, como /fondo.webp): ambas
- * pasan por el endpoint /_vercel/image de Vercel. Cualquier otra cosa
- * (blob:, data:, u otro dominio no permitido) se devuelve tal cual.
- */
-function esOptimizable(url: string): boolean {
-	return (
-		url.startsWith('https://firebasestorage.googleapis.com/') ||
-		(url.startsWith('/') && !url.startsWith('//'))
-	);
-}
-
-/**
- * Imagen redimensionada por Vercel a un ancho puntual.
+ * Foto de Firebase Storage redimensionada por Vercel a un ancho puntual.
+ *
+ * Solo tiene efecto con fotos absolutas de un dominio permitido en
+ * "images.domains" (vite.config.ts) — hoy solo firebasestorage.googleapis.com.
+ * Rutas locales (/logos/*.webp, etc.) se devuelven tal cual: ya están
+ * optimizadas por Vite y no necesitan pasar por este endpoint.
  *
  * En desarrollo se devuelve la URL original sin tocar: el endpoint
  * /_vercel/image solo existe una vez desplegado en Vercel.
@@ -41,7 +32,7 @@ export function fotoOptimizada(
 	ancho: number,
 	calidad = 75
 ): string {
-	if (!url || dev || !esOptimizable(url)) {
+	if (!url || dev || !url.startsWith('https://firebasestorage.googleapis.com/')) {
 		return url ?? '';
 	}
 
@@ -61,7 +52,7 @@ export function srcsetOptimizado(
 	anchos: number[] = [...ANCHOS_IMAGEN_OPTIMIZADA],
 	calidad = 75
 ): string | undefined {
-	if (!url || dev || !esOptimizable(url)) {
+	if (!url || dev || !url.startsWith('https://firebasestorage.googleapis.com/')) {
 		return undefined;
 	}
 
