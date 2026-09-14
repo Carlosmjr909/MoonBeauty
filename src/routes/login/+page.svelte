@@ -2,15 +2,7 @@
 	import Icon from "@iconify/svelte";
 	import { goto } from "$app/navigation";
 
-	import {
-		browserLocalPersistence,
-		browserSessionPersistence,
-		setPersistence,
-		signInWithEmailAndPassword,
-		signInWithPopup,
-	} from "firebase/auth";
-
-	import { auth, googleProvider } from "$lib/firebase";
+	import { obtenerAuth, obtenerGoogleProvider } from "$lib/firebase";
 
 	let mostrarContrasena = $state(false);
 
@@ -27,6 +19,11 @@
 		cargando = true;
 
 		try {
+			const [
+				auth,
+				{ browserLocalPersistence, browserSessionPersistence, setPersistence, signInWithEmailAndPassword },
+			] = await Promise.all([obtenerAuth(), import("firebase/auth")]);
+
 			await setPersistence(
 				auth,
 				recordarme
@@ -49,6 +46,12 @@
 		cargando = true;
 
 		try {
+			const [auth, googleProvider, { signInWithPopup }] = await Promise.all([
+				obtenerAuth(),
+				obtenerGoogleProvider(),
+				import("firebase/auth"),
+			]);
+
 			await signInWithPopup(auth, googleProvider);
 			await goto("/");
 		} catch (error) {

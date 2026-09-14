@@ -15,11 +15,7 @@ import {
 	uploadBytes
 } from 'firebase/storage';
 
-import {
-	signInAnonymously
-} from 'firebase/auth';
-
-import { auth, db, storage } from '$lib/firebase';
+import { db, storage, obtenerAuth } from '$lib/firebase';
 
 export type MetodoPago =
 	| 'efectivo'
@@ -155,10 +151,13 @@ export async function subirComprobantePago(archivo: File): Promise<string> {
  * Firestore puedan verificar la escritura, sin obligar a crear cuenta.
  */
 export async function asegurarSesion() {
+	const auth = await obtenerAuth();
+
 	if (auth.currentUser) {
 		return auth.currentUser;
 	}
 
+	const { signInAnonymously } = await import('firebase/auth');
 	const resultado = await signInAnonymously(auth);
 	return resultado.user;
 }

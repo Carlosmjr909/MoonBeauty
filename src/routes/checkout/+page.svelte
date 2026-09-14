@@ -5,8 +5,6 @@
 	import { goto } from '$app/navigation';
 	import { env } from '$env/dynamic/public';
 
-	import { auth } from '$lib/firebase';
-
 	import {
 		carrito,
 		totalCarritoUSD

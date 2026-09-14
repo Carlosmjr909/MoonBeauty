@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from "svelte";
 	import Icon from "@iconify/svelte";
-	import { auth } from "$lib/firebase";
+	import { obtenerAuth } from "$lib/firebase";
 	import {
 		escucharCupones,
 		guardarCupon,
@@ -195,6 +195,7 @@
 		error = "";
 
 		try {
+			const auth = await obtenerAuth();
 			const usuarioActual = auth.currentUser;
 
 			if (!usuarioActual) {

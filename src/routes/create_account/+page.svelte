@@ -2,15 +2,9 @@
 	import Icon from "@iconify/svelte";
 	import { goto } from "$app/navigation";
 
-	import {
-		createUserWithEmailAndPassword,
-		updateProfile,
-		signInWithPopup,
-	} from "firebase/auth";
-
 	import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
-	import { auth, db, googleProvider } from "$lib/firebase";
+	import { db, obtenerAuth, obtenerGoogleProvider } from "$lib/firebase";
 
 	let mostrarContrasena = $state(false);
 	let mostrarConfirmacion = $state(false);
@@ -40,6 +34,9 @@
 		cargando = true;
 
 		try {
+			const [auth, { createUserWithEmailAndPassword, updateProfile }] =
+				await Promise.all([obtenerAuth(), import("firebase/auth")]);
+
 			const credencial = await createUserWithEmailAndPassword(
 				auth,
 				correo.trim(),
@@ -71,6 +68,12 @@
 		cargando = true;
 
 		try {
+			const [auth, googleProvider, { signInWithPopup }] = await Promise.all([
+				obtenerAuth(),
+				obtenerGoogleProvider(),
+				import("firebase/auth"),
+			]);
+
 			const credencial = await signInWithPopup(auth, googleProvider);
 
 			await setDoc(

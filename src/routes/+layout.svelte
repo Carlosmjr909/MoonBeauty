@@ -4,8 +4,7 @@
 	import { cantidadCarrito } from "$lib/cart";
 	import { usuario, autenticacionCargando } from "$lib/auth";
 	import { esAdmin } from "$lib/admin";
-	import { signOut } from "firebase/auth";
-	import { auth } from "$lib/firebase";
+	import { obtenerAuth } from "$lib/firebase";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import { fade } from "svelte/transition";
@@ -226,6 +225,11 @@
 	});
 
 	async function cerrarSesion() {
+		const [auth, { signOut }] = await Promise.all([
+			obtenerAuth(),
+			import("firebase/auth")
+		]);
+
 		await signOut(auth);
 		await goto("/");
 	}

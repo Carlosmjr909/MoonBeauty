@@ -1,5 +1,6 @@
+import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { imagenParaCompartir, recortar, SEO_POR_DEFECTO, SITIO_URL } from '$lib/seo';
+import { imagenParaCompartir, recortar, SITIO_URL } from '$lib/seo';
 
 /**
  * Datos de la vista previa al compartir un producto por WhatsApp: su
@@ -17,8 +18,12 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 
 	const producto = productos.find((item) => item.id === params.id);
 
+	// Antes esto devolvía la página igual, con "seo" por defecto y un 200
+	// silencioso: cualquier URL de producto vieja o mal escrita quedaba
+	// indexable y auto-canonicalizada como si fuera una página real. Un
+	// 404 real evita que esas URLs acumulen en el índice de Google.
 	if (!producto) {
-		return { seo: SEO_POR_DEFECTO, productoSchema: null, breadcrumbSchema: null };
+		error(404, 'Producto no encontrado');
 	}
 
 	const precio = Number.isFinite(producto.precio)

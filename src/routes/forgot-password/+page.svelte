@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { sendPasswordResetEmail } from 'firebase/auth';
-	import { auth } from '$lib/firebase';
+	import { obtenerAuth } from '$lib/firebase';
 
 	let correo = $state('');
 	let cargando = $state(false);
@@ -15,6 +14,11 @@
 		cargando = true;
 
 		try {
+			const [auth, { sendPasswordResetEmail }] = await Promise.all([
+				obtenerAuth(),
+				import('firebase/auth')
+			]);
+
 			await sendPasswordResetEmail(auth, correo.trim());
 
 			mensaje =
