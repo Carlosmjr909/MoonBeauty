@@ -223,242 +223,266 @@
 			return;
 		}
 
-		// gsap/ScrollTrigger es CommonJS y en el servidor (SSR en Vercel)
-		// Node no puede resolver su named export vía import estático. Como
-		// esta animación solo tiene sentido en el navegador, se carga de
-		// forma dinámica aquí adentro, que nunca corre en el servidor.
 		let cancelado = false;
 		let limpiar: (() => void) | undefined;
 
-		Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
-			([{ gsap }, { ScrollTrigger }]) => {
-				if (cancelado) return;
-				gsap.registerPlugin(ScrollTrigger);
+		function iniciar() {
+			// gsap/ScrollTrigger es CommonJS y en el servidor (SSR en Vercel)
+			// Node no puede resolver su named export vía import estático. Como
+			// esta animación solo tiene sentido en el navegador, se carga de
+			// forma dinámica aquí adentro, que nunca corre en el servidor.
+			Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
+				([{ gsap }, { ScrollTrigger }]) => {
+					if (cancelado) return;
+					gsap.registerPlugin(ScrollTrigger);
 
-		const animaciones: Array<{ scrollTrigger?: { kill: () => void } | null }> = [];
+					const animaciones: Array<{ scrollTrigger?: { kill: () => void } | null }> = [];
 
-		// "Favoritos de temporada": el encabezado sube con fade, y el
-		// carrusel de productos sube un poco después con un leve zoom-in.
-		if (encabezadoFavoritos) {
-			animaciones.push(
-				gsap.from(encabezadoFavoritos, {
-					opacity: 0,
-					y: 50,
-					duration: 0.8,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: encabezadoFavoritos,
-						start: "top 88%",
-						once: true,
-					},
-				}),
+					// "Favoritos de temporada": el encabezado sube con fade, y el
+					// carrusel de productos sube un poco después con un leve zoom-in.
+					if (encabezadoFavoritos) {
+						animaciones.push(
+							gsap.from(encabezadoFavoritos, {
+								opacity: 0,
+								y: 50,
+								duration: 0.8,
+								ease: "power3.out",
+								scrollTrigger: {
+									trigger: encabezadoFavoritos,
+									start: "top 88%",
+									once: true,
+								},
+							}),
+						);
+					}
+
+					if (carruselFavoritosWrap) {
+						animaciones.push(
+							gsap.from(carruselFavoritosWrap, {
+								opacity: 0,
+								y: 70,
+								scale: 0.96,
+								duration: 0.9,
+								delay: 0.15,
+								ease: "power3.out",
+								scrollTrigger: {
+									trigger: carruselFavoritosWrap,
+									start: "top 90%",
+									once: true,
+								},
+							}),
+						);
+					}
+
+					// "Marcas que amamos": aparece con un zoom suave desde adentro.
+					if (seccionMarcas) {
+						animaciones.push(
+							gsap.from(seccionMarcas, {
+								opacity: 0,
+								scale: 0.88,
+								duration: 1,
+								ease: "power2.out",
+								scrollTrigger: {
+									trigger: seccionMarcas,
+									start: "top 85%",
+									once: true,
+								},
+							}),
+						);
+					}
+
+					// "Nuestro Instagram": el texto entra desde la izquierda y el
+					// botón desde la derecha, como si se encontraran; el carrusel
+					// aparece con fade + zoom un momento después.
+					if (encabezadoInstagramTexto) {
+						animaciones.push(
+							gsap.from(encabezadoInstagramTexto, {
+								opacity: 0,
+								x: -90,
+								duration: 0.8,
+								ease: "power3.out",
+								scrollTrigger: {
+									trigger: encabezadoInstagramTexto,
+									start: "top 88%",
+									once: true,
+								},
+							}),
+						);
+					}
+
+					if (botonInstagramSeguir) {
+						animaciones.push(
+							gsap.from(botonInstagramSeguir, {
+								opacity: 0,
+								x: 90,
+								duration: 0.8,
+								ease: "power3.out",
+								scrollTrigger: {
+									trigger: botonInstagramSeguir,
+									start: "top 88%",
+									once: true,
+								},
+							}),
+						);
+					}
+
+					if (carruselInstagramWrap) {
+						animaciones.push(
+							gsap.from(carruselInstagramWrap, {
+								opacity: 0,
+								scale: 0.9,
+								duration: 0.9,
+								delay: 0.2,
+								ease: "power2.out",
+								scrollTrigger: {
+									trigger: carruselInstagramWrap,
+									start: "top 90%",
+									once: true,
+								},
+							}),
+						);
+					}
+
+					// Testimonios: el encabezado sube con fade y las tarjetas
+					// aparecen escalonadas, una detrás de otra.
+					if (encabezadoTestimonios) {
+						animaciones.push(
+							gsap.from(encabezadoTestimonios, {
+								opacity: 0,
+								y: 30,
+								duration: 0.7,
+								ease: "power3.out",
+								scrollTrigger: {
+									trigger: encabezadoTestimonios,
+									start: "top 88%",
+									once: true,
+								},
+							}),
+						);
+					}
+
+					if (grillaTestimonios) {
+						// Se anima el bloque entero y no tarjeta por tarjeta: en
+						// móvil las tarjetas viven dentro de un carrusel horizontal,
+						// y animarlas por separado deja a las de la derecha (fuera de
+						// la vista) atrapadas a media opacidad.
+						animaciones.push(
+							gsap.from(grillaTestimonios, {
+								opacity: 0,
+								y: 40,
+								duration: 0.7,
+								ease: "power3.out",
+								scrollTrigger: {
+									trigger: grillaTestimonios,
+									start: "top 92%",
+									once: true,
+								},
+							}),
+						);
+					}
+
+					// "Nuestra esencia": el título cae desde arriba y las 4 tarjetas
+					// entran en diagonal (como en /products), con un leve giro extra
+					// para diferenciarla del resto de las animaciones de esta vista.
+					if (encabezadoEsencia) {
+						animaciones.push(
+							gsap.from(encabezadoEsencia, {
+								opacity: 0,
+								y: -40,
+								duration: 0.7,
+								ease: "power3.out",
+								scrollTrigger: {
+									trigger: encabezadoEsencia,
+									start: "top 88%",
+									once: true,
+								},
+							}),
+						);
+					}
+
+					let triggersEsencia: ScrollTrigger[] = [];
+
+					if (grillaEsencia) {
+						const tarjetas = Array.from(
+							grillaEsencia.children,
+						) as HTMLElement[];
+
+						if (tarjetas.length) {
+							gsap.set(tarjetas, { opacity: 0, x: -30, y: 60, rotate: -3 });
+
+							triggersEsencia = ScrollTrigger.batch(tarjetas, {
+								start: "top 90%",
+								once: true,
+								onEnter: (lote) => {
+									gsap.to(lote, {
+										opacity: 1,
+										x: 0,
+										y: 0,
+										rotate: 0,
+										duration: 0.8,
+										ease: "power3.out",
+										stagger: 0.12,
+									});
+								},
+							});
+						}
+					}
+
+					// ScrollTrigger calcula al arrancar en qué punto de la página
+					// está cada sección. Varias imágenes de esta vista (los logos
+					// de marcas, las fotos de Instagram) se cargan de forma
+					// diferida y estiran la página después, así que esos puntos
+					// quedaban desfasados: las secciones de más abajo no llegaban
+					// a dispararse nunca y se quedaban a media opacidad.
+					//
+					// Observando el alto real de la página se recalculan en cuanto
+					// cambia, sin importar qué lo haya provocado.
+					let pendiente: ReturnType<typeof setTimeout> | null = null;
+
+					const observador = new ResizeObserver(() => {
+						if (pendiente) clearTimeout(pendiente);
+						// Se agrupan los cambios seguidos en un solo recálculo.
+						pendiente = setTimeout(() => {
+							ScrollTrigger.refresh();
+						}, 250);
+					});
+
+					observador.observe(document.body);
+
+					limpiar = () => {
+						if (pendiente) clearTimeout(pendiente);
+						observador.disconnect();
+						animaciones.forEach((tween) => tween.scrollTrigger?.kill());
+						triggersEsencia.forEach((trigger) => trigger.kill());
+					};
+				},
 			);
 		}
 
-		if (carruselFavoritosWrap) {
-			animaciones.push(
-				gsap.from(carruselFavoritosWrap, {
-					opacity: 0,
-					y: 70,
-					scale: 0.96,
-					duration: 0.9,
-					delay: 0.15,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: carruselFavoritosWrap,
-						start: "top 90%",
-						once: true,
-					},
-				}),
-			);
+		// Configurar estas animaciones implica cargar GSAP, registrar media
+		// docena de ScrollTrigger y mover un ResizeObserver — todo trabajo
+		// que compite por CPU justo con el primer pintado de la página
+		// (mismo motivo que el arranque diferido de Firebase Auth en
+		// $lib/auth.ts). Ninguna de estas animaciones se ve hasta hacer
+		// scroll, así que esperar a un momento de inactividad del
+		// navegador no se nota, pero libera esa ventana crítica.
+		let idInactividad: ReturnType<typeof setTimeout> | number | undefined;
+
+		if ("requestIdleCallback" in window) {
+			idInactividad = requestIdleCallback(iniciar);
+		} else {
+			idInactividad = setTimeout(iniciar, 1);
 		}
-
-		// "Marcas que amamos": aparece con un zoom suave desde adentro.
-		if (seccionMarcas) {
-			animaciones.push(
-				gsap.from(seccionMarcas, {
-					opacity: 0,
-					scale: 0.88,
-					duration: 1,
-					ease: "power2.out",
-					scrollTrigger: {
-						trigger: seccionMarcas,
-						start: "top 85%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		// "Nuestro Instagram": el texto entra desde la izquierda y el
-		// botón desde la derecha, como si se encontraran; el carrusel
-		// aparece con fade + zoom un momento después.
-		if (encabezadoInstagramTexto) {
-			animaciones.push(
-				gsap.from(encabezadoInstagramTexto, {
-					opacity: 0,
-					x: -90,
-					duration: 0.8,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: encabezadoInstagramTexto,
-						start: "top 88%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		if (botonInstagramSeguir) {
-			animaciones.push(
-				gsap.from(botonInstagramSeguir, {
-					opacity: 0,
-					x: 90,
-					duration: 0.8,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: botonInstagramSeguir,
-						start: "top 88%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		if (carruselInstagramWrap) {
-			animaciones.push(
-				gsap.from(carruselInstagramWrap, {
-					opacity: 0,
-					scale: 0.9,
-					duration: 0.9,
-					delay: 0.2,
-					ease: "power2.out",
-					scrollTrigger: {
-						trigger: carruselInstagramWrap,
-						start: "top 90%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		// Testimonios: el encabezado sube con fade y las tarjetas
-		// aparecen escalonadas, una detrás de otra.
-		if (encabezadoTestimonios) {
-			animaciones.push(
-				gsap.from(encabezadoTestimonios, {
-					opacity: 0,
-					y: 30,
-					duration: 0.7,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: encabezadoTestimonios,
-						start: "top 88%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		if (grillaTestimonios) {
-			// Se anima el bloque entero y no tarjeta por tarjeta: en
-			// móvil las tarjetas viven dentro de un carrusel horizontal,
-			// y animarlas por separado deja a las de la derecha (fuera de
-			// la vista) atrapadas a media opacidad.
-			animaciones.push(
-				gsap.from(grillaTestimonios, {
-					opacity: 0,
-					y: 40,
-					duration: 0.7,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: grillaTestimonios,
-						start: "top 92%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		// "Nuestra esencia": el título cae desde arriba y las 4 tarjetas
-		// entran en diagonal (como en /products), con un leve giro extra
-		// para diferenciarla del resto de las animaciones de esta vista.
-		if (encabezadoEsencia) {
-			animaciones.push(
-				gsap.from(encabezadoEsencia, {
-					opacity: 0,
-					y: -40,
-					duration: 0.7,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: encabezadoEsencia,
-						start: "top 88%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		let triggersEsencia: ScrollTrigger[] = [];
-
-		if (grillaEsencia) {
-			const tarjetas = Array.from(
-				grillaEsencia.children,
-			) as HTMLElement[];
-
-			if (tarjetas.length) {
-				gsap.set(tarjetas, { opacity: 0, x: -30, y: 60, rotate: -3 });
-
-				triggersEsencia = ScrollTrigger.batch(tarjetas, {
-					start: "top 90%",
-					once: true,
-					onEnter: (lote) => {
-						gsap.to(lote, {
-							opacity: 1,
-							x: 0,
-							y: 0,
-							rotate: 0,
-							duration: 0.8,
-							ease: "power3.out",
-							stagger: 0.12,
-						});
-					},
-				});
-			}
-		}
-
-				// ScrollTrigger calcula al arrancar en qué punto de la página
-				// está cada sección. Varias imágenes de esta vista (los logos
-				// de marcas, las fotos de Instagram) se cargan de forma
-				// diferida y estiran la página después, así que esos puntos
-				// quedaban desfasados: las secciones de más abajo no llegaban
-				// a dispararse nunca y se quedaban a media opacidad.
-				//
-				// Observando el alto real de la página se recalculan en cuanto
-				// cambia, sin importar qué lo haya provocado.
-				let pendiente: ReturnType<typeof setTimeout> | null = null;
-
-				const observador = new ResizeObserver(() => {
-					if (pendiente) clearTimeout(pendiente);
-					// Se agrupan los cambios seguidos en un solo recálculo.
-					pendiente = setTimeout(() => {
-						ScrollTrigger.refresh();
-					}, 250);
-				});
-
-				observador.observe(document.body);
-
-				limpiar = () => {
-					if (pendiente) clearTimeout(pendiente);
-					observador.disconnect();
-					animaciones.forEach((tween) => tween.scrollTrigger?.kill());
-					triggersEsencia.forEach((trigger) => trigger.kill());
-				};
-			},
-		);
 
 		return () => {
 			cancelado = true;
+			if (idInactividad !== undefined) {
+				if ("cancelIdleCallback" in window) {
+					cancelIdleCallback(idInactividad as number);
+				} else {
+					clearTimeout(idInactividad as ReturnType<typeof setTimeout>);
+				}
+			}
 			limpiar?.();
 		};
 	});
