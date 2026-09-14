@@ -52,15 +52,6 @@
 	let videosInstagram: Record<number, HTMLVideoElement> = {};
 	let slideActivoPorPost = $state<Record<number, number>>({});
 
-	// El navegador descarga la portada ("poster") de un <video> apenas
-	// existe en el HTML, sin importar que esté fuera de pantalla — a
-	// diferencia de <img loading="lazy">, no hay forma nativa de
-	// diferirla. Con 5 videos en este carrusel, eso competía por ancho
-	// de banda con la imagen del hero justo en la ventana que mide el
-	// LCP. Por eso ningún <video> se renderiza con poster/src hasta que
-	// esta sección entra en pantalla.
-	let seccionInstagramVisible = $state(false);
-
 	function slideActual(indice: number) {
 		return slideActivoPorPost[indice] ?? 0;
 	}
@@ -456,28 +447,6 @@
 			limpiar?.();
 		};
 	});
-
-	// Independiente de la animación de scroll (y de si el usuario prefiere
-	// menos movimiento): en cuanto el carrusel de Instagram entra en
-	// pantalla, se habilitan los poster/src de sus videos.
-	$effect(() => {
-		const contenedor = carruselInstagramWrap;
-		if (!contenedor || seccionInstagramVisible) return;
-
-		const observador = new IntersectionObserver(
-			(entradas) => {
-				if (entradas.some((entrada) => entrada.isIntersecting)) {
-					seccionInstagramVisible = true;
-					observador.disconnect();
-				}
-			},
-			{ rootMargin: "200px" },
-		);
-
-		observador.observe(contenedor);
-
-		return () => observador.disconnect();
-	});
 </script>
 
 <svelte:head>
@@ -686,20 +655,18 @@
 								class="group relative block aspect-9/16 w-44 overflow-hidden rounded-3xl bg-slate-100 shadow-lg sm:w-48 lg:w-56 xl:w-72 2xl:w-80"
 							>
 								{#if post.tipo === "video"}
-									{#if seccionInstagramVisible}
-										<video
-											bind:this={videosInstagram[indice]}
-											src={post.archivos[0]}
-											poster={post.miniatura}
-											muted={!sonidoActivo[indice]}
-											preload="none"
-											loop
-											playsinline
-											class="h-full w-full object-cover"
-											onplay={() => (reproduciendo[indice] = true)}
-											onpause={() => (reproduciendo[indice] = false)}
-										></video>
-									{/if}
+									<video
+										bind:this={videosInstagram[indice]}
+										src={post.archivos[0]}
+										poster={post.miniatura}
+										muted={!sonidoActivo[indice]}
+										preload="none"
+										loop
+										playsinline
+										class="h-full w-full object-cover"
+										onplay={() => (reproduciendo[indice] = true)}
+										onpause={() => (reproduciendo[indice] = false)}
+									></video>
 								{:else}
 									{#each post.archivos as foto, indiceFoto}
 										<img
