@@ -15,6 +15,10 @@ export type ProductoPublico = {
 	marca: string;
 	descripcion: string;
 	especificacion: string;
+	/** Lista de ingredientes (INCI), en texto libre. */
+	ingredientes: string;
+	/** Cómo usar el producto, en texto libre. */
+	modoDeUso: string;
 	imagen: string;
 	/** Fotos adicionales de la galería. */
 	imagenes: string[];
@@ -57,6 +61,8 @@ export async function obtenerProductosPublicos(): Promise<ProductoPublico[]> {
 			marca: String(datos.marca ?? ''),
 			descripcion: String(datos.descripcion ?? ''),
 			especificacion: String(datos.especificacion ?? ''),
+			ingredientes: String(datos.ingredientes ?? ''),
+			modoDeUso: String(datos.modoDeUso ?? ''),
 			imagen: String(datos.imagen ?? ''),
 			imagenes: normalizarImagenes(datos.imagenes),
 			tonos: normalizarTonos(datos.tonos),

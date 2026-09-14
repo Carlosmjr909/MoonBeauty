@@ -100,7 +100,7 @@
 				addressRegion: 'Carabobo',
 				addressCountry: 'VE'
 			},
-			sameAs: [contacto.instagramUrl].filter(Boolean)
+			sameAs: [contacto.instagramUrl, contacto.googlePerfilUrl].filter(Boolean)
 		});
 
 		// Se escapa "<" para que un texto del panel no pueda cerrar la
@@ -273,11 +273,37 @@
 			// sessionStorage no disponible; mostramos igual.
 		}
 
-		const id = setTimeout(() => {
-			mostrarPopupCuenta = true;
-		}, 5000);
+		// El popup se ancla abajo del todo de la pantalla, que en móvil es
+		// justo donde vive el botón principal (el CTA del hero en el
+		// inicio, "Agregar al carrito" en una ficha de producto). Antes
+		// aparecía a los 5s sin importar el scroll y lo tapaba. Ahora
+		// espera a que la persona haya pasado esa zona; si nunca hace
+		// scroll (una página corta, alguien que solo lee), igual aparece
+		// a los 15s para no perder la oportunidad de mostrarlo.
+		let yaSeMostro = false;
 
-		return () => clearTimeout(id);
+		function mostrarSiCorresponde() {
+			if (yaSeMostro) return;
+			yaSeMostro = true;
+			mostrarPopupCuenta = true;
+			limpiar();
+		}
+
+		function alHacerScroll() {
+			if (window.scrollY > 250) {
+				mostrarSiCorresponde();
+			}
+		}
+
+		window.addEventListener("scroll", alHacerScroll, { passive: true });
+		const idRespaldo = setTimeout(mostrarSiCorresponde, 15000);
+
+		function limpiar() {
+			window.removeEventListener("scroll", alHacerScroll);
+			clearTimeout(idRespaldo);
+		}
+
+		return limpiar;
 	});
 
 	function cerrarPopupCuenta() {
@@ -689,7 +715,7 @@
 			type="button"
 			onclick={cerrarPopupCuenta}
 			aria-label="Cerrar"
-			class="absolute right-3 top-3 text-slate-400 transition hover:text-slate-600"
+			class="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-slate-400 transition hover:bg-white/50 hover:text-slate-600"
 		>
 			<Icon icon="material-symbols:close-rounded" width="20" />
 		</button>
@@ -806,6 +832,22 @@
 				<p class="font-Manrope text-lg text-slate-700">Información</p>
 
 				<ul class="mt-4 space-y-3 text-sm text-slate-600">
+					<li>
+						<a
+							href="/nosotros"
+							class="transition hover:text-sky-700 hover:underline"
+						>
+							Nosotros
+						</a>
+					</li>
+					<li>
+						<a
+							href="/preguntas-frecuentes"
+							class="transition hover:text-sky-700 hover:underline"
+						>
+							Preguntas Frecuentes
+						</a>
+					</li>
 					<li>
 						<a
 							href="/envios"

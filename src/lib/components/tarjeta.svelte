@@ -21,6 +21,13 @@
 		stock?: number;
 		/** Qué mostrar como etiqueta pequeña arriba del nombre. */
 		etiquetaSuperior?: 'tipo' | 'marca';
+		/**
+		 * true para las tarjetas de la primera fila visible de una
+		 * grilla: se cargan de inmediato (sin "loading=lazy") para no
+		 * retrasar la foto que compite por ser el LCP de la página. El
+		 * resto de la grilla se difiere.
+		 */
+		prioridad?: boolean;
 	}
 
 	const {
@@ -34,7 +41,8 @@
 		OfertaEnDivisas = 0,
 		tasaBCV = null,
 		stock = 1,
-		etiquetaSuperior = 'tipo'
+		etiquetaSuperior = 'tipo',
+		prioridad = false
 	}: PropTypes = $props();
 
 	const etiqueta = $derived(
@@ -90,6 +98,8 @@
 				<img
 					src={imagen}
 					alt={Nombre}
+					loading={prioridad ? 'eager' : 'lazy'}
+					fetchpriority={prioridad ? 'high' : 'auto'}
 					class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
 				/>
 			</div>

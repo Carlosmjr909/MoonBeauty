@@ -5,6 +5,8 @@
 		imagen: string;
 		cantidad: number;
 		href: string;
+		/** true para las primeras tarjetas visibles sin hacer scroll. */
+		prioridad?: boolean;
 	}
 
 	let {
@@ -12,7 +14,8 @@
 		descripcion,
 		imagen,
 		cantidad,
-		href
+		href,
+		prioridad = false
 	}: PropTypes = $props();
 </script>
 
@@ -25,6 +28,8 @@
 			<img
 				src={imagen}
 				alt={nombre}
+				loading={prioridad ? 'eager' : 'lazy'}
+				fetchpriority={prioridad ? 'high' : 'auto'}
 				class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
 			/>
 			<span

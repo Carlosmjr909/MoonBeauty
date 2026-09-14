@@ -5,12 +5,14 @@ import envios from '$lib/legales/envios.md?raw';
 import cambiosYDevoluciones from '$lib/legales/cambios-y-devoluciones.md?raw';
 import terminosYCondiciones from '$lib/legales/terminos-y-condiciones.md?raw';
 import privacidad from '$lib/legales/privacidad.md?raw';
+import nosotros from '$lib/legales/nosotros.md?raw';
 
 export type SlugLegal =
 	| 'envios'
 	| 'cambios-y-devoluciones'
 	| 'terminos-y-condiciones'
-	| 'privacidad';
+	| 'privacidad'
+	| 'nosotros';
 
 export type PaginaLegalDatos = {
 	slug: SlugLegal;
@@ -51,6 +53,11 @@ const CONTENIDO_POR_DEFECTO: Record<
 		titulo: 'Política de Privacidad',
 		actualizado: '2 de septiembre de 2026',
 		contenido: privacidad
+	},
+	nosotros: {
+		titulo: 'Nosotros',
+		actualizado: '13 de septiembre de 2026',
+		contenido: nosotros
 	}
 };
 

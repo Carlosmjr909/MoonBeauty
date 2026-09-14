@@ -158,13 +158,14 @@
 				bind:this={grillaCategorias}
 				class="grid grid-cols-2 gap-3 sm:gap-6 xl:grid-cols-3"
 			>
-				{#each categorias as categoria}
+				{#each categorias as categoria, indice}
 					<Categoria
 						nombre={categoria.nombre}
 						descripcion={categoria.descripcion}
 						imagen={categoria.imagen}
 						cantidad={categoria.cantidad}
 						href={categoria.href}
+						prioridad={indice < 4}
 					/>
 				{/each}
 			</div>

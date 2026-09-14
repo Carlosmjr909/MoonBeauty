@@ -38,6 +38,19 @@
 
 	let { data } = $props();
 
+	// Se escapa "<" por la misma razón que en +layout.svelte: un texto
+	// del panel no debe poder cerrar la etiqueta <script> e inyectar código.
+	const productoSchemaJson = $derived(
+		data.productoSchema
+			? JSON.stringify(data.productoSchema).replaceAll("<", "\\u003c")
+			: null,
+	);
+	const breadcrumbSchemaJson = $derived(
+		data.breadcrumbSchema
+			? JSON.stringify(data.breadcrumbSchema).replaceAll("<", "\\u003c")
+			: null,
+	);
+
 	const product = $derived(
 		(data.productos ?? []).find(
 			(producto) => producto.id === page.params.id,
@@ -68,6 +81,20 @@
 
 	let cantidad = $state(1);
 	let mensaje = $state("");
+
+	/** Cuál de las dos pestañas (ingredientes / modo de uso) está abierta. */
+	let pestañaActiva = $state<"ingredientes" | "modoDeUso" | null>(null);
+
+	function alternarPestaña(pestaña: "ingredientes" | "modoDeUso") {
+		pestañaActiva = pestañaActiva === pestaña ? null : pestaña;
+	}
+
+	// Al cambiar de producto se cierra cualquier pestaña que haya
+	// quedado abierta del producto anterior.
+	$effect(() => {
+		page.params.id;
+		pestañaActiva = null;
+	});
 
 	const agotado = $derived((product?.stock ?? 0) <= 0);
 
@@ -219,7 +246,20 @@
 </script>
 
 <svelte:head>
-	<title>{product ? `${product.Nombre} · Moon Beauty` : "Producto | Moon Beauty"}</title>
+	<title>
+		{product
+			? `${product.marca ? `${product.marca} ` : ""}${product.Nombre} · Moon Beauty`
+			: "Producto | Moon Beauty"}
+	</title>
+
+	{#if productoSchemaJson}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html `<script type="application/ld+json">${productoSchemaJson}</scr` + `ipt>`}
+	{/if}
+	{#if breadcrumbSchemaJson}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html `<script type="application/ld+json">${breadcrumbSchemaJson}</scr` + `ipt>`}
+	{/if}
 </svelte:head>
 
 <section class="bg-gray-50">
@@ -247,7 +287,7 @@
 					{#key imagenActual}
 						<img
 							src={imagenActual}
-							alt={product.Nombre}
+							alt={product.marca ? `${product.marca} ${product.Nombre}` : product.Nombre}
 							draggable="false"
 							in:fade={{ duration: 220 }}
 							class="absolute inset-0 h-full w-full select-none object-cover transition-transform duration-200 ease-out"
@@ -343,6 +383,14 @@
 				class="w-full lg:w-1/2 lg:pt-4 flex flex-col"
 				in:fly={{ y: 24, duration: 600, delay: 150, easing: cubicOut }}
 			>
+				{#if product.marca}
+					<p
+						class="font-Manrope text-sm font-semibold uppercase tracking-[0.15em] text-slate-400"
+					>
+						{product.marca}
+					</p>
+				{/if}
+
 				<h1
 					class="font-Manrope text-3xl leading-tight text-gray-600
 			sm:text-4xl
@@ -372,6 +420,56 @@
 				>
 					{product.descripcion}
 				</p>
+
+				{#if product.ingredientes || product.modoDeUso}
+					<div class="mt-6">
+						<div class="flex w-fit rounded-full bg-slate-100 p-1">
+							{#if product.ingredientes}
+								<button
+									type="button"
+									onclick={() => alternarPestaña("ingredientes")}
+									aria-pressed={pestañaActiva === "ingredientes"}
+									class="rounded-full px-4 py-2 text-sm font-semibold transition"
+									class:bg-white={pestañaActiva === "ingredientes"}
+									class:text-slate-800={pestañaActiva === "ingredientes"}
+									class:shadow-sm={pestañaActiva === "ingredientes"}
+									class:text-slate-500={pestañaActiva !== "ingredientes"}
+								>
+									Ingredientes
+								</button>
+							{/if}
+
+							{#if product.modoDeUso}
+								<button
+									type="button"
+									onclick={() => alternarPestaña("modoDeUso")}
+									aria-pressed={pestañaActiva === "modoDeUso"}
+									class="rounded-full px-4 py-2 text-sm font-semibold transition"
+									class:bg-white={pestañaActiva === "modoDeUso"}
+									class:text-slate-800={pestañaActiva === "modoDeUso"}
+									class:shadow-sm={pestañaActiva === "modoDeUso"}
+									class:text-slate-500={pestañaActiva !== "modoDeUso"}
+								>
+									Modo de uso
+								</button>
+							{/if}
+						</div>
+
+						{#if pestañaActiva === "ingredientes"}
+							<p
+								class="mt-4 whitespace-pre-line font-Manrope text-sm leading-6 text-gray-500 sm:text-base"
+							>
+								{product.ingredientes}
+							</p>
+						{:else if pestañaActiva === "modoDeUso"}
+							<p
+								class="mt-4 whitespace-pre-line font-Manrope text-sm leading-6 text-gray-500 sm:text-base"
+							>
+								{product.modoDeUso}
+							</p>
+						{/if}
+					</div>
+				{/if}
 
 				<div class="mt-6 gap-4 sm:flex-row sm:flex-wrap">
 					<div

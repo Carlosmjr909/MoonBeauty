@@ -43,6 +43,10 @@ export type Producto = {
 	marca: string;
 	descripcion: string;
 	especificacion: string;
+	/** Lista de ingredientes (INCI), en texto libre. */
+	ingredientes: string;
+	/** Cómo usar el producto, en texto libre. */
+	modoDeUso: string;
 	/** Foto principal: la que se ve en las tarjetas y al compartir. */
 	imagen: string;
 	/** Fotos adicionales de la galería, además de la principal. */
@@ -172,6 +176,8 @@ export function escucharProductos(
 					marca: String(datos.marca ?? ''),
 					descripcion: String(datos.descripcion ?? ''),
 					especificacion: String(datos.especificacion ?? ''),
+					ingredientes: String(datos.ingredientes ?? ''),
+					modoDeUso: String(datos.modoDeUso ?? ''),
 					imagen: String(datos.imagen ?? ''),
 					imagenes: normalizarImagenes(datos.imagenes),
 					tonos: normalizarTonos(datos.tonos),

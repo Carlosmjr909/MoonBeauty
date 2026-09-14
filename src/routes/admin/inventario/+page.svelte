@@ -34,6 +34,8 @@
 		marca: "",
 		descripcion: "",
 		especificacion: "",
+		ingredientes: "",
+		modoDeUso: "",
 		precio: 0,
 		stock: 0,
 		popular: false,
@@ -138,6 +140,9 @@
 		Tipo?: string;
 		categorias?: string[];
 		marca?: string;
+		descripcion?: string;
+		ingredientes?: string;
+		modoDeUso?: string;
 		precio?: number;
 		stock?: number;
 		popular?: boolean;
@@ -376,6 +381,8 @@
 				marca: formulario.marca.trim(),
 				descripcion: formulario.descripcion.trim(),
 				especificacion: formulario.especificacion.trim(),
+				ingredientes: formulario.ingredientes.trim(),
+				modoDeUso: formulario.modoDeUso.trim(),
 				imagen: urlImagen,
 				// Las fotos adicionales y los tonos se agregan después,
 				// desde el botón "Fotos y tonos" de cada producto.
@@ -721,6 +728,32 @@
 			></textarea>
 		</div>
 
+		<div class="flex flex-col gap-1 sm:col-span-2">
+			<label for="ingredientes" class="text-sm font-semibold text-slate-600">
+				Ingredientes (opcional)
+			</label>
+			<textarea
+				id="ingredientes"
+				rows="3"
+				placeholder="Aqua, Niacinamide, Centella Asiatica Extract..."
+				bind:value={formulario.ingredientes}
+				class="rounded-lg border border-slate-200 px-3 py-2"
+			></textarea>
+		</div>
+
+		<div class="flex flex-col gap-1 sm:col-span-2">
+			<label for="modoDeUso" class="text-sm font-semibold text-slate-600">
+				Modo de uso (opcional)
+			</label>
+			<textarea
+				id="modoDeUso"
+				rows="3"
+				placeholder="Aplicar sobre el rostro limpio, en las mañanas y noches..."
+				bind:value={formulario.modoDeUso}
+				class="rounded-lg border border-slate-200 px-3 py-2"
+			></textarea>
+		</div>
+
 		<div class="sm:col-span-2">
 			<button
 				type="submit"
@@ -908,6 +941,8 @@
 							<th class="py-2 pr-4">Popular</th>
 							<th class="py-2 pr-4">New arrivals</th>
 							<th class="py-2 pr-4">Descripción</th>
+							<th class="py-2 pr-4">Ingredientes</th>
+							<th class="py-2 pr-4">Modo de uso</th>
 							<th class="py-2 pr-4"></th>
 						</tr>
 					</thead>
@@ -1037,8 +1072,50 @@
 										class="h-4 w-4 rounded border-slate-300"
 									/>
 								</td>
-								<td class="max-w-xs py-3 pr-4 text-slate-500">
-									<p class="line-clamp-2">{producto.descripcion}</p>
+								<td class="py-3 pr-4">
+									<textarea
+										rows="3"
+										placeholder="Descripción"
+										value={cambiosPorGuardar[producto.id]?.descripcion ??
+											producto.descripcion}
+										oninput={(evento) =>
+											actualizarCampoPendiente(
+												producto.id,
+												"descripcion",
+												(evento.target as HTMLTextAreaElement).value
+											)}
+										class="w-56 resize-y rounded-lg border border-slate-200 px-2 py-1 text-slate-700"
+									></textarea>
+								</td>
+								<td class="py-3 pr-4">
+									<textarea
+										rows="3"
+										placeholder="Ingredientes"
+										value={cambiosPorGuardar[producto.id]?.ingredientes ??
+											producto.ingredientes}
+										oninput={(evento) =>
+											actualizarCampoPendiente(
+												producto.id,
+												"ingredientes",
+												(evento.target as HTMLTextAreaElement).value
+											)}
+										class="w-56 resize-y rounded-lg border border-slate-200 px-2 py-1 text-slate-700"
+									></textarea>
+								</td>
+								<td class="py-3 pr-4">
+									<textarea
+										rows="3"
+										placeholder="Modo de uso"
+										value={cambiosPorGuardar[producto.id]?.modoDeUso ??
+											producto.modoDeUso}
+										oninput={(evento) =>
+											actualizarCampoPendiente(
+												producto.id,
+												"modoDeUso",
+												(evento.target as HTMLTextAreaElement).value
+											)}
+										class="w-56 resize-y rounded-lg border border-slate-200 px-2 py-1 text-slate-700"
+									></textarea>
 								</td>
 								<td class="py-3 pr-4">
 									<div class="flex items-center gap-2">

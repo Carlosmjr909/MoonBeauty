@@ -460,6 +460,7 @@
 		src="/fondo.webp"
 		alt=""
 		aria-hidden="true"
+		fetchpriority="high"
 		class="absolute -top-30 left-0 -z-10 h-[calc(100%+7.5rem)] w-full object-cover lg:-top-34 lg:h-[calc(100%+8.5rem)]"
 	/>
 	
@@ -953,6 +954,7 @@
 						<img
 							src="/planta.webp"
 							alt="Ingredientes botánicos utilizados en skincare"
+							loading="lazy"
 							class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
 						/>
 					</div>
@@ -1007,6 +1009,7 @@
 				<img
 					src="/Agua.webp"
 					alt="Rutina de cuidado para una piel luminosa"
+					loading="lazy"
 					class="absolute inset-0 h-full w-full object-cover opacity-60 transition duration-500 group-hover:scale-105"
 				/>
 
@@ -1028,7 +1031,7 @@
 					</p>
 
 					<a
-						href="/products"
+						href="/nosotros"
 						class="mt-4 inline-flex w-fit items-center justify-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-sky-100 sm:mt-6 sm:px-6 sm:py-3 sm:text-base"
 					>
 						{textos.esencia4Boton}

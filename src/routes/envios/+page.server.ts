@@ -12,7 +12,7 @@ export const load: PageServerLoad = async () => {
 		seo: {
 			titulo: `${pagina.titulo} | Moon Beauty`,
 			descripcion:
-				'Política de envíos de Moon Beauty: cobertura, tiempos de entrega y qué hacer si tu pedido no llega a tiempo.'
+				'Envíos de Moon Beauty: delivery en Valencia, entrega gratis en Naguanagua y envío nacional por MRW, Zoom o Tealca a toda Venezuela.'
 		}
 	};
 };

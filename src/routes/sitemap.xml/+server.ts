@@ -50,7 +50,8 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
 	const entradas: Entrada[] = [
 		{ ruta: '/', prioridad: '1.0', frecuencia: 'daily' },
 		{ ruta: '/products', prioridad: '0.9', frecuencia: 'daily' },
-		{ ruta: '/categorias', prioridad: '0.8', frecuencia: 'weekly' }
+		{ ruta: '/categorias', prioridad: '0.8', frecuencia: 'weekly' },
+		{ ruta: '/preguntas-frecuentes', prioridad: '0.5', frecuencia: 'monthly' }
 	];
 
 	// Cada categoría es una página propia que la gente busca por su

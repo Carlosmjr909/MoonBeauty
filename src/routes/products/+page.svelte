@@ -25,6 +25,12 @@
 
 	let { data } = $props();
 
+	const breadcrumbSchemaJson = $derived(
+		data.breadcrumbSchema
+			? JSON.stringify(data.breadcrumbSchema).replaceAll('<', '\\u003c')
+			: null
+	);
+
 	let grillaProductos = $state<HTMLDivElement | null>(null);
 
 	const products = $derived(data.productos ?? []);
@@ -137,6 +143,11 @@
 			? `${categoriaSeleccionada} | Moon Beauty`
 			: 'Productos | Moon Beauty'}
 	</title>
+
+	{#if breadcrumbSchemaJson}
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html `<script type="application/ld+json">${breadcrumbSchemaJson}</scr` + `ipt>`}
+	{/if}
 </svelte:head>
 
 <section class="bg-slate-50 px-5 py-12 sm:px-8 lg:px-14">
@@ -144,7 +155,7 @@
 		<div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 			<div>
 				<h1 class="font-Manrope text-3xl text-slate-800 sm:text-4xl lg:text-5xl">
-					Productos
+					{categoriaSeleccionada || 'Productos'}
 				</h1>
 				<p class="mt-2 text-sm text-slate-500 sm:text-base">
 					{#if categoriaSeleccionada}
@@ -153,6 +164,11 @@
 						Explora todo nuestro catálogo de skincare coreano.
 					{/if}
 				</p>
+				{#if categoriaSeleccionada && data.categoriaDescripcion}
+					<p class="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
+						{data.categoriaDescripcion}
+					</p>
+				{/if}
 			</div>
 
 			<div class="flex items-center gap-3">
@@ -232,11 +248,12 @@
 				bind:this={grillaProductos}
 				class="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-4"
 			>
-				{#each productosOrdenados as product (product.id)}
+				{#each productosOrdenados as product, indice (product.id)}
 					<Tarjeta
 						{...product}
 						tasaBCV={data?.tasaBCV?.promedio ?? null}
 						etiquetaSuperior="marca"
+						prioridad={indice < 4}
 					/>
 				{/each}
 			</div>
