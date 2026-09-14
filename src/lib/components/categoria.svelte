@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { fotoOptimizada, srcsetOptimizado } from '$lib/utils/imagen';
+
 	interface PropTypes {
 		nombre: string;
 		descripcion: string;
@@ -26,7 +28,9 @@
 	>
 		<div class="relative aspect-4/3 overflow-hidden">
 			<img
-				src={imagen}
+				src={fotoOptimizada(imagen, 400)}
+				srcset={srcsetOptimizado(imagen, [200, 300, 400, 600])}
+				sizes="(min-width: 1280px) 400px, 50vw"
 				alt={nombre}
 				loading={prioridad ? 'eager' : 'lazy'}
 				fetchpriority={prioridad ? 'high' : 'auto'}

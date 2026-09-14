@@ -7,6 +7,7 @@
 		formatearUSD,
 		formatearVES
 	} from '$lib/utils/moneda';
+	import { fotoOptimizada, srcsetOptimizado } from '$lib/utils/imagen';
 
 	interface PropTypes {
 		Tipo: string;
@@ -96,7 +97,9 @@
 		>
 			<div class="aspect-4/5 overflow-hidden">
 				<img
-					src={imagen}
+					src={fotoOptimizada(imagen, 300)}
+					srcset={srcsetOptimizado(imagen, [200, 300, 400, 600])}
+					sizes="(min-width: 1280px) 300px, 50vw"
 					alt={Nombre}
 					loading={prioridad ? 'eager' : 'lazy'}
 					fetchpriority={prioridad ? 'high' : 'auto'}

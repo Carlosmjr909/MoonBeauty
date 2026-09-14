@@ -416,6 +416,8 @@
 				<img
 					src="/logo.webp"
 					alt="Moon Beauty"
+					width="945"
+					height="639"
 					class="h-auto w-20 sm:w-24 lg:w-30"
 				/>
 			</a>

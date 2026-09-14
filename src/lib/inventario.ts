@@ -22,6 +22,58 @@ import {
 
 import { db, storage } from '$lib/firebase';
 
+/**
+ * Redimensiona una foto en el propio navegador antes de subirla, para que
+ * el archivo que queda en Firebase Storage no sea una foto de cámara sin
+ * tocar (algunas llegaban a pesar varios MB en resoluciones de miles de
+ * píxeles, mucho más de lo que cualquier tarjeta o ficha de producto
+ * llega a mostrar). Se convierte a WebP de paso, igual que el resto de
+ * las imágenes estáticas del sitio.
+ *
+ * Si algo falla (un formato que el navegador no sabe decodificar, por
+ * ejemplo), se sube el archivo original tal cual: nunca debe bloquear la
+ * subida.
+ */
+async function redimensionarImagen(archivo: File, anchoMaximo = 1600): Promise<File> {
+	if (!archivo.type.startsWith('image/')) return archivo;
+
+	try {
+		const bitmap = await createImageBitmap(archivo);
+
+		if (bitmap.width <= anchoMaximo) {
+			bitmap.close();
+			return archivo;
+		}
+
+		const alto = Math.round(bitmap.height * (anchoMaximo / bitmap.width));
+
+		const canvas = document.createElement('canvas');
+		canvas.width = anchoMaximo;
+		canvas.height = alto;
+
+		const contexto = canvas.getContext('2d');
+		if (!contexto) {
+			bitmap.close();
+			return archivo;
+		}
+
+		contexto.drawImage(bitmap, 0, 0, anchoMaximo, alto);
+		bitmap.close();
+
+		const blob = await new Promise<Blob | null>((resolve) =>
+			canvas.toBlob(resolve, 'image/webp', 0.85)
+		);
+
+		if (!blob) return archivo;
+
+		const nombreSinExtension = archivo.name.replace(/\.[^.]+$/, '');
+		return new File([blob], `${nombreSinExtension}.webp`, { type: 'image/webp' });
+	} catch (error) {
+		console.error('No se pudo redimensionar la imagen, se sube tal cual:', error);
+		return archivo;
+	}
+}
+
 /** Un tono o color disponible del producto, con su propia foto. */
 export type Tono = {
 	nombre: string;
@@ -205,10 +257,11 @@ export async function agregarProducto(producto: NuevoProducto) {
 }
 
 export async function subirImagenProducto(archivo: File): Promise<string> {
-	const nombreUnico = `${crypto.randomUUID()}-${archivo.name}`;
+	const redimensionada = await redimensionarImagen(archivo);
+	const nombreUnico = `${crypto.randomUUID()}-${redimensionada.name}`;
 	const referencia = ref(storage, `productos/${nombreUnico}`);
 
-	await uploadBytes(referencia, archivo);
+	await uploadBytes(referencia, redimensionada);
 
 	return getDownloadURL(referencia);
 }
@@ -396,10 +449,11 @@ export async function eliminarCategoria(idCategoria: string, imagen?: string) {
 }
 
 export async function subirImagenCategoria(archivo: File): Promise<string> {
-	const nombreUnico = `${crypto.randomUUID()}-${archivo.name}`;
+	const redimensionada = await redimensionarImagen(archivo);
+	const nombreUnico = `${crypto.randomUUID()}-${redimensionada.name}`;
 	const referencia = ref(storage, `categorias/${nombreUnico}`);
 
-	await uploadBytes(referencia, archivo);
+	await uploadBytes(referencia, redimensionada);
 
 	return getDownloadURL(referencia);
 }
