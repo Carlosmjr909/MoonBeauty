@@ -2,7 +2,7 @@
 	import { onMount, untrack } from "svelte";
 	import Tarjeta from "$lib/components/tarjeta.svelte";
 	import Icon from "@iconify/svelte";
-	import { fotoOptimizada } from "$lib/utils/imagen";
+	import { fotoOptimizada, srcsetOptimizado } from "$lib/utils/imagen";
 
 	let { data } = $props();
 
@@ -494,7 +494,9 @@
 	class="isolate relative flex min-h-[calc(100svh-5rem)] items-center justify-center overflow-hidden px-4 py-20 sm:px-6 lg:min-h-[calc(100svh-6rem)] lg:px-8"
 >
 	<img
-		src="/fondo.webp"
+		src={fotoOptimizada("/fondo.webp", 600)}
+		srcset={srcsetOptimizado("/fondo.webp", [300, 400, 600])}
+		sizes="100vw"
 		alt=""
 		aria-hidden="true"
 		fetchpriority="high"
@@ -712,6 +714,8 @@
 									{#each post.archivos as foto, indiceFoto}
 										<img
 											src={fotoOptimizada(foto, 400)}
+											srcset={srcsetOptimizado(foto, [200, 300, 400])}
+											sizes="(min-width: 1536px) 320px, (min-width: 1024px) 288px, (min-width: 640px) 192px, 176px"
 											alt="Publicación de Moon Beauty en Instagram"
 											loading="lazy"
 											class="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
@@ -993,7 +997,9 @@
 
 					<div class="min-h-40 overflow-hidden sm:min-h-64 md:min-h-80">
 						<img
-							src="/planta.webp"
+							src={fotoOptimizada("/planta.webp", 600)}
+							srcset={srcsetOptimizado("/planta.webp", [300, 400, 600])}
+							sizes="(min-width: 1024px) 50vw, 100vw"
 							alt="Ingredientes botánicos utilizados en skincare"
 							loading="lazy"
 							width="665"
@@ -1050,7 +1056,9 @@
 				class="group relative min-h-64 overflow-hidden rounded-2xl bg-slate-700 shadow-sm transition duration-300 hover:-translate-y-2 hover:shadow-xl sm:min-h-105 sm:rounded-3xl lg:min-h-80"
 			>
 				<img
-					src="/Agua.webp"
+					src={fotoOptimizada("/Agua.webp", 300)}
+					srcset={srcsetOptimizado("/Agua.webp", [200, 300])}
+					sizes="(min-width: 1024px) 33vw, 100vw"
 					alt="Rutina de cuidado para una piel luminosa"
 					loading="lazy"
 					width="233"
