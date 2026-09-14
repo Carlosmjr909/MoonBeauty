@@ -112,12 +112,7 @@
 	}
 
 	$effect(() => {
-		// Centrar el carrusel implica leer offsetWidth/clientWidth, lo que
-		// obliga al navegador a recalcular el layout ("reprocesamiento
-		// forzado"). Nadie percibe si el carrusel ya está centrado antes de
-		// llegar a verlo, así que se espera a que la sección sea visible en
-		// vez de hacerlo apenas monta la página.
-		if (!pistaInstagram || !seccionInstagramVisible) return;
+		if (!pistaInstagram) return;
 		actualizarPaddingInstagram();
 
 		if (!centradoInicialInstagram) {
@@ -497,8 +492,6 @@
 		alt=""
 		aria-hidden="true"
 		fetchpriority="high"
-		width="655"
-		height="468"
 		class="absolute -top-30 left-0 -z-10 h-[calc(100%+7.5rem)] w-full object-cover lg:-top-34 lg:h-[calc(100%+8.5rem)]"
 	/>
 	
@@ -995,8 +988,6 @@
 							src="/planta.webp"
 							alt="Ingredientes botánicos utilizados en skincare"
 							loading="lazy"
-							width="665"
-							height="198"
 							class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
 						/>
 					</div>
@@ -1052,8 +1043,6 @@
 					src="/Agua.webp"
 					alt="Rutina de cuidado para una piel luminosa"
 					loading="lazy"
-					width="233"
-					height="196"
 					class="absolute inset-0 h-full w-full object-cover opacity-60 transition duration-500 group-hover:scale-105"
 				/>
 
