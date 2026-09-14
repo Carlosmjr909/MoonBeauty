@@ -16,25 +16,7 @@ export default defineConfig({
 			// plugin sveltekit() acá, así que el adapter (y el resto de la
 			// config de "kit", como csp) tienen que vivir en este archivo
 			// para que realmente se usen.
-			//
-			// La config de "images" habilita la Optimización de Imágenes de
-			// Vercel (endpoint /_vercel/image) para las fotos que vienen de
-			// Firebase Storage: las redimensiona y las convierte a
-			// AVIF/WebP al vuelo, cacheadas en el CDN de Vercel, sin tener
-			// que volver a subir ni tocar nada en Firebase. Los tamaños
-			// cubren desde una miniatura de tarjeta hasta la foto grande de
-			// la ficha de producto. minimumCacheTTL es largo (31 días)
-			// porque las URLs de Firebase Storage ya son únicas por archivo
-			// (llevan un token en la query), así que cachear agresivo es
-			// seguro.
-			adapter: adapter({
-				images: {
-					sizes: [200, 300, 400, 600, 800, 1200],
-					domains: ['firebasestorage.googleapis.com'],
-					formats: ['image/avif', 'image/webp'],
-					minimumCacheTTL: 2678400
-				}
-			}),
+			adapter: adapter(),
 
 			// Content-Security-Policy con nonce automático de SvelteKit
 			// (mode: "auto" usa nonce en páginas dinámicas como esta app).

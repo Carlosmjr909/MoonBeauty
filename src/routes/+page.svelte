@@ -2,7 +2,6 @@
 	import { onMount, untrack } from "svelte";
 	import Tarjeta from "$lib/components/tarjeta.svelte";
 	import Icon from "@iconify/svelte";
-	import { fotoOptimizada } from "$lib/utils/imagen";
 
 	let { data } = $props();
 
@@ -698,7 +697,7 @@
 										<video
 											bind:this={videosInstagram[indice]}
 											src={post.archivos[0]}
-											poster={fotoOptimizada(post.miniatura, 400)}
+											poster={post.miniatura}
 											muted={!sonidoActivo[indice]}
 											preload="none"
 											loop
@@ -711,7 +710,7 @@
 								{:else}
 									{#each post.archivos as foto, indiceFoto}
 										<img
-											src={fotoOptimizada(foto, 400)}
+											src={foto}
 											alt="Publicación de Moon Beauty en Instagram"
 											loading="lazy"
 											class="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"

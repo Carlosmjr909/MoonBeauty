@@ -13,7 +13,6 @@
 	} from "$lib/utils/moneda";
 	import { carrito } from "$lib/cart";
 	import Tarjeta from "$lib/components/tarjeta.svelte";
-	import { fotoOptimizada, srcsetOptimizado } from "$lib/utils/imagen";
 	import {
 		categoriasDeProducto,
 		galeriaDeProducto,
@@ -287,9 +286,7 @@
 				>
 					{#key imagenActual}
 						<img
-							src={fotoOptimizada(imagenActual, 800)}
-							srcset={srcsetOptimizado(imagenActual, [400, 600, 800, 1200])}
-							sizes="(min-width: 1024px) 50vw, 100vw"
+							src={imagenActual}
 							alt={product.marca ? `${product.marca} ${product.Nombre}` : product.Nombre}
 							draggable="false"
 							in:fade={{ duration: 220 }}
@@ -370,7 +367,7 @@
 										></span>
 									{:else}
 										<img
-											src={fotoOptimizada(tono.imagen, 200)}
+											src={tono.imagen}
 											alt=""
 											class="h-full w-full object-cover"
 										/>
