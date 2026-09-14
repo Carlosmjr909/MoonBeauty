@@ -333,6 +333,24 @@
 	<link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192" />
 	<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
+	<!-- La tipografía se usa en literalmente todo el texto del sitio
+	(clase font-Manrope): precargarla evita que el texto espere a que el
+	CSS termine de resolverse antes de empezar a descargarla. -->
+	<link
+		rel="preload"
+		href="/Manrope-Regular.woff2"
+		as="font"
+		type="font/woff2"
+		crossorigin="anonymous"
+	/>
+
+	<!-- Las fotos de producto, del carrusel de Instagram y de las
+	tarjetas de categoría salen todas de Firebase Storage: adelantar la
+	conexión (DNS + TLS) ahorra ese tiempo antes de pedir la primera
+	imagen real. -->
+	<link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin="anonymous" />
+	<link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
+
 	<!-- El <title> lo pone cada página, así no se duplica. -->
 	<meta name="description" content={seo.descripcion} />
 	<link rel="canonical" href={urlCanonica} />
