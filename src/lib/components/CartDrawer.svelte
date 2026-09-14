@@ -50,6 +50,7 @@
     class:translate-x-0={abierto}
     class:translate-x-full={!abierto}
     aria-hidden={!abierto}
+    inert={!abierto}
 >
     <header
         class="flex items-center justify-between border-b border-slate-200 px-6 py-5"

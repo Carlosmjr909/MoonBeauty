@@ -842,6 +842,7 @@
 						>
 							<div
 								class="flex gap-0.5 text-amber-400"
+								role="img"
 								aria-label="{testimonio.estrellas} de 5 estrellas"
 							>
 								{#each Array(5) as _, indice}
