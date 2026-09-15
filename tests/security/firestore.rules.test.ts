@@ -246,9 +246,14 @@ describe('cupones', () => {
 		await assertFails(db.collection('cupones').get());
 	});
 
-	it('un usuario autenticado SÍ puede sumar exactamente 1 uso', async () => {
+	// El contador de usos ya no se incrementa desde el cliente: desde que
+	// crear-pedido lo valida y cuenta en el servidor con el Admin SDK
+	// (que no pasa por estas reglas), permitir el +1 aquí solo dejaba que
+	// cualquier sesión anónima agotara el límite de un cupón sin comprar
+	// (pentest de cupones, auditoría de seguridad).
+	it('un usuario normal NO puede sumar ni siquiera 1 uso (el conteo ya es solo del servidor)', async () => {
 		const db = testEnv.authenticatedContext('usuario-normal').firestore();
-		await assertSucceeds(db.collection('cupones').doc('MOON20').update({ usos: 1 }));
+		await assertFails(db.collection('cupones').doc('MOON20').update({ usos: 1 }));
 	});
 
 	it('un usuario NO puede saltar el contador de usos (sumar más de 1 de golpe)', async () => {
@@ -268,5 +273,16 @@ describe('cupones', () => {
 		await assertFails(
 			db.collection('cupones').doc('NUEVO').set({ activo: true, usos: 0 })
 		);
+	});
+
+	it('un admin SÍ puede crear, editar (incluido "usos") y borrar cupones', async () => {
+		const db = testEnv.authenticatedContext('admin-uid').firestore();
+		await assertSucceeds(
+			db.collection('cupones').doc('NUEVO').set({ activo: true, usos: 0, limiteUsos: 5 })
+		);
+		await assertSucceeds(
+			db.collection('cupones').doc('MOON20').update({ usos: 3, limiteUsos: 20 })
+		);
+		await assertSucceeds(db.collection('cupones').doc('NUEVO').delete());
 	});
 });

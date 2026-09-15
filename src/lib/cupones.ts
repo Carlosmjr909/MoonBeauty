@@ -3,14 +3,12 @@ import {
 	deleteDoc,
 	doc,
 	getDoc,
-	increment,
 	onSnapshot,
 	orderBy,
 	query,
 	serverTimestamp,
 	setDoc,
-	Timestamp,
-	updateDoc
+	Timestamp
 } from 'firebase/firestore';
 
 import { db } from '$lib/firebase';
@@ -286,15 +284,4 @@ export function calcularDescuentoUSD(cupon: Cupon, totalUSD: number): number {
 
 	// Nunca puede dejar el total en negativo.
 	return Math.round(Math.min(descuento, totalUSD) * 100) / 100;
-}
-
-/**
- * Suma 1 al contador de usos. Las reglas de Firestore verifican que sea
- * exactamente +1 y que no se pase del límite, así que el tope se respeta
- * aunque alguien manipule el navegador.
- */
-export async function registrarUsoCupon(codigo: string) {
-	await updateDoc(doc(db, COLECCION_CUPONES, normalizarCodigo(codigo)), {
-		usos: increment(1)
-	});
 }

@@ -88,18 +88,14 @@ service cloud.firestore {
       allow list: if esAdmin();
       allow write: if esAdmin();
 
-      // Un comprador puede sumar exactamente 1 al contador de usos y
-      // nada más. Las reglas verifican aquí (no en el navegador) que el
-      // cupón esté activo, no vencido y que no se pase de su límite,
-      // así que el tope se respeta aunque alguien manipule el cliente.
-      allow update: if request.auth != null &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usos']) &&
-        request.resource.data.usos == resource.data.usos + 1 &&
-        resource.data.activo == true &&
-        (resource.data.limiteUsos == null ||
-          request.resource.data.usos <= resource.data.limiteUsos) &&
-        (resource.data.fechaVencimiento == null ||
-          request.time < resource.data.fechaVencimiento);
+      // Antes un comprador podía sumar 1 al contador de usos directo
+      // desde el cliente (con límite/vigencia validados aquí mismo). Ya
+      // no hace falta: desde que crear-pedido valida y cuenta el cupón
+      // en el servidor con el Admin SDK (que no pasa por estas reglas),
+      // nadie legítimo llama esto. Dejarlo abierto solo permitía que
+      // cualquier sesión anónima agotara el límite de un cupón sin
+      // comprar nada. Auditoría de seguridad, pentest de cupones.
+      allow update: if false;
     }
   }
 }
