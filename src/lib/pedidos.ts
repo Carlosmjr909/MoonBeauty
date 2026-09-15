@@ -1,11 +1,10 @@
 import {
-	addDoc,
 	collection,
 	doc,
 	onSnapshot,
 	orderBy,
 	query,
-	serverTimestamp,
+	runTransaction,
 	updateDoc
 } from 'firebase/firestore';
 
@@ -116,6 +115,18 @@ export type PedidoAdmin = {
 	fechaCreacion: number;
 };
 
+/**
+ * Lo único que el navegador decide de cada línea del carrito es cuál
+ * producto y cuántas unidades. El precio, el subtotal y el total los
+ * calcula el servidor con los datos reales de productos.ts (ver
+ * hallazgo A1 de la auditoría de seguridad) — mandarlos desde acá ya no
+ * tendría ningún efecto, el endpoint los ignora.
+ */
+export type ItemCarritoInput = {
+	id: string | number;
+	cantidad: number;
+};
+
 export type CrearPedidoInput = {
 	contacto: ContactoPedido;
 	tipoEntrega: TipoEntrega;
@@ -123,13 +134,10 @@ export type CrearPedidoInput = {
 	envioNacional?: EnvioNacionalPedido | null;
 	metodoPago: MetodoPago;
 	comprobantePago: ComprobantePago;
-	items: ItemPedido[];
-	subtotalUSD: number;
-	cupon?: string | null;
-	descuentoUSD?: number;
-	totalUSD: number;
-	tasaBCV: number;
-	totalVES: number;
+	items: ItemCarritoInput[];
+	/** Códigos de cupón tal como los escribió el comprador; el servidor
+	 * los valida y calcula el descuento, no se manda ya calculado. */
+	codigosCupones?: string[];
 };
 
 /**
@@ -174,88 +182,45 @@ export async function asegurarSesion() {
 	return resultado.user;
 }
 
+/**
+ * Crea el pedido llamando al endpoint del servidor, que es quien de
+ * verdad calcula precios, descuentos y total (ver hallazgo A1 de la
+ * auditoría de seguridad). Antes esta función escribía el pedido directo
+ * a Firestore con los números que traía "input", así que cualquiera
+ * podía fabricar un pedido con precios inventados llamando a Firestore
+ * manualmente desde el navegador.
+ */
 export async function crearPedido(
 	input: CrearPedidoInput
 ): Promise<{
 	id: string;
 	numeroPedido: string;
 }> {
-	const usuarioActual = await asegurarSesion();
-
 	if (!Array.isArray(input.items) || input.items.length === 0) {
 		throw new Error('El carrito está vacío.');
 	}
 
-	if (
-		!Number.isFinite(input.totalUSD) ||
-		!Number.isFinite(input.tasaBCV) ||
-		!Number.isFinite(input.totalVES)
-	) {
-		throw new Error(
-			'Los valores del pedido no son válidos.'
-		);
+	const usuarioActual = await asegurarSesion();
+	const token = await usuarioActual.getIdToken();
+
+	const respuesta = await fetch('/api/enviar-pedido/crear-pedido', {
+		method: 'POST',
+		headers: {
+			'content-type': 'application/json',
+			authorization: `Bearer ${token}`
+		},
+		body: JSON.stringify(input)
+	});
+
+	const datos = await respuesta.json();
+
+	if (!respuesta.ok || !datos.ok) {
+		throw new Error(datos.error ?? 'No se pudo crear el pedido.');
 	}
 
-	const fecha = new Date()
-		.toISOString()
-		.slice(0, 10)
-		.replaceAll('-', '');
-
-	const codigo = crypto
-		.randomUUID()
-		.replaceAll('-', '')
-		.slice(0, 6)
-		.toUpperCase();
-
-	const numeroPedido = `MB-${fecha}-${codigo}`;
-
-	const referencia = await addDoc(
-		collection(db, 'pedidos'),
-		{
-			numeroPedido,
-			usuarioId: usuarioActual.uid,
-			usuarioCorreo:
-				usuarioActual.email ?? null,
-
-			contacto: {
-				nombre: input.contacto.nombre,
-				correo: input.contacto.correo,
-				telefono: input.contacto.telefono
-			},
-
-			tipoEntrega: input.tipoEntrega,
-
-			entrega: {
-				direccion: input.entrega.direccion,
-				casaApartamento: input.entrega.casaApartamento ?? '',
-				ciudad: input.entrega.ciudad,
-				codigoPostal: input.entrega.codigoPostal ?? '',
-				estado: input.entrega.estado,
-				ubicacionMapa: input.entrega.ubicacionMapa ?? null
-			},
-
-			envioNacional: input.envioNacional ?? null,
-
-			metodoPago: input.metodoPago,
-			comprobantePago: {
-				url: input.comprobantePago.url ?? null,
-				referencia: input.comprobantePago.referencia ?? null
-			},
-			items: input.items,
-			subtotalUSD: input.subtotalUSD,
-			cupon: input.cupon ?? null,
-			descuentoUSD: input.descuentoUSD ?? 0,
-			totalUSD: input.totalUSD,
-			tasaBCV: input.tasaBCV,
-			totalVES: input.totalVES,
-			estado: 'pendiente_contacto',
-			fechaCreacion: serverTimestamp()
-		}
-	);
-
 	return {
-		id: referencia.id,
-		numeroPedido
+		id: datos.id,
+		numeroPedido: datos.numeroPedido
 	};
 }
 
@@ -402,9 +367,66 @@ export function escucharPedidos(
 	);
 }
 
+/**
+ * Cambia el estado del pedido. Al pasar a "confirmado" descuenta el stock
+ * de cada producto una sola vez (protegido por "stockDescontado" para
+ * que no se reste dos veces si el pedido se vuelve a marcar como
+ * confirmado más adelante); el stock nunca baja de 0. Esto es
+ * independiente de la edición manual de stock del panel de inventario,
+ * que sigue funcionando igual — ambas formas escriben el mismo campo,
+ * pero por caminos distintos y en momentos distintos.
+ */
 export async function actualizarEstadoPedido(
 	id: string,
 	estado: EstadoPedido
 ) {
-	await updateDoc(doc(db, 'pedidos', id), { estado });
+	if (estado !== 'confirmado') {
+		await updateDoc(doc(db, 'pedidos', id), { estado });
+		return;
+	}
+
+	await runTransaction(db, async (transaccion) => {
+		const refPedido = doc(db, 'pedidos', id);
+		const snapPedido = await transaccion.get(refPedido);
+
+		if (!snapPedido.exists()) {
+			throw new Error('El pedido ya no existe.');
+		}
+
+		const datosPedido = snapPedido.data();
+
+		if (datosPedido.stockDescontado) {
+			transaccion.update(refPedido, { estado });
+			return;
+		}
+
+		const items = Array.isArray(datosPedido.items) ? datosPedido.items : [];
+
+		const lineas = items.flatMap(
+			(item: { id?: string | number; cantidad?: number }) => {
+				const cantidad = Number(item?.cantidad ?? 0);
+				if (item?.id == null || cantidad <= 0) return [];
+				return [{ cantidad, ref: doc(db, 'productos', String(item.id)) }];
+			}
+		);
+
+		// Firestore exige leer todo antes de escribir nada en una transacción.
+		const snapsProductos = await Promise.all(
+			lineas.map((linea) => transaccion.get(linea.ref))
+		);
+
+		lineas.forEach((linea, indice) => {
+			const snapProducto = snapsProductos[indice];
+			// El producto pudo haberse eliminado del catálogo desde que se
+			// hizo el pedido; en ese caso no hay stock que descontar.
+			if (!snapProducto.exists()) return;
+
+			const stockActual = Number(snapProducto.data()?.stock ?? 0);
+			const nuevoStock = Math.max(0, stockActual - linea.cantidad);
+
+			transaccion.update(linea.ref, { stock: nuevoStock });
+		});
+
+		transaccion.update(refPedido, { estado, stockDescontado: true });
+	});
 }

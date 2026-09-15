@@ -28,7 +28,6 @@
 	import {
 		calcularDescuentoUSD,
 		calcularDescuentoTotalUSD,
-		registrarUsoCupon,
 		validarCupon,
 		MAXIMO_CUPONES,
 		type Cupon
@@ -554,38 +553,16 @@
 				comprobanteUrl = await subirComprobantePago(comprobanteArchivo);
 			}
 
+			// Solo id y cantidad: el precio de cada línea, el descuento y el
+			// total los calcula el servidor con los datos reales del
+			// catálogo (ver hallazgo A1 de la auditoría de seguridad),
+			// nunca con lo que calcule este navegador.
 			const items = $carrito.map((item) => ({
 				id: item.id,
-				nombre: item.Nombre,
-				tipo: item.Tipo,
-				imagen: item.imagen,
-				precioUSD: item.precio,
-				cantidad: item.cantidad,
-				subtotalUSD:
-					Math.round(
-						item.precio *
-							item.cantidad *
-							100
-					) / 100
+				cantidad: item.cantidad
 			}));
 
-			const subtotalUSDRedondeado =
-	Math.round($totalCarritoUSD * 100) / 100;
-
-const descuentoUSDRedondeado =
-	Math.round(descuentoUSD * 100) / 100;
-
-const totalUSDRedondeado =
-	Math.round(totalConDescuentoUSD * 100) / 100;
-
-const totalVESRedondeado =
-	Math.round(totalVES * 100) / 100;
-
-// Si hay dos cupones se guardan juntos en el mismo campo, separados
-// por " + ", para que el pedido y el correo muestren ambos.
-const codigosCupones = cuponesAplicados.map((cupon) => cupon.codigo);
-const cuponFinal =
-	codigosCupones.length > 0 ? codigosCupones.join(' + ') : null;
+			const codigosCupones = cuponesAplicados.map((cupon) => cupon.codigo);
 
 const envioNacionalFinal =
 	tipoEntrega === 'envio_nacional' && empresaEnvio
@@ -651,30 +628,10 @@ const resultado = await crearPedido({
 	metodoPago,
 	comprobantePago: comprobanteFinal,
 	items,
-	subtotalUSD: subtotalUSDRedondeado,
-	cupon: cuponFinal,
-	descuentoUSD: descuentoUSDRedondeado,
-	totalUSD: totalUSDRedondeado,
-	tasaBCV,
-	totalVES: totalVESRedondeado
+	codigosCupones
 });
 
 numeroPedido = resultado.numeroPedido;
-
-// Se cuenta el uso de cada cupón después de que el pedido quedó
-// guardado, para no gastar un uso si la compra falla. Si este contador
-// fallara, el pedido igual es válido, así que el error no se le muestra
-// al comprador.
-for (const codigo of codigosCupones) {
-	try {
-		await registrarUsoCupon(codigo);
-	} catch (errorCupon) {
-		console.error(
-			`El pedido se guardó, pero no se pudo contar el uso del cupón ${codigo}:`,
-			errorCupon
-		);
-	}
-}
 
 try {
 	// El servidor vuelve a leer el pedido completo de Firestore con el
