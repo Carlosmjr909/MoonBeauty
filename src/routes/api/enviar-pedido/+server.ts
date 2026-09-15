@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { Resend } from 'resend';
 import { env } from '$env/dynamic/private';
 
+import { adminAuth, adminDb } from '$lib/server/firebase-admin';
 import type { RequestHandler } from './$types';
 
 const RESEND_API_KEY = env.RESEND_API_KEY ?? '';
@@ -42,11 +43,23 @@ type EnvioNacional = {
 	};
 };
 
-type DatosPedido = {
-	numeroPedido: string;
+type ContactoPedido = {
 	nombre: string;
 	correo: string;
 	telefono: string;
+};
+
+/**
+ * Forma tal cual se guarda el documento en Firestore (ver crearPedido en
+ * $lib/pedidos.ts). Se lee con el Admin SDK, nunca se confía en el cuerpo
+ * del POST para estos datos (ver hallazgo A2 de la auditoría de
+ * seguridad): cualquiera podía antes pedirle a este endpoint que mandara
+ * un correo con destinatario y contenido inventados.
+ */
+type DatosPedido = {
+	numeroPedido: string;
+	usuarioId: string;
+	contacto: ContactoPedido;
 	tipoEntrega?: string;
 	envioNacional?: EnvioNacional | null;
 	entrega: EntregaPedido;
@@ -172,9 +185,72 @@ function filaComprobante(datos: DatosPedido): string {
 	`;
 }
 
+/**
+ * Verifica el token de Firebase y devuelve el uid, o null si no es válido.
+ * Sin esto, cualquiera podía llamar a este endpoint sin haber iniciado
+ * sesión siquiera.
+ */
+async function verificarUsuario(request: Request): Promise<string | null> {
+	const encabezado = request.headers.get('authorization') ?? '';
+
+	if (!encabezado.startsWith('Bearer ')) {
+		return null;
+	}
+
+	const token = encabezado.slice('Bearer '.length).trim();
+	if (!token) return null;
+
+	try {
+		const decodificado = await adminAuth.verifyIdToken(token);
+		return decodificado.uid;
+	} catch (error) {
+		console.error('Token inválido al intentar enviar el correo de pedido:', error);
+		return null;
+	}
+}
+
 export const POST: RequestHandler = async ({ request }): Promise<Response> => {
 	try {
-		const datos = (await request.json()) as DatosPedido;
+		const uid = await verificarUsuario(request);
+
+		if (!uid) {
+			return json(
+				{ ok: false, error: 'No autorizado.' },
+				{ status: 401 }
+			);
+		}
+
+		const cuerpo = (await request.json()) as { pedidoId?: string };
+		const pedidoId = cuerpo.pedidoId?.trim();
+
+		if (!pedidoId) {
+			return json(
+				{ ok: false, error: 'Falta el identificador del pedido.' },
+				{ status: 400 }
+			);
+		}
+
+		// El pedido se vuelve a leer completo desde Firestore con el Admin
+		// SDK: el contenido del correo sale de acá, nunca del cuerpo de
+		// este POST. Así, ni el destinatario ni los productos/precios que
+		// se muestran pueden ser inventados por quien llama al endpoint.
+		const snapshotPedido = await adminDb.collection('pedidos').doc(pedidoId).get();
+
+		if (!snapshotPedido.exists) {
+			return json(
+				{ ok: false, error: 'El pedido no existe.' },
+				{ status: 404 }
+			);
+		}
+
+		const datos = snapshotPedido.data() as DatosPedido;
+
+		if (datos.usuarioId !== uid) {
+			return json(
+				{ ok: false, error: 'Este pedido no te pertenece.' },
+				{ status: 403 }
+			);
+		}
 
 		if (!datos.numeroPedido?.trim()) {
 			return json(
@@ -188,7 +264,7 @@ export const POST: RequestHandler = async ({ request }): Promise<Response> => {
 			);
 		}
 
-		if (!datos.nombre?.trim()) {
+		if (!datos.contacto?.nombre?.trim()) {
 			return json(
 				{
 					ok: false,
@@ -200,7 +276,7 @@ export const POST: RequestHandler = async ({ request }): Promise<Response> => {
 			);
 		}
 
-		if (!datos.correo?.trim() && !datos.telefono?.trim()) {
+		if (!datos.contacto?.correo?.trim() && !datos.contacto?.telefono?.trim()) {
 			return json(
 				{
 					ok: false,
@@ -270,9 +346,9 @@ export const POST: RequestHandler = async ({ request }): Promise<Response> => {
 				${encabezadoCorreo}
 				<h2 style="margin-bottom: 12px;">Nuevo pedido recibido</h2>
 				<p><strong>Número del pedido:</strong> ${escaparHtml(datos.numeroPedido)}</p>
-				<p><strong>Comprador:</strong> ${escaparHtml(datos.nombre)}</p>
-				<p><strong>Correo:</strong> ${escaparHtml(datos.correo ?? '')}</p>
-				<p><strong>Teléfono:</strong> ${escaparHtml(datos.telefono ?? '')}</p>
+				<p><strong>Comprador:</strong> ${escaparHtml(datos.contacto.nombre)}</p>
+				<p><strong>Correo:</strong> ${escaparHtml(datos.contacto.correo ?? '')}</p>
+				<p><strong>Teléfono:</strong> ${escaparHtml(datos.contacto.telefono ?? '')}</p>
 				<p><strong>Método de pago:</strong> ${escaparHtml(obtenerMetodoPago(datos.metodoPago))}</p>
 				${filaDescuento(datos)}
 				<p><strong>Total USD:</strong> ${escaparHtml(formatearNumero(datos.totalUSD))}</p>
@@ -287,7 +363,7 @@ export const POST: RequestHandler = async ({ request }): Promise<Response> => {
 		const htmlComprador = `
 			<div style="font-family: Arial, sans-serif; color: #111827;">
 				${encabezadoCorreo}
-				<h2 style="margin-bottom: 12px;">¡Gracias por tu compra, ${escaparHtml(datos.nombre)}!</h2>
+				<h2 style="margin-bottom: 12px;">¡Gracias por tu compra, ${escaparHtml(datos.contacto.nombre)}!</h2>
 				<p>Recibimos tu pedido y pronto nos pondremos en contacto para coordinar el pago y la entrega.</p>
 				<p><strong>Número del pedido:</strong> ${escaparHtml(datos.numeroPedido)}</p>
 				<p><strong>Método de pago:</strong> ${escaparHtml(obtenerMetodoPago(datos.metodoPago))}</p>
@@ -316,7 +392,7 @@ export const POST: RequestHandler = async ({ request }): Promise<Response> => {
 	RESEND_API_KEY
 );
 
-		const correoComprador = datos.correo?.trim();
+		const correoComprador = datos.contacto.correo?.trim();
 
 		const [envioEmpresa, envioComprador] = await Promise.all([
 			resend.emails.send({

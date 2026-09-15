@@ -677,33 +677,26 @@ for (const codigo of codigosCupones) {
 }
 
 try {
+	// El servidor vuelve a leer el pedido completo de Firestore con el
+	// Admin SDK y arma el correo con esos datos, no con lo que mande este
+	// fetch: así nadie puede pedirle a este endpoint que mande un correo
+	// con contenido o destinatario inventado (auditoría de seguridad,
+	// hallazgo A2). Por eso acá solo hace falta identificar quién es y
+	// cuál pedido, no repetir toda la info.
+	const usuarioActual = await asegurarSesion();
+	const tokenAuth = await usuarioActual.getIdToken();
+
 	const respuestaCorreo = await fetch(
 		'/api/enviar-pedido',
 		{
 			method: 'POST',
 			headers: {
-				'content-type': 'application/json'
+				'content-type': 'application/json',
+				authorization: `Bearer ${tokenAuth}`
 			},
 
 			body: JSON.stringify({
-				numeroPedido:
-					resultado.numeroPedido,
-
-				nombre: nombre.trim(),
-				correo: correo.trim(),
-				telefono: telefono.trim(),
-				tipoEntrega,
-				entrega: entregaFinal,
-				envioNacional: envioNacionalFinal,
-				metodoPago,
-				comprobantePago: comprobanteFinal,
-				items,
-				subtotalUSD: subtotalUSDRedondeado,
-				cupon: cuponFinal,
-				descuentoUSD: descuentoUSDRedondeado,
-				totalUSD: totalUSDRedondeado,
-				tasaBCV,
-				totalVES: totalVESRedondeado
+				pedidoId: resultado.id
 			})
 		}
 	);

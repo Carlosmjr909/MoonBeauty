@@ -134,12 +134,24 @@ export type CrearPedidoInput = {
 
 /**
  * Sube el comprobante de pago (imagen o PDF) a Storage y devuelve su URL.
+ *
+ * Se guarda el uid de quien sube el archivo como metadata: las reglas de
+ * Storage lo usan para que solo esa persona (o un admin) pueda leerlo
+ * después, en vez de dejarlo abierto a cualquier usuario autenticado.
+ * Quien llama a esta función ya debe haber llamado a asegurarSesion().
  */
 export async function subirComprobantePago(archivo: File): Promise<string> {
+	const auth = await obtenerAuth();
+	const uid = auth.currentUser?.uid;
+
+	if (!uid) {
+		throw new Error('No hay una sesión activa para subir el comprobante.');
+	}
+
 	const nombreUnico = `${crypto.randomUUID()}-${archivo.name}`;
 	const referencia = ref(storage, `comprobantes/${nombreUnico}`);
 
-	await uploadBytes(referencia, archivo);
+	await uploadBytes(referencia, archivo, { customMetadata: { uid } });
 
 	return getDownloadURL(referencia);
 }

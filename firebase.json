@@ -4,5 +4,18 @@
 	},
 	"firestore": {
 		"rules": "firestore.rules"
+	},
+	"emulators": {
+		"firestore": {
+			"port": 8080
+		},
+		"storage": {
+			"port": 9199
+		},
+		"ui": {
+			"enabled": true,
+			"port": 4001
+		},
+		"singleProjectMode": true
 	}
 }
