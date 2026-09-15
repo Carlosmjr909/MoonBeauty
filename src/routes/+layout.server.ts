@@ -1,89 +1,54 @@
 import type { LayoutServerLoad } from './$types';
 import {
-	obtenerCategoriasPublicas,
-	obtenerConfiguracionSitio,
-	obtenerProductosPublicos
-} from '$lib/server/productos';
+	obtenerCategoriasPublicasConCache,
+	obtenerConfiguracionSitioConCache,
+	obtenerProductosPublicosConCache
+} from '$lib/server/cachePublico';
 import {
 	normalizarConfiguracionContacto,
 	normalizarConfiguracionPagos,
 	normalizarConfiguracionPortada
 } from '$lib/configuracion';
+import { obtenerTasaBCVConCache } from '$lib/server/tasaBCV';
 
-export type TasaBCV = {
-	moneda: string;
-	fuente: string;
-	nombre: string;
-	compra: number | null;
-	venta: number | null;
-	promedio: number;
-	fechaActualizacion: string;
-};
+export type { TasaBCV } from '$lib/server/tasaBCV';
 
 async function cargarTasaBCV(
 	fetch: typeof globalThis.fetch,
 	setHeaders: Parameters<LayoutServerLoad>[0]['setHeaders']
 ) {
-	try {
-		const respuesta = await fetch(
-			'https://ve.dolarapi.com/v1/dolares/oficial',
-			{
-				headers: {
-					accept: 'application/json'
-				}
-			}
-		);
+	const resultado = await obtenerTasaBCVConCache(fetch);
 
-		if (!respuesta.ok) {
-			throw new Error(
-				`DolarApi respondió con el código ${respuesta.status}`
-			);
-		}
-
-		const tasaBCV = (await respuesta.json()) as TasaBCV;
-
-		if (
-			typeof tasaBCV.promedio !== 'number' ||
-			!Number.isFinite(tasaBCV.promedio) ||
-			tasaBCV.promedio <= 0
-		) {
-			throw new Error('La tasa BCV recibida no es válida');
-		}
-
+	if (resultado.tasaBCV) {
 		/*
-		 * Permite reutilizar la tasa durante cinco minutos
-		 * para no llamar innecesariamente a la API.
+		 * Permite reutilizar la respuesta de esta página en el borde de
+		 * Vercel durante cinco minutos. Es independiente del caché de la
+		 * tasa en sí (ver $lib/server/tasaBCV.ts): esto cachea el HTML
+		 * de ESTA URL; el otro cachea el VALOR de la tasa, compartido
+		 * entre todas las URLs del sitio.
 		 */
 		setHeaders({
 			'cache-control':
 				'public, max-age=300, stale-while-revalidate=600'
 		});
-
-		return { tasaBCV, errorTasaBCV: null };
-	} catch (error) {
-		console.error('Error obteniendo la tasa BCV:', error);
-
-		return {
-			tasaBCV: null,
-			errorTasaBCV:
-				'No se pudo consultar la tasa BCV en este momento.'
-		};
 	}
+
+	return resultado;
 }
 
 export const load: LayoutServerLoad = async ({ fetch, setHeaders }) => {
 	const [datosTasaBCV, productos, categorias, configuracion] =
 		await Promise.all([
 			cargarTasaBCV(fetch, setHeaders),
-			obtenerProductosPublicos().catch((error) => {
+			obtenerProductosPublicosConCache().catch((error) => {
 				console.error('Error obteniendo productos:', error);
 				return [];
 			}),
-			obtenerCategoriasPublicas().catch((error) => {
+			obtenerCategoriasPublicasConCache().catch((error) => {
 				console.error('Error obteniendo categorías:', error);
 				return [];
 			}),
-			obtenerConfiguracionSitio().catch((error) => {
+			obtenerConfiguracionSitioConCache().catch((error) => {
 				console.error('Error obteniendo la configuración del sitio:', error);
 				return {} as Record<string, Record<string, unknown>>;
 			})

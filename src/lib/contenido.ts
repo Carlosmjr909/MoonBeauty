@@ -13,6 +13,7 @@ import {
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 import { db, storage } from '$lib/firebase';
+import { invalidarCachePublico } from '$lib/invalidarCache';
 
 const COLECCION_INSTAGRAM = 'instagram';
 const COLECCION_MARCAS = 'marcas';
@@ -114,10 +115,12 @@ export async function agregarPublicacion(publicacion: {
 		...publicacion,
 		fechaCreacion: serverTimestamp()
 	});
+	await invalidarCachePublico('instagram');
 }
 
 export async function actualizarOrdenPublicacion(id: string, orden: number) {
 	await updateDoc(doc(db, COLECCION_INSTAGRAM, id), { orden });
+	await invalidarCachePublico('instagram');
 }
 
 /**
@@ -127,6 +130,7 @@ export async function actualizarOrdenPublicacion(id: string, orden: number) {
  */
 export async function eliminarPublicacion(publicacion: PublicacionInstagram) {
 	await deleteDoc(doc(db, COLECCION_INSTAGRAM, publicacion.id));
+	await invalidarCachePublico('instagram');
 
 	const archivos = [...publicacion.archivos, publicacion.miniatura].filter(
 		(archivo): archivo is string =>
@@ -204,6 +208,7 @@ export async function agregarMarca(marca: {
 		nombre: marca.nombre.trim(),
 		fechaCreacion: serverTimestamp()
 	});
+	await invalidarCachePublico('marcas');
 }
 
 export async function actualizarMarca(
@@ -211,10 +216,12 @@ export async function actualizarMarca(
 	cambios: Partial<Omit<Marca, 'id'>>
 ) {
 	await updateDoc(doc(db, COLECCION_MARCAS, id), cambios);
+	await invalidarCachePublico('marcas');
 }
 
 export async function eliminarMarca(marca: Marca) {
 	await deleteDoc(doc(db, COLECCION_MARCAS, marca.id));
+	await invalidarCachePublico('marcas');
 
 	if (!marca.imagen.includes('firebasestorage')) return;
 
@@ -303,6 +310,7 @@ export async function agregarTestimonio(testimonio: {
 		orden: testimonio.orden,
 		fechaCreacion: serverTimestamp()
 	});
+	await invalidarCachePublico('testimonios');
 }
 
 export async function actualizarTestimonio(
@@ -310,8 +318,10 @@ export async function actualizarTestimonio(
 	cambios: Partial<Omit<Testimonio, 'id'>>
 ) {
 	await updateDoc(doc(db, COLECCION_TESTIMONIOS, id), cambios);
+	await invalidarCachePublico('testimonios');
 }
 
 export async function eliminarTestimonio(id: string) {
 	await deleteDoc(doc(db, COLECCION_TESTIMONIOS, id));
+	await invalidarCachePublico('testimonios');
 }

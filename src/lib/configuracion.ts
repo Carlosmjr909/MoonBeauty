@@ -1,5 +1,6 @@
 import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '$lib/firebase';
+import { invalidarCachePublico } from '$lib/invalidarCache';
 
 const COLECCION = 'configuracion';
 
@@ -201,4 +202,6 @@ export async function guardarConfiguracion(
 		},
 		{ merge: true }
 	);
+
+	await invalidarCachePublico('configuracion');
 }

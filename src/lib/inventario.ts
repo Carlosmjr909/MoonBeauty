@@ -21,6 +21,7 @@ import {
 } from 'firebase/storage';
 
 import { db, storage } from '$lib/firebase';
+import { invalidarCachePublico } from '$lib/invalidarCache';
 
 /** Un tono o color disponible del producto, con su propia foto. */
 export type Tono = {
@@ -202,6 +203,7 @@ export async function agregarProducto(producto: NuevoProducto) {
 		...producto,
 		fechaCreacion: serverTimestamp()
 	});
+	await invalidarCachePublico('productos');
 }
 
 export async function subirImagenProducto(archivo: File): Promise<string> {
@@ -215,6 +217,7 @@ export async function subirImagenProducto(archivo: File): Promise<string> {
 
 export async function eliminarProducto(id: string, imagen?: string) {
 	await deleteDoc(doc(db, COLECCION, id));
+	await invalidarCachePublico('productos');
 
 	if (!imagen) return;
 
@@ -227,6 +230,7 @@ export async function eliminarProducto(id: string, imagen?: string) {
 
 export async function actualizarStock(id: string, stock: number) {
 	await updateDoc(doc(db, COLECCION, id), { stock });
+	await invalidarCachePublico('productos');
 }
 
 export async function actualizarProducto(
@@ -234,6 +238,7 @@ export async function actualizarProducto(
 	datos: Partial<Omit<Producto, 'id'>>
 ) {
 	await updateDoc(doc(db, COLECCION, id), datos);
+	await invalidarCachePublico('productos');
 }
 
 export function escucharCategorias(
@@ -289,6 +294,8 @@ export async function guardarCategoria(payload: {
 		{ merge: true }
 	);
 
+	await invalidarCachePublico('categorias');
+
 	return idCategoria;
 }
 
@@ -308,6 +315,8 @@ export async function actualizarCategoria(
 		imagen: payload.imagen,
 		updatedAt: serverTimestamp()
 	});
+
+	await invalidarCachePublico('categorias');
 }
 
 /**
@@ -380,11 +389,19 @@ export async function renombrarCategoria(
 
 	await lote.commit();
 
+	await invalidarCachePublico('categorias');
+	// El lote también reescribe "categorias"/"Tipo" en los productos
+	// afectados, así que su caché queda igual de desactualizada.
+	if (actualizados > 0) {
+		await invalidarCachePublico('productos');
+	}
+
 	return actualizados;
 }
 
 export async function eliminarCategoria(idCategoria: string, imagen?: string) {
 	await deleteDoc(doc(db, COLECCION_CATEGORIAS, idCategoria));
+	await invalidarCachePublico('categorias');
 
 	if (!imagen) return;
 

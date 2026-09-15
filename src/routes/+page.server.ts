@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
 import {
-	obtenerMarcas,
-	obtenerPublicacionesInstagram,
-	obtenerTestimonios
-} from '$lib/server/productos';
+	obtenerMarcasConCache,
+	obtenerPublicacionesInstagramConCache,
+	obtenerTestimoniosConCache
+} from '$lib/server/cachePublico';
 
 /**
  * Contenido de la portada que se administra desde el panel: las
@@ -16,15 +16,15 @@ import {
  */
 export const load: PageServerLoad = async () => {
 	const [publicacionesInstagram, marcas, testimonios] = await Promise.all([
-		obtenerPublicacionesInstagram().catch((error) => {
+		obtenerPublicacionesInstagramConCache().catch((error) => {
 			console.error('Error obteniendo publicaciones de Instagram:', error);
 			return [];
 		}),
-		obtenerMarcas().catch((error) => {
+		obtenerMarcasConCache().catch((error) => {
 			console.error('Error obteniendo marcas:', error);
 			return [];
 		}),
-		obtenerTestimonios().catch((error) => {
+		obtenerTestimoniosConCache().catch((error) => {
 			console.error('Error obteniendo testimonios:', error);
 			return [];
 		})
