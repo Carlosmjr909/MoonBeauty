@@ -13,6 +13,11 @@
 	const publicacionesInstagram = $derived(data.publicacionesInstagram ?? []);
 	const logos = $derived(data.marcas ?? []);
 
+	// El carrusel de marcas se parte en dos filas (mitad y mitad) que
+	// avanzan en sentidos opuestos.
+	const logosFilaUno = $derived(logos.slice(0, Math.ceil(logos.length / 2)));
+	const logosFilaDos = $derived(logos.slice(Math.ceil(logos.length / 2)));
+
 	// Textos editables del hero y de "Nuestra esencia".
 	const textos = $derived(data.configuracionPortada);
 
@@ -574,13 +579,6 @@
 		</div>
 	</div>
 </section>
-
-<FranjaConfianza />
-
-<DiagnosticoRutina tasaBCV={data?.tasaBCV?.promedio ?? null} />
-
-<MoonBeautyClub />
-
 <section
 	bind:this={seccionMarcas}
 	class="overflow-hidden bg-white py-12 sm:py-16 lg:py-20 2xl:py-24"
@@ -593,9 +591,27 @@
 
 	<div class="marquee">
 		<div class="marquee__track">
-			{#each [...logos, ...logos] as logo}
+			{#each [...logosFilaUno, ...logosFilaUno] as logo}
 				<div
-					class="flex h-24 w-40 shrink-0 items-center justify-center px-6 sm:h-28 sm:w-48 sm:px-8"
+					class="flex h-40 w-[50vw] shrink-0 items-center justify-center px-4 sm:h-44 sm:px-6 lg:h-56 lg:w-[20vw] lg:px-10"
+				>
+					<img
+						src={logo.imagen}
+						alt={logo.nombre}
+						class="w-auto max-w-full object-contain"
+						style="max-height: {logo.alto}"
+						loading="lazy"
+					/>
+				</div>
+			{/each}
+		</div>
+	</div>
+
+	<div class="marquee mt-6">
+		<div class="marquee__track marquee__track--reversa">
+			{#each [...logosFilaDos, ...logosFilaDos] as logo}
+				<div
+					class="flex h-40 w-[50vw] shrink-0 items-center justify-center px-4 sm:h-44 sm:px-6 lg:h-56 lg:w-[20vw] lg:px-10"
 				>
 					<img
 						src={logo.imagen}
@@ -609,6 +625,13 @@
 		</div>
 	</div>
 </section>
+
+
+<DiagnosticoRutina tasaBCV={data?.tasaBCV?.promedio ?? null} />
+
+
+
+
 
 <section class="bg-white py-12 sm:py-16 lg:py-20 2xl:py-24">
 	<div
@@ -855,7 +878,7 @@
 		{/if}
 	</div>
 </section>
-
+<MoonBeautyClub />
 {#if testimonios.length > 0 || enlaceResena}
 	<section class="bg-white py-12 sm:py-16 lg:py-20 2xl:py-24">
 		<div
@@ -950,7 +973,7 @@
 		</div>
 	</section>
 {/if}
-
+<FranjaConfianza />
 <section class="bg-slate-50 py-12 sm:py-16 lg:py-20 2xl:py-24">
 	<div
 		class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[1600px]"
@@ -1129,6 +1152,10 @@
 		display: flex;
 		width: max-content;
 		animation: marquee-scroll 35s linear infinite;
+	}
+
+	.marquee__track--reversa {
+		animation-direction: reverse;
 	}
 
 	@keyframes marquee-scroll {
