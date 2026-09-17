@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onMount, untrack } from "svelte";
 	import Tarjeta from "$lib/components/tarjeta.svelte";
+	import FranjaConfianza from "$lib/components/FranjaConfianza.svelte";
+	import DiagnosticoRutina from "$lib/components/DiagnosticoRutina.svelte";
+	import MoonBeautyClub from "$lib/components/MoonBeautyClub.svelte";
 	import Icon from "@iconify/svelte";
 
 	let { data } = $props();
@@ -73,7 +76,8 @@
 
 	function actualizarIndiceInstagram() {
 		if (!pistaInstagram) return;
-		const item = pistaInstagram.querySelector<HTMLElement>("[data-ig-item]");
+		const item =
+			pistaInstagram.querySelector<HTMLElement>("[data-ig-item]");
 		if (!item) return;
 		const paso = item.offsetWidth + 20;
 		// El padding lateral solo existe para que el primer/último post
@@ -84,7 +88,8 @@
 
 	function actualizarPaddingInstagram() {
 		if (!pistaInstagram) return;
-		const item = pistaInstagram.querySelector<HTMLElement>("[data-ig-item]");
+		const item =
+			pistaInstagram.querySelector<HTMLElement>("[data-ig-item]");
 		if (!item) return;
 		paddingInstagram = Math.max(
 			0,
@@ -92,9 +97,13 @@
 		);
 	}
 
-	function irAInstagram(indice: number, comportamiento: ScrollBehavior = "smooth") {
+	function irAInstagram(
+		indice: number,
+		comportamiento: ScrollBehavior = "smooth",
+	) {
 		if (!pistaInstagram) return;
-		const item = pistaInstagram.querySelector<HTMLElement>("[data-ig-item]");
+		const item =
+			pistaInstagram.querySelector<HTMLElement>("[data-ig-item]");
 		const paso = item ? item.offsetWidth + 20 : pistaInstagram.clientWidth;
 		pistaInstagram.scrollTo({
 			left: paso * indice,
@@ -175,8 +184,7 @@
 	function actualizarLimites() {
 		if (!pista) return;
 		alInicio = pista.scrollLeft <= 1;
-		alFinal =
-			pista.scrollLeft + pista.clientWidth >= pista.scrollWidth - 1;
+		alFinal = pista.scrollLeft + pista.clientWidth >= pista.scrollWidth - 1;
 	}
 
 	function desplazar(direccion: 1 | -1) {
@@ -220,197 +228,204 @@
 				if (cancelado) return;
 				gsap.registerPlugin(ScrollTrigger);
 
-		const animaciones: Array<{ scrollTrigger?: { kill: () => void } | null }> = [];
+				const animaciones: Array<{
+					scrollTrigger?: { kill: () => void } | null;
+				}> = [];
 
-		// "Favoritos de temporada": el encabezado sube con fade, y el
-		// carrusel de productos sube un poco después con un leve zoom-in.
-		if (encabezadoFavoritos) {
-			animaciones.push(
-				gsap.from(encabezadoFavoritos, {
-					opacity: 0,
-					y: 50,
-					duration: 0.8,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: encabezadoFavoritos,
-						start: "top 88%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		if (carruselFavoritosWrap) {
-			animaciones.push(
-				gsap.from(carruselFavoritosWrap, {
-					opacity: 0,
-					y: 70,
-					scale: 0.96,
-					duration: 0.9,
-					delay: 0.15,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: carruselFavoritosWrap,
-						start: "top 90%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		// "Marcas que amamos": aparece con un zoom suave desde adentro.
-		if (seccionMarcas) {
-			animaciones.push(
-				gsap.from(seccionMarcas, {
-					opacity: 0,
-					scale: 0.88,
-					duration: 1,
-					ease: "power2.out",
-					scrollTrigger: {
-						trigger: seccionMarcas,
-						start: "top 85%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		// "Nuestro Instagram": el texto entra desde la izquierda y el
-		// botón desde la derecha, como si se encontraran; el carrusel
-		// aparece con fade + zoom un momento después.
-		if (encabezadoInstagramTexto) {
-			animaciones.push(
-				gsap.from(encabezadoInstagramTexto, {
-					opacity: 0,
-					x: -90,
-					duration: 0.8,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: encabezadoInstagramTexto,
-						start: "top 88%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		if (botonInstagramSeguir) {
-			animaciones.push(
-				gsap.from(botonInstagramSeguir, {
-					opacity: 0,
-					x: 90,
-					duration: 0.8,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: botonInstagramSeguir,
-						start: "top 88%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		if (carruselInstagramWrap) {
-			animaciones.push(
-				gsap.from(carruselInstagramWrap, {
-					opacity: 0,
-					scale: 0.9,
-					duration: 0.9,
-					delay: 0.2,
-					ease: "power2.out",
-					scrollTrigger: {
-						trigger: carruselInstagramWrap,
-						start: "top 90%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		// Testimonios: el encabezado sube con fade y las tarjetas
-		// aparecen escalonadas, una detrás de otra.
-		if (encabezadoTestimonios) {
-			animaciones.push(
-				gsap.from(encabezadoTestimonios, {
-					opacity: 0,
-					y: 30,
-					duration: 0.7,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: encabezadoTestimonios,
-						start: "top 88%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		if (grillaTestimonios) {
-			// Se anima el bloque entero y no tarjeta por tarjeta: en
-			// móvil las tarjetas viven dentro de un carrusel horizontal,
-			// y animarlas por separado deja a las de la derecha (fuera de
-			// la vista) atrapadas a media opacidad.
-			animaciones.push(
-				gsap.from(grillaTestimonios, {
-					opacity: 0,
-					y: 40,
-					duration: 0.7,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: grillaTestimonios,
-						start: "top 92%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		// "Nuestra esencia": el título cae desde arriba y las 4 tarjetas
-		// entran en diagonal (como en /products), con un leve giro extra
-		// para diferenciarla del resto de las animaciones de esta vista.
-		if (encabezadoEsencia) {
-			animaciones.push(
-				gsap.from(encabezadoEsencia, {
-					opacity: 0,
-					y: -40,
-					duration: 0.7,
-					ease: "power3.out",
-					scrollTrigger: {
-						trigger: encabezadoEsencia,
-						start: "top 88%",
-						once: true,
-					},
-				}),
-			);
-		}
-
-		let triggersEsencia: ScrollTrigger[] = [];
-
-		if (grillaEsencia) {
-			const tarjetas = Array.from(
-				grillaEsencia.children,
-			) as HTMLElement[];
-
-			if (tarjetas.length) {
-				gsap.set(tarjetas, { opacity: 0, x: -30, y: 60, rotate: -3 });
-
-				triggersEsencia = ScrollTrigger.batch(tarjetas, {
-					start: "top 90%",
-					once: true,
-					onEnter: (lote) => {
-						gsap.to(lote, {
-							opacity: 1,
-							x: 0,
-							y: 0,
-							rotate: 0,
+				// "Favoritos de temporada": el encabezado sube con fade, y el
+				// carrusel de productos sube un poco después con un leve zoom-in.
+				if (encabezadoFavoritos) {
+					animaciones.push(
+						gsap.from(encabezadoFavoritos, {
+							opacity: 0,
+							y: 50,
 							duration: 0.8,
 							ease: "power3.out",
-							stagger: 0.12,
+							scrollTrigger: {
+								trigger: encabezadoFavoritos,
+								start: "top 88%",
+								once: true,
+							},
+						}),
+					);
+				}
+
+				if (carruselFavoritosWrap) {
+					animaciones.push(
+						gsap.from(carruselFavoritosWrap, {
+							opacity: 0,
+							y: 70,
+							scale: 0.96,
+							duration: 0.9,
+							delay: 0.15,
+							ease: "power3.out",
+							scrollTrigger: {
+								trigger: carruselFavoritosWrap,
+								start: "top 90%",
+								once: true,
+							},
+						}),
+					);
+				}
+
+				// "Marcas que amamos": aparece con un zoom suave desde adentro.
+				if (seccionMarcas) {
+					animaciones.push(
+						gsap.from(seccionMarcas, {
+							opacity: 0,
+							scale: 0.88,
+							duration: 1,
+							ease: "power2.out",
+							scrollTrigger: {
+								trigger: seccionMarcas,
+								start: "top 85%",
+								once: true,
+							},
+						}),
+					);
+				}
+
+				// "Nuestro Instagram": el texto entra desde la izquierda y el
+				// botón desde la derecha, como si se encontraran; el carrusel
+				// aparece con fade + zoom un momento después.
+				if (encabezadoInstagramTexto) {
+					animaciones.push(
+						gsap.from(encabezadoInstagramTexto, {
+							opacity: 0,
+							x: -90,
+							duration: 0.8,
+							ease: "power3.out",
+							scrollTrigger: {
+								trigger: encabezadoInstagramTexto,
+								start: "top 88%",
+								once: true,
+							},
+						}),
+					);
+				}
+
+				if (botonInstagramSeguir) {
+					animaciones.push(
+						gsap.from(botonInstagramSeguir, {
+							opacity: 0,
+							x: 90,
+							duration: 0.8,
+							ease: "power3.out",
+							scrollTrigger: {
+								trigger: botonInstagramSeguir,
+								start: "top 88%",
+								once: true,
+							},
+						}),
+					);
+				}
+
+				if (carruselInstagramWrap) {
+					animaciones.push(
+						gsap.from(carruselInstagramWrap, {
+							opacity: 0,
+							scale: 0.9,
+							duration: 0.9,
+							delay: 0.2,
+							ease: "power2.out",
+							scrollTrigger: {
+								trigger: carruselInstagramWrap,
+								start: "top 90%",
+								once: true,
+							},
+						}),
+					);
+				}
+
+				// Testimonios: el encabezado sube con fade y las tarjetas
+				// aparecen escalonadas, una detrás de otra.
+				if (encabezadoTestimonios) {
+					animaciones.push(
+						gsap.from(encabezadoTestimonios, {
+							opacity: 0,
+							y: 30,
+							duration: 0.7,
+							ease: "power3.out",
+							scrollTrigger: {
+								trigger: encabezadoTestimonios,
+								start: "top 88%",
+								once: true,
+							},
+						}),
+					);
+				}
+
+				if (grillaTestimonios) {
+					// Se anima el bloque entero y no tarjeta por tarjeta: en
+					// móvil las tarjetas viven dentro de un carrusel horizontal,
+					// y animarlas por separado deja a las de la derecha (fuera de
+					// la vista) atrapadas a media opacidad.
+					animaciones.push(
+						gsap.from(grillaTestimonios, {
+							opacity: 0,
+							y: 40,
+							duration: 0.7,
+							ease: "power3.out",
+							scrollTrigger: {
+								trigger: grillaTestimonios,
+								start: "top 92%",
+								once: true,
+							},
+						}),
+					);
+				}
+
+				// "Nuestra esencia": el título cae desde arriba y las 4 tarjetas
+				// entran en diagonal (como en /products), con un leve giro extra
+				// para diferenciarla del resto de las animaciones de esta vista.
+				if (encabezadoEsencia) {
+					animaciones.push(
+						gsap.from(encabezadoEsencia, {
+							opacity: 0,
+							y: -40,
+							duration: 0.7,
+							ease: "power3.out",
+							scrollTrigger: {
+								trigger: encabezadoEsencia,
+								start: "top 88%",
+								once: true,
+							},
+						}),
+					);
+				}
+
+				let triggersEsencia: ScrollTrigger[] = [];
+
+				if (grillaEsencia) {
+					const tarjetas = Array.from(
+						grillaEsencia.children,
+					) as HTMLElement[];
+
+					if (tarjetas.length) {
+						gsap.set(tarjetas, {
+							opacity: 0,
+							x: -30,
+							y: 60,
+							rotate: -3,
 						});
-					},
-				});
-			}
-		}
+
+						triggersEsencia = ScrollTrigger.batch(tarjetas, {
+							start: "top 90%",
+							once: true,
+							onEnter: (lote) => {
+								gsap.to(lote, {
+									opacity: 1,
+									x: 0,
+									y: 0,
+									rotate: 0,
+									duration: 0.8,
+									ease: "power3.out",
+									stagger: 0.12,
+								});
+							},
+						});
+					}
+				}
 
 				// ScrollTrigger calcula al arrancar en qué punto de la página
 				// está cada sección. Varias imágenes de esta vista (los logos
@@ -463,7 +478,6 @@
 		fetchpriority="high"
 		class="absolute -top-30 left-0 -z-10 h-[calc(100%+7.5rem)] w-full object-cover lg:-top-34 lg:h-[calc(100%+8.5rem)]"
 	/>
-	
 
 	<div class="mx-auto w-full px-8 lg:px-12">
 		<p class="text-sky-200 font-Manrope text-lg">{textos.heroEtiqueta}</p>
@@ -507,7 +521,6 @@
 			bind:this={encabezadoFavoritos}
 			class="mt-4 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"
 		>
-
 			<a
 				class="inline-flex w-fit shrink-0 items-center justify-center rounded-full bg-sky-200 px-6 py-3 font-Manrope text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-600 hover:text-white sm:text-base"
 				href="/products"
@@ -553,11 +566,20 @@
 				aria-label="Producto siguiente"
 				class="absolute -right-3 top-[38%] z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-700 shadow-lg transition hover:scale-110 hover:bg-sky-100 active:scale-95 disabled:pointer-events-none disabled:opacity-0 lg:flex lg:-right-5"
 			>
-				<Icon icon="material-symbols:chevron-right-rounded" width="28" />
+				<Icon
+					icon="material-symbols:chevron-right-rounded"
+					width="28"
+				/>
 			</button>
 		</div>
 	</div>
 </section>
+
+<FranjaConfianza />
+
+<DiagnosticoRutina tasaBCV={data?.tasaBCV?.promedio ?? null} />
+
+<MoonBeautyClub />
 
 <section
 	bind:this={seccionMarcas}
@@ -624,12 +646,16 @@
 			<div bind:this={carruselInstagramWrap} class="relative mt-10">
 				<button
 					type="button"
-					onclick={() => irAInstagram(Math.max(0, indiceActivoInstagram - 1))}
+					onclick={() =>
+						irAInstagram(Math.max(0, indiceActivoInstagram - 1))}
 					disabled={indiceActivoInstagram === 0}
 					aria-label="Publicación anterior"
 					class="absolute left-1 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-700 shadow-lg transition hover:scale-110 hover:bg-sky-100 active:scale-95 disabled:pointer-events-none disabled:opacity-0 sm:left-2 lg:left-4"
 				>
-					<Icon icon="material-symbols:chevron-left-rounded" width="28" />
+					<Icon
+						icon="material-symbols:chevron-left-rounded"
+						width="28"
+					/>
 				</button>
 
 				<div
@@ -664,8 +690,10 @@
 										loop
 										playsinline
 										class="h-full w-full object-cover"
-										onplay={() => (reproduciendo[indice] = true)}
-										onpause={() => (reproduciendo[indice] = false)}
+										onplay={() =>
+											(reproduciendo[indice] = true)}
+										onpause={() =>
+											(reproduciendo[indice] = false)}
 									></video>
 								{:else}
 									{#each post.archivos as foto, indiceFoto}
@@ -674,8 +702,10 @@
 											alt="Publicación de Moon Beauty en Instagram"
 											loading="lazy"
 											class="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
-											class:opacity-100={indiceFoto === slide}
-											class:opacity-0={indiceFoto !== slide}
+											class:opacity-100={indiceFoto ===
+												slide}
+											class:opacity-0={indiceFoto !==
+												slide}
 										/>
 									{/each}
 								{/if}
@@ -702,10 +732,13 @@
 
 									<button
 										type="button"
-										aria-label={sonidoActivo[indice] ? "Silenciar" : "Activar sonido"}
+										aria-label={sonidoActivo[indice]
+											? "Silenciar"
+											: "Activar sonido"}
 										onclick={(evento) => {
 											evento.preventDefault();
-											sonidoActivo[indice] = !sonidoActivo[indice];
+											sonidoActivo[indice] =
+												!sonidoActivo[indice];
 										}}
 										class="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-slate-700 backdrop-blur-sm transition hover:bg-white"
 									>
@@ -722,7 +755,12 @@
 										aria-label="Foto anterior de esta publicación"
 										disabled={slide === 0}
 										onclick={(evento) =>
-											cambiarSlide(evento, indice, -1, post.archivos.length)}
+											cambiarSlide(
+												evento,
+												indice,
+												-1,
+												post.archivos.length,
+											)}
 										class="absolute left-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-slate-700 backdrop-blur-sm transition hover:bg-white disabled:pointer-events-none disabled:opacity-0"
 									>
 										<Icon
@@ -734,9 +772,15 @@
 									<button
 										type="button"
 										aria-label="Siguiente foto de esta publicación"
-										disabled={slide === post.archivos.length - 1}
+										disabled={slide ===
+											post.archivos.length - 1}
 										onclick={(evento) =>
-											cambiarSlide(evento, indice, 1, post.archivos.length)}
+											cambiarSlide(
+												evento,
+												indice,
+												1,
+												post.archivos.length,
+											)}
 										class="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-slate-700 backdrop-blur-sm transition hover:bg-white disabled:pointer-events-none disabled:opacity-0"
 									>
 										<Icon
@@ -778,11 +822,15 @@
 								indiceActivoInstagram + 1,
 							),
 						)}
-					disabled={indiceActivoInstagram === publicacionesInstagram.length - 1}
+					disabled={indiceActivoInstagram ===
+						publicacionesInstagram.length - 1}
 					aria-label="Publicación siguiente"
 					class="absolute right-1 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-700 shadow-lg transition hover:scale-110 hover:bg-sky-100 active:scale-95 disabled:pointer-events-none disabled:opacity-0 sm:right-2 lg:right-4"
 				>
-					<Icon icon="material-symbols:chevron-right-rounded" width="28" />
+					<Icon
+						icon="material-symbols:chevron-right-rounded"
+						width="28"
+					/>
 				</button>
 
 				{#if publicacionesInstagram.length > 1}
@@ -794,9 +842,11 @@
 								onclick={() => irAInstagram(indice)}
 								class="h-2 rounded-full transition-all"
 								class:w-6={indiceActivoInstagram === indice}
-								class:bg-sky-500={indiceActivoInstagram === indice}
+								class:bg-sky-500={indiceActivoInstagram ===
+									indice}
 								class:w-2={indiceActivoInstagram !== indice}
-								class:bg-slate-300={indiceActivoInstagram !== indice}
+								class:bg-slate-300={indiceActivoInstagram !==
+									indice}
 							></button>
 						{/each}
 					</div>
@@ -951,7 +1001,9 @@
 						</p>
 					</div>
 
-					<div class="min-h-40 overflow-hidden sm:min-h-64 md:min-h-80">
+					<div
+						class="min-h-40 overflow-hidden sm:min-h-64 md:min-h-80"
+					>
 						<img
 							src="/planta.webp"
 							alt="Ingredientes botánicos utilizados en skincare"
@@ -971,7 +1023,9 @@
 					<Icon icon="mdi:medal-outline" width="24" />
 				</div>
 
-				<p class="mt-3 font-Manrope text-base font-bold sm:mt-5 sm:text-2xl lg:text-3xl">
+				<p
+					class="mt-3 font-Manrope text-base font-bold sm:mt-5 sm:text-2xl lg:text-3xl"
+				>
 					{textos.esencia2Titulo}
 				</p>
 
@@ -1042,7 +1096,6 @@
 		</div>
 	</div>
 </section>
-
 
 <style>
 	.pista-scroll {

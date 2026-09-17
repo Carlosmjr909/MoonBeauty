@@ -761,7 +761,7 @@
 	</div>
 {/if}
 
-<footer class="border-t border-slate-200 bg-slate-100">
+<footer class="border-t border-slate-200 bg-white">
 	<div
 		class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16 2xl:max-w-[1600px]"
 	>
@@ -950,7 +950,7 @@
 </footer>
 
 <a
-	href="{enlaceWhatsapp}?text=¡Hola! Estoy interesado en algunos productos de Moon Beauty. ¿Podrían asesorarme?"
+	href="{enlaceWhatsapp}?text=¡Hola! Estoy interesado/a en algunos productos de Moon Beauty. ¿Podrían asesorarme?"
 	target="_blank"
 	rel="noopener noreferrer"
 	class="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-black text-white shadow-2xl transition-all duration-300 hover:scale-110 hover:shadow-green-400/40"

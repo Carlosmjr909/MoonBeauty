@@ -17,6 +17,26 @@
 	let cargando = $state(false);
 	let errorRegistro = $state("");
 
+	/**
+	 * Le pide al servidor que mande el correo de bienvenida al club (a la
+	 * clienta y a la empresa). Se hace "best effort": si falla, no debe
+	 * impedir que la cuenta recién creada navegue con normalidad.
+	 */
+	async function enviarBienvenidaClub(usuario: { getIdToken: () => Promise<string> }) {
+		try {
+			const token = await usuario.getIdToken();
+
+			await fetch("/api/enviar-bienvenida-club", {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+		} catch (error) {
+			console.error("No se pudo enviar el correo de bienvenida al club:", error);
+		}
+	}
+
 	async function crearCuenta(event: SubmitEvent) {
 		event.preventDefault();
 		errorRegistro = "";
@@ -53,7 +73,11 @@
 				correo: credencial.user.email,
 				rol: "cliente",
 				fechaRegistro: serverTimestamp(),
+				miembroClub: true,
+				fechaIngresoClub: serverTimestamp(),
 			});
+
+			await enviarBienvenidaClub(credencial.user);
 
 			await goto("/");
 		} catch (error) {
@@ -68,13 +92,15 @@
 		cargando = true;
 
 		try {
-			const [auth, googleProvider, { signInWithPopup }] = await Promise.all([
-				obtenerAuth(),
-				obtenerGoogleProvider(),
-				import("firebase/auth"),
-			]);
+			const [auth, googleProvider, { signInWithPopup, getAdditionalUserInfo }] =
+				await Promise.all([
+					obtenerAuth(),
+					obtenerGoogleProvider(),
+					import("firebase/auth"),
+				]);
 
 			const credencial = await signInWithPopup(auth, googleProvider);
+			const esCuentaNueva = getAdditionalUserInfo(credencial)?.isNewUser ?? false;
 
 			await setDoc(
 				doc(db, "usuarios", credencial.user.uid),
@@ -85,11 +111,22 @@
 					foto: credencial.user.photoURL ?? null,
 					rol: "cliente",
 					fechaRegistro: serverTimestamp(),
+					...(esCuentaNueva
+						? { miembroClub: true, fechaIngresoClub: serverTimestamp() }
+						: {}),
 				},
 				{
 					merge: true,
 				},
 			);
+
+			// Solo se manda el correo de bienvenida al club la primera vez
+			// que esta cuenta de Google se registra; alguien que ya tenía
+			// cuenta y usa "Registrarse con Google" para iniciar sesión no
+			// debe recibirlo de nuevo.
+			if (esCuentaNueva) {
+				await enviarBienvenidaClub(credencial.user);
+			}
 
 			await goto("/");
 		} catch (error) {
