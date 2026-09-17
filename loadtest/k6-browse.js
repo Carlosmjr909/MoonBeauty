@@ -284,12 +284,17 @@ function pausaRealista() {
 }
 
 function get(url, tags) {
-	const params = { tags };
+	// k6 no envía Accept-Encoding por defecto (confirmado en la sesión de
+	// diagnóstico: un navegador real sí lo hace). Sin este header, Vercel
+	// sirve las páginas sin comprimir — varias veces más pesadas de lo que
+	// cualquier usuario real recibiría. Se agrega explícitamente para que
+	// esta prueba negocie compresión como lo haría un navegador.
+	const params = { tags, headers: { 'Accept-Encoding': 'gzip, br' } };
 	if (PROTECTION_BYPASS) {
 		// Solo necesario para pasar la protección de Vercel (login SSO) en
 		// un Preview Deployment. En producción el dominio propio no tiene
 		// esta protección, así que esto no se usaría ahí.
-		params.headers = { 'x-vercel-protection-bypass': PROTECTION_BYPASS };
+		params.headers['x-vercel-protection-bypass'] = PROTECTION_BYPASS;
 	}
 
 	const urlFinal = agregarParametroFrio(url);
