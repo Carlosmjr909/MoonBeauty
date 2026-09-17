@@ -21,6 +21,7 @@
 
 	let productos = $state<Producto[]>([]);
 	let categorias = $state<Categoria[]>([]);
+	let busquedaProducto = $state("");
 	let cargando = $state(true);
 	let error = $state<string | null>(null);
 	let guardando = $state(false);
@@ -155,6 +156,21 @@
 			.map((categoria) => categoria.nombre)
 			.filter((nombre) => nombre.trim().length > 0)
 	);
+
+	const productosFiltrados = $derived.by(() => {
+		const texto = busquedaProducto.trim().toLowerCase();
+		if (!texto) return productos;
+
+		return productos.filter((producto) => {
+			return (
+				producto.Nombre.toLowerCase().includes(texto) ||
+				producto.marca.toLowerCase().includes(texto) ||
+				categoriasDeProducto(producto).some((categoria) =>
+					categoria.toLowerCase().includes(texto)
+				)
+			);
+		});
+	});
 
 	function opcionesTipo(tipoActual?: string) {
 		const opciones = [...nombresCategorias];
@@ -923,10 +939,33 @@
 	</div>
 
 	<div class="mt-10">
+		<div class="mb-4 flex items-center justify-between gap-3">
+			<p class="font-Manrope text-2xl text-slate-700">Productos</p>
+
+			<div class="relative w-full max-w-sm">
+				<Icon
+					icon="material-symbols:search"
+					width="20"
+					class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-slate-400"
+				/>
+				<input
+					type="search"
+					placeholder="Buscar por nombre, marca o categoría..."
+					aria-label="Buscar productos"
+					bind:value={busquedaProducto}
+					class="h-11 w-full rounded-full border border-slate-200 bg-white pr-4 pl-11 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:bg-white"
+				/>
+			</div>
+		</div>
+
 		{#if cargando}
 			<p class="text-slate-500">Cargando productos...</p>
 		{:else if productos.length === 0}
 			<p class="text-slate-500">No hay productos en el inventario.</p>
+		{:else if productosFiltrados.length === 0}
+			<p class="text-slate-500">
+				No hay productos que coincidan con «{busquedaProducto}».
+			</p>
 		{:else}
 			<div class="overflow-x-auto">
 				<table class="w-full min-w-180 table-auto border-collapse text-left text-sm">
@@ -947,7 +986,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each productos as producto (producto.id)}
+						{#each productosFiltrados as producto (producto.id)}
 							<tr class="border-b border-slate-100 align-top">
 								<td class="py-3 pr-4">
 									{#if producto.imagen}

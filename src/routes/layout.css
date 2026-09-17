@@ -1,5 +1,15 @@
 @import 'tailwindcss';
 
+/*
+ * Por defecto Tailwind v4 activa "dark:" según la preferencia del
+ * sistema operativo. El panel de administración tiene su propio botón
+ * de modo nocturno (independiente del resto del sitio), así que acá se
+ * redefine "dark:" para que dependa de una clase ".dark" en un
+ * ancestro — esa clase la pone/quita el layout de /admin, nunca el
+ * resto del sitio, así que esto no afecta ninguna otra página.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 
 @font-face {
     font-family: MiTypografia3;
