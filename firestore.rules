@@ -97,5 +97,16 @@ service cloud.firestore {
       // comprar nada. Auditoría de seguridad, pentest de cupones.
       allow update: if false;
     }
+
+    // Reseñas internas (1 a 5 estrellas por producto). Nunca se muestran
+    // en el sitio público, solo en /admin/resenas, así que "read" queda
+    // solo para admins. Se escriben siempre desde POST /api/resenas con
+    // el Admin SDK (que no pasa por estas reglas), nunca directo desde
+    // el cliente: así cualquier visitante puede calificar sin necesitar
+    // permisos de escritura abiertos en Firestore.
+    match /resenas/{resenaId} {
+      allow read: if esAdmin();
+      allow write: if false;
+    }
   }
 }

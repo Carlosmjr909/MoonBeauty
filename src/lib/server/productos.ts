@@ -29,6 +29,8 @@ export type ProductoPublico = {
 	popular: boolean;
 	nuevoIngreso: boolean;
 	fechaCreacion: number;
+	/** Cantidad de reseñas internas (1 a 5 estrellas) que ha recibido. */
+	cantidadResenas: number;
 };
 
 export type CategoriaPublica = {
@@ -73,7 +75,8 @@ export async function obtenerProductosPublicos(): Promise<ProductoPublico[]> {
 			fechaCreacion:
 				fechaCreacion && typeof fechaCreacion.toMillis === 'function'
 					? fechaCreacion.toMillis()
-					: 0
+					: 0,
+			cantidadResenas: Number(datos.cantidadResenas ?? 0)
 		};
 	});
 }

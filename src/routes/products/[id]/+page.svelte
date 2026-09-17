@@ -111,6 +111,77 @@
 		cantidad++;
 	}
 
+	/* ---------------- Reseñas internas (1 a 5 estrellas) ---------------- */
+
+	let calificacionSeleccionada = $state(0);
+	let calificacionHover = $state(0);
+	let enviandoResena = $state(false);
+	let resenaEnviada = $state(false);
+	let errorResena = $state("");
+	let conteoResenasLocal = $state<number | null>(null);
+
+	const conteoResenasMostrado = $derived(
+		conteoResenasLocal ?? product?.cantidadResenas ?? 0,
+	);
+
+	// Al cambiar de producto se reinicia el widget de reseña y se revisa
+	// si esta clienta ya calificó este producto desde este navegador.
+	$effect(() => {
+		const id = product?.id;
+		if (!id) return;
+
+		calificacionSeleccionada = 0;
+		calificacionHover = 0;
+		errorResena = "";
+		conteoResenasLocal = null;
+		resenaEnviada = browser
+			? localStorage.getItem(`moonbeauty-resena-${id}`) === "1"
+			: false;
+	});
+
+	async function enviarResena() {
+		if (!product || !calificacionSeleccionada || enviandoResena) return;
+
+		enviandoResena = true;
+		errorResena = "";
+
+		try {
+			const respuesta = await fetch("/api/resenas", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					productoId: product.id,
+					calificacion: calificacionSeleccionada,
+				}),
+			});
+
+			const resultado = await respuesta.json();
+
+			if (!respuesta.ok || !resultado.ok) {
+				throw new Error(resultado.error ?? "No se pudo enviar la reseña.");
+			}
+
+			conteoResenasLocal = (product.cantidadResenas ?? 0) + 1;
+			resenaEnviada = true;
+
+			if (browser) {
+				try {
+					localStorage.setItem(`moonbeauty-resena-${product.id}`, "1");
+				} catch {
+					// Sin acceso a localStorage: la reseña ya se guardó igual,
+					// solo no se recuerda para la próxima visita.
+				}
+			}
+		} catch (error) {
+			errorResena =
+				error instanceof Error
+					? error.message
+					: "No se pudo enviar la reseña.";
+		} finally {
+			enviandoResena = false;
+		}
+	}
+
 	function agregarAlCarrito() {
 		if (!product || agotado) {
 			return;
@@ -550,6 +621,65 @@
 						{mensaje}
 					</div>
 				{/if}
+
+				<div class="mt-6 border-t border-slate-100 pt-6">
+					<p class="text-sm font-semibold uppercase tracking-wide text-slate-500">
+						Calificar este producto
+					</p>
+
+					{#if resenaEnviada}
+						<p class="mt-3 flex items-center gap-2 text-sm font-medium text-sky-700">
+							<Icon icon="material-symbols:check-circle-outline-rounded" width="18" />
+							¡Gracias por tu reseña!
+						</p>
+					{:else}
+						<div class="mt-3 flex flex-wrap items-center gap-4">
+							<div class="flex gap-1">
+								{#each [1, 2, 3, 4, 5] as estrella}
+									<button
+										type="button"
+										onclick={() => (calificacionSeleccionada = estrella)}
+										onmouseenter={() => (calificacionHover = estrella)}
+										onmouseleave={() => (calificacionHover = 0)}
+										aria-label={`Calificar con ${estrella} estrella${estrella > 1 ? "s" : ""}`}
+										class="p-0.5"
+									>
+										<Icon
+											icon={(calificacionHover || calificacionSeleccionada) >=
+											estrella
+												? "material-symbols:star-rounded"
+												: "material-symbols:star-outline-rounded"}
+											width="26"
+											class={(calificacionHover || calificacionSeleccionada) >=
+											estrella
+												? "text-amber-400"
+												: "text-slate-300"}
+										/>
+									</button>
+								{/each}
+							</div>
+
+							<button
+								type="button"
+								onclick={enviarResena}
+								disabled={!calificacionSeleccionada || enviandoResena}
+								class="rounded-full bg-slate-100 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								{enviandoResena ? "Enviando..." : "Agregar reseña"}
+							</button>
+
+							<p class="text-sm text-slate-400">
+								{conteoResenasMostrado} reseña{conteoResenasMostrado === 1
+									? ""
+									: "s"}
+							</p>
+						</div>
+
+						{#if errorResena}
+							<p class="mt-2 text-xs text-red-600">{errorResena}</p>
+						{/if}
+					{/if}
+				</div>
 			</div>
 		</div>
 	{/key}

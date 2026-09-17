@@ -1,9 +1,5 @@
 import type { RequestHandler } from './$types';
-import {
-	obtenerCategoriasPublicas,
-	obtenerProductosPublicos
-} from '$lib/server/productos';
-import { categoriasDeProducto } from '$lib/inventario';
+import { obtenerProductosPublicos } from '$lib/server/productos';
 import { SITIO_URL } from '$lib/seo';
 import { SLUGS_LEGALES } from '$lib/server/legales';
 
@@ -36,16 +32,10 @@ function comoFecha(milisegundos: number): string | undefined {
 }
 
 export const GET: RequestHandler = async ({ setHeaders }) => {
-	const [productos, categoriasGuardadas] = await Promise.all([
-		obtenerProductosPublicos().catch((error) => {
-			console.error('Sitemap: no se pudieron leer los productos:', error);
-			return [];
-		}),
-		obtenerCategoriasPublicas().catch((error) => {
-			console.error('Sitemap: no se pudieron leer las categorías:', error);
-			return [];
-		})
-	]);
+	const productos = await obtenerProductosPublicos().catch((error) => {
+		console.error('Sitemap: no se pudieron leer los productos:', error);
+		return [];
+	});
 
 	const entradas: Entrada[] = [
 		{ ruta: '/', prioridad: '1.0', frecuencia: 'daily' },
@@ -54,32 +44,12 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
 		{ ruta: '/preguntas-frecuentes', prioridad: '0.5', frecuencia: 'monthly' }
 	];
 
-	// Cada categoría es una página propia que la gente busca por su
-	// nombre ("protector solar", "mascarillas"), así que va al sitemap.
-	// Se juntan las guardadas en el panel con las que salen de los
-	// productos, sin repetir.
-	const nombresCategorias = new Set<string>();
-
-	for (const categoria of categoriasGuardadas) {
-		const nombre = categoria.nombre.trim();
-		if (nombre) nombresCategorias.add(nombre);
-	}
-
-	for (const producto of productos) {
-		for (const nombre of categoriasDeProducto(producto)) {
-			const limpio = String(nombre).trim();
-			if (limpio) nombresCategorias.add(limpio);
-		}
-	}
-
-	for (const nombre of nombresCategorias) {
-		entradas.push({
-			ruta: `/products?categoria=${encodeURIComponent(nombre)}`,
-			prioridad: '0.7',
-			frecuencia: 'weekly'
-		});
-	}
-
+	// Las vistas filtradas por categoría (/products?categoria=X) ya NO
+	// van al sitemap: son casi el mismo contenido que /products, así
+	// que competían por presupuesto de rastreo con las páginas de
+	// producto reales sin aportar valor propio a Google. La página
+	// "/categorias" sigue en el sitemap porque esa sí es una página
+	// distinta.
 	for (const producto of productos) {
 		entradas.push({
 			ruta: `/products/${producto.id}`,

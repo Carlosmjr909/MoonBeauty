@@ -56,6 +56,7 @@
 		{ href: "/admin/pedidos", etiqueta: "Pedidos", icono: "material-symbols:receipt-long-outline" },
 		{ href: "/admin/inventario", etiqueta: "Inventario", icono: "material-symbols:inventory-2-outline" },
 		{ href: "/admin/cupones", etiqueta: "Cupones", icono: "material-symbols:sell-outline" },
+		{ href: "/admin/resenas", etiqueta: "Reseñas", icono: "material-symbols:star-outline-rounded" },
 		{ href: "/admin/contenido", etiqueta: "Contenido", icono: "material-symbols:auto-awesome-mosaic-outline" },
 		{ href: "/admin/legales", etiqueta: "Legales", icono: "material-symbols:gavel-rounded" },
 	];

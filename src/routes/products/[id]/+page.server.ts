@@ -59,7 +59,47 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 			price: producto.precio.toFixed(2),
 			availability:
 				producto.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-			itemCondition: 'https://schema.org/NewCondition'
+			itemCondition: 'https://schema.org/NewCondition',
+			// El flete no se cobra dentro del precio: la entrega en Naguanagua
+			// ya es gratis y el envío nacional se paga aparte, al retirar en
+			// la agencia (MRW/Tealca/Zoom), nunca acá en el checkout.
+			shippingDetails: {
+				'@type': 'OfferShippingDetails',
+				shippingRate: {
+					'@type': 'MonetaryAmount',
+					value: '0',
+					currency: 'USD'
+				},
+				shippingDestination: {
+					'@type': 'DefinedRegion',
+					addressCountry: 'VE'
+				},
+				deliveryTime: {
+					'@type': 'ShippingDeliveryTime',
+					handlingTime: {
+						'@type': 'QuantitativeValue',
+						minValue: 0,
+						maxValue: 1,
+						unitCode: 'DAY'
+					},
+					transitTime: {
+						'@type': 'QuantitativeValue',
+						minValue: 1,
+						maxValue: 5,
+						unitCode: 'DAY'
+					}
+				}
+			},
+			// Refleja la política real en /cambios-y-devoluciones: no son
+			// devoluciones por cambio de opinión, sino cambios por producto
+			// dañado/incorrecto/defectuoso, reportados dentro de 48 horas.
+			hasMerchantReturnPolicy: {
+				'@type': 'MerchantReturnPolicy',
+				applicableCountry: 'VE',
+				returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+				merchantReturnDays: 2,
+				returnFees: 'https://schema.org/ReturnShippingFees'
+			}
 		}
 	};
 
