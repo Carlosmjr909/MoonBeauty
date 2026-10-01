@@ -162,7 +162,7 @@
 			</p>
 		{/if}
 
-		<p class="text-lg font-bold text-slate-700">
+		<p class="text-lg font-bold text-sky-700">
 			{formatearUSD(precio)}
 		</p>
 

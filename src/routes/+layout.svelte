@@ -36,6 +36,7 @@
 		imagen?: string | null;
 		precio?: number | string | null;
 		especificacion?: string | null;
+		stock?: number | null;
 	};
 
 	type LayoutDataConProductos = {
@@ -651,11 +652,23 @@
 										/>
 
 										<div class="min-w-0 flex-1">
-											<p class="text-xs text-slate-400">
-												{producto.marca
-													? `${producto.marca} · ${producto.Tipo}`
-													: producto.Tipo}
-											</p>
+											<div
+												class="flex items-start justify-between gap-2"
+											>
+												<p class="truncate text-xs text-slate-400">
+													{producto.marca
+														? `${producto.marca} · ${producto.Tipo}`
+														: producto.Tipo}
+												</p>
+
+												{#if Number(producto.stock ?? 0) <= 0}
+													<span
+														class="shrink-0 rounded-full bg-slate-900/90 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white"
+													>
+														Agotado
+													</span>
+												{/if}
+											</div>
 
 											<p
 												class="truncate font-semibold text-slate-700"

@@ -550,7 +550,7 @@
 					<div
 						class="rounded-4xl bg-sky-100 w-38 px-5 py-4 sm:min-w-52"
 					>
-						<p class="font-Manrope text-2xl sm:text-3xl">
+						<p class="font-Manrope text-2xl text-sky-700 sm:text-3xl">
 							{formatearUSD(product.precio)}
 						</p>
 
@@ -569,9 +569,9 @@
 					>
 						Agotado
 					</p>
-				{:else if product.stock <= 5}
+				{:else if product.stock === 1}
 					<p class="mt-8 text-sm font-semibold text-amber-600">
-						¡Últimas {product.stock} unidades disponibles!
+						¡Última unidad disponible!
 					</p>
 				{/if}
 
