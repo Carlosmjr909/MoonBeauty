@@ -692,6 +692,22 @@
 										/>
 									</a>
 								{/each}
+
+								<!-- La lista solo muestra los primeros resultados; al
+								final se ofrece ir al catálogo completo. -->
+								<div class="p-3">
+									<a
+										href="/products"
+										onclick={cerrarBuscador}
+										class="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sky-200 px-6 py-3 font-Manrope text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-600 hover:text-white sm:text-base"
+									>
+										Ver todos
+										<Icon
+											icon="material-symbols:arrow-forward-rounded"
+											width="20"
+										/>
+									</a>
+								</div>
 							{:else}
 								<div class="px-6 py-10 text-center">
 									<Icon
@@ -966,10 +982,17 @@
 	href="{enlaceWhatsapp}?text=¡Hola! Estoy interesado/a en algunos productos de Moon Beauty. ¿Podrían asesorarme?"
 	target="_blank"
 	rel="noopener noreferrer"
-	class="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-black text-white shadow-2xl transition-all duration-300 hover:scale-110 hover:shadow-green-400/40"
-	aria-label="WhatsApp"
+	class="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-sky-200 py-1.5 pl-1.5 pr-4 text-slate-700 sm:bottom-6 sm:right-6 sm:gap-3 sm:py-2 sm:pl-2 sm:pr-6 shadow-2xl ring-1 ring-white/70 transition-all duration-300 hover:-translate-y-1 hover:bg-sky-300 hover:shadow-sky-300/50"
+	aria-label="Escríbenos por WhatsApp"
 >
-	<Icon icon="mdi:whatsapp" class="h-9 w-9" />
+	<img
+		src="/favicon-192.png"
+		alt=""
+		width="44"
+		height="44"
+		class="h-9 w-9 rounded-full object-cover sm:h-11 sm:w-11"
+	/>
+	<span class="font-Manrope text-sm font-semibold sm:text-base">WhatsApp</span>
 </a>
 
 <style>

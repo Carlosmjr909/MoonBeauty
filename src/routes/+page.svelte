@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount, untrack } from "svelte";
+	import { fade, fly } from "svelte/transition";
+	import { cubicOut } from "svelte/easing";
 	import Tarjeta from "$lib/components/tarjeta.svelte";
 	import FranjaConfianza from "$lib/components/FranjaConfianza.svelte";
 	import DiagnosticoRutina from "$lib/components/DiagnosticoRutina.svelte";
@@ -20,6 +22,91 @@
 
 	// Textos editables del hero y de "Nuestra esencia".
 	const textos = $derived(data.configuracionPortada);
+
+	// Slider del hero. La primera diapositiva usa los textos editables
+	// del panel; "lado" es dónde va el texto en pantallas grandes (la
+	// foto ya viene armada del lado contrario, ver /static/hero).
+	type SlideHero = {
+		imagen: string;
+		imagenMovil: string;
+		lado: "izquierda" | "derecha";
+		etiqueta: string;
+		titulo: string;
+		subtitulo: string;
+		boton: string;
+	};
+
+	const slidesHero = $derived<SlideHero[]>([
+		{
+			imagen: "/hero/hero-1.webp",
+			imagenMovil: "/hero/hero-1-movil.webp",
+			lado: "izquierda",
+			etiqueta: textos.heroEtiqueta,
+			titulo: textos.heroTitulo,
+			subtitulo: textos.heroSubtitulo,
+			boton: textos.heroBoton,
+		},
+		{
+			imagen: "/hero/hero-2.webp",
+			imagenMovil: "/hero/hero-2-movil.webp",
+			lado: "derecha",
+			etiqueta: "RITUAL DE NOCHE",
+			titulo: "Hidratación\nque se siente.",
+			subtitulo:
+				"Mascarillas y cremas calmantes para despertar con la piel suave, firme y luminosa.",
+			boton: "Ver productos",
+		},
+		{
+			imagen: "/hero/hero-3.webp",
+			imagenMovil: "/hero/hero-3-movil.webp",
+			lado: "izquierda",
+			etiqueta: "CALMA · CENTELLA",
+			titulo: "Menos pasos,\nmás glow.",
+			subtitulo:
+				"Limpieza, tónico y ampolla: lo esencial para una piel tranquila y equilibrada todos los días.",
+			boton: "Arma tu rutina",
+		},
+	]);
+
+	const DURACION_SLIDE = 6500;
+
+	let indiceHero = $state(0);
+	let heroPausado = $state(false);
+	// Se activa en el navegador solo si la persona no pidió menos
+	// movimiento; en ese caso las diapositivas se cambian con los puntos.
+	let heroAutomatico = $state(false);
+	let inicioToqueX = 0;
+
+	const slideHeroActual = $derived(slidesHero[indiceHero]);
+	// El texto entra desde el lado donde se ubica.
+	const desplazamiento = $derived(slideHeroActual.lado === "derecha" ? 60 : -60);
+
+	function irASlide(indice: number) {
+		const total = slidesHero.length;
+		indiceHero = (indice + total) % total;
+	}
+
+	// Cada cambio de diapositiva (automático o manual) reinicia la cuenta.
+	$effect(() => {
+		void indiceHero;
+		if (!heroAutomatico || heroPausado) return;
+
+		const temporizador = setTimeout(
+			() => irASlide(indiceHero + 1),
+			DURACION_SLIDE,
+		);
+		return () => clearTimeout(temporizador);
+	});
+
+	function alEmpezarToque(evento: TouchEvent) {
+		inicioToqueX = evento.touches[0].clientX;
+	}
+
+	function alTerminarToque(evento: TouchEvent) {
+		const distancia = evento.changedTouches[0].clientX - inicioToqueX;
+		if (Math.abs(distancia) < 50) return;
+		irASlide(indiceHero + (distancia < 0 ? 1 : -1));
+	}
 
 	// Testimonios y enlaces al perfil de Google, todos administrables.
 	const testimonios = $derived(data.testimonios ?? []);
@@ -220,6 +307,8 @@
 		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
 			return;
 		}
+
+		heroAutomatico = true;
 
 		// gsap/ScrollTrigger es CommonJS y en el servidor (SSR en Vercel)
 		// Node no puede resolver su named export vía import estático. Como
@@ -474,41 +563,117 @@
 </svelte:head>
 
 <section
-	class="isolate relative flex min-h-[calc(100svh-5rem)] items-center justify-center overflow-hidden px-4 py-20 sm:px-6 lg:min-h-[calc(100svh-6rem)] lg:px-8"
+	aria-roledescription="carrusel"
+	aria-label="Destacados"
+	class="isolate relative flex min-h-[calc(100svh-5rem)] items-end justify-center overflow-hidden px-4 pb-32 pt-20 sm:px-6 lg:min-h-[calc(100svh-6rem)] lg:items-center lg:px-8 lg:py-20"
+	onmouseenter={() => (heroPausado = true)}
+	onmouseleave={() => (heroPausado = false)}
+	onfocusin={() => (heroPausado = true)}
+	onfocusout={() => (heroPausado = false)}
+	ontouchstart={alEmpezarToque}
+	ontouchend={alTerminarToque}
 >
-	<img
-		src="/fondo.webp"
-		alt=""
-		aria-hidden="true"
-		fetchpriority="high"
-		class="absolute -top-30 left-0 -z-10 h-[calc(100%+7.5rem)] w-full object-cover lg:-top-34 lg:h-[calc(100%+8.5rem)]"
-	/>
-
-	<div class="mx-auto w-full px-8 lg:px-12">
-		<p class="text-sky-200 font-Manrope text-lg">{textos.heroEtiqueta}</p>
-
-		<!-- whitespace-pre-line respeta los saltos de línea que se escriban
-		en el panel, que es lo que parte el título en dos renglones.
-		Es un <h1> (no un <p>) a propósito: es el título principal de la
-		portada y antes no había ningún <h1> en toda la página. -->
-		<h1
-			class="font-Manrope my-4 whitespace-pre-line text-5xl leading-none text-slate-600 sm:text-6xl md:text-7xl lg:text-8xl 2xl:text-9xl"
+	<!-- Las fotos se apilan y solo la activa es visible; se cruzan con
+	un fundido y la activa hace un leve zoom-out mientras se muestra.
+	Celular y tablet en vertical usan una versión vertical de cada foto. -->
+	{#each slidesHero as slide, indice (slide.imagen)}
+		<div
+			aria-hidden="true"
+			class="absolute -top-30 left-0 -z-10 h-[calc(100%+7.5rem)] w-full overflow-hidden transition-opacity duration-1000 ease-out lg:-top-34 lg:h-[calc(100%+8.5rem)]"
+			class:opacity-0={indice !== indiceHero}
 		>
-			{textos.heroTitulo}
-		</h1>
+			<picture>
+				<source media="(min-width: 1024px)" srcset={slide.imagen} />
+				<img
+					src={slide.imagenMovil}
+					alt=""
+					loading={indice === 0 ? "eager" : "lazy"}
+					fetchpriority={indice === 0 ? "high" : "auto"}
+					class="h-full w-full object-cover transition-transform duration-[7000ms] ease-out motion-reduce:transition-none {indice ===
+					indiceHero
+						? 'scale-100'
+						: 'scale-[1.06] motion-reduce:scale-100'}"
+				/>
+			</picture>
 
-		<p
-			class="mt-5 max-w-2xl font-Manrope text-lg text-slate-600 sm:text-xl md:text-2xl lg:text-3xl"
-		>
-			{textos.heroSubtitulo}
-		</p>
+			<!-- Velo blanco del lado del texto para que siempre se lea. -->
+			<div
+				class="absolute inset-0 bg-linear-to-t from-white/85 via-white/25 to-transparent to-60% {slide.lado ===
+				'derecha'
+					? 'lg:bg-linear-to-l'
+					: 'lg:bg-linear-to-r'} lg:from-white/60 lg:via-white/15 lg:to-55%"
+			></div>
+		</div>
+	{/each}
 
-		<a
-			class="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-sky-200 px-8 py-3 font-Manrope text-base font-semibold text-slate-600 transition duration-300 hover:-translate-y-1 hover:bg-slate-600 hover:text-white hover:shadow-lg sm:px-10 sm:text-lg lg:px-12"
-			href="/products"
-		>
-			{textos.heroBoton}
-		</a>
+	<!-- El texto de cada diapositiva entra desde su lado, por partes; la
+	anterior y la nueva comparten celda para que no salte el alto. -->
+	<div
+		class="mx-auto grid w-full px-2 *:[grid-area:1/1] sm:px-8 lg:px-12 2xl:max-w-[1600px]"
+		aria-live={heroAutomatico && !heroPausado ? "off" : "polite"}
+	>
+		{#key indiceHero}
+			<div
+				out:fade={{ duration: 250 }}
+				class="max-w-xl lg:max-w-[46%] {slideHeroActual.lado === 'derecha'
+					? 'lg:justify-self-end'
+					: 'lg:justify-self-start'}"
+			>
+				<p
+					in:fly={{ x: desplazamiento, duration: 800, delay: 250, easing: cubicOut }}
+					class="font-Manrope text-sm font-bold uppercase tracking-[0.2em] text-sky-700 sm:text-base"
+				>
+					{slideHeroActual.etiqueta}
+				</p>
+
+				<!-- whitespace-pre-line respeta los saltos de línea que se escriban
+				en el panel, que es lo que parte el título en dos renglones.
+				Es un <h1> (no un <p>) a propósito: es el título principal de la
+				portada y antes no había ningún <h1> en toda la página. -->
+				<h1
+					in:fly={{ x: desplazamiento, duration: 900, delay: 350, easing: cubicOut }}
+					class="font-Manrope my-4 whitespace-pre-line text-5xl leading-none text-slate-600 sm:text-6xl lg:text-6xl xl:text-7xl 2xl:text-8xl"
+				>
+					{slideHeroActual.titulo}
+				</h1>
+
+				<p
+					in:fly={{ x: desplazamiento, duration: 900, delay: 470, easing: cubicOut }}
+					class="mt-4 font-Manrope text-base text-slate-600 sm:text-xl lg:mt-5 lg:text-2xl"
+				>
+					{slideHeroActual.subtitulo}
+				</p>
+
+				<a
+					in:fly={{ y: 20, duration: 700, delay: 600, easing: cubicOut }}
+					class="mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-sky-200 px-8 py-3 font-Manrope text-base font-semibold text-slate-600 transition duration-300 hover:-translate-y-1 hover:bg-slate-600 hover:text-white hover:shadow-lg sm:px-10 sm:text-lg lg:mt-8 lg:px-12"
+					href="/products"
+				>
+					{slideHeroActual.boton}
+				</a>
+			</div>
+		{/key}
+	</div>
+
+	<div
+		class="absolute bottom-16 left-5 flex items-center gap-2 sm:left-13 lg:bottom-12 lg:left-1/2 lg:-translate-x-1/2"
+	>
+		{#each slidesHero as _, indice (indice)}
+			<button
+				type="button"
+				aria-label="Ver diapositiva {indice + 1} de {slidesHero.length}"
+				aria-current={indice === indiceHero ? "true" : undefined}
+				onclick={() => irASlide(indice)}
+				class="flex h-6 items-center justify-center px-1"
+			>
+				<span
+					class="block h-2 rounded-full transition-all duration-500 {indice ===
+					indiceHero
+						? 'w-8 bg-slate-600'
+						: 'w-2 bg-slate-600/30 hover:bg-slate-600/60'}"
+				></span>
+			</button>
+		{/each}
 	</div>
 </section>
 
