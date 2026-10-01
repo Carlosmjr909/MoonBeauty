@@ -70,6 +70,9 @@ type SolicitudPedido = {
 
 const MAXIMO_CUPONES = 2;
 
+/** Error que se le muestra tal cual al comprador. */
+class ErrorPedido extends Error {}
+
 function normalizarCodigoCupon(codigo: string): string {
 	return codigo.trim().toUpperCase().replace(/\s+/g, '');
 }
@@ -342,53 +345,69 @@ export const POST: RequestHandler = async ({ request }) => {
 	// solo una de las dos transacciones puede ganar.
 	const refPedido = adminDb.collection('pedidos').doc();
 
-	await adminDb.runTransaction(async (transaccion) => {
-		for (const cupon of cuponesValidados) {
-			const snapActual = await transaccion.get(cupon.ref);
-			const datosActuales = snapActual.data() ?? {};
-			const usosActuales = Number(datosActuales.usos ?? 0);
-			const limiteActual =
-				datosActuales.limiteUsos === null || datosActuales.limiteUsos === undefined
-					? null
-					: Number(datosActuales.limiteUsos);
+	try {
+		await adminDb.runTransaction(async (transaccion) => {
+			// Firestore exige hacer todas las lecturas antes de cualquier
+			// escritura. Antes se leía y se actualizaba cada cupón dentro del
+			// mismo ciclo, así que un pedido con dos cupones fallaba siempre
+			// al leer el segundo.
+			const snapsCupones = await Promise.all(
+				cuponesValidados.map((cupon) => transaccion.get(cupon.ref))
+			);
 
-			if (limiteActual !== null && usosActuales >= limiteActual) {
-				throw new Error(`El cupón "${cupon.codigo}" se agotó justo ahora. Intenta sin ese código.`);
+			cuponesValidados.forEach((cupon, indice) => {
+				const datosActuales = snapsCupones[indice].data() ?? {};
+				const usosActuales = Number(datosActuales.usos ?? 0);
+				const limiteActual =
+					datosActuales.limiteUsos === null || datosActuales.limiteUsos === undefined
+						? null
+						: Number(datosActuales.limiteUsos);
+
+				if (limiteActual !== null && usosActuales >= limiteActual) {
+					throw new ErrorPedido(`El cupón "${cupon.codigo}" se agotó justo ahora. Intenta sin ese código.`);
+				}
+			});
+
+			for (const cupon of cuponesValidados) {
+				transaccion.update(cupon.ref, { usos: FieldValue.increment(1) });
 			}
 
-			transaccion.update(cupon.ref, { usos: FieldValue.increment(1) });
-		}
-
-		transaccion.set(refPedido, {
-			numeroPedido,
-			usuarioId: uid,
-			contacto: {
-				nombre: solicitud.contacto.nombre.trim(),
-				correo: solicitud.contacto.correo?.trim() ?? '',
-				telefono: solicitud.contacto.telefono?.trim() ?? ''
-			},
-			tipoEntrega: solicitud.tipoEntrega,
-			entrega: solicitud.entrega,
-			envioNacional: solicitud.envioNacional ?? null,
-			metodoPago: solicitud.metodoPago,
-			comprobantePago: {
-				url: solicitud.comprobantePago?.url ?? null,
-				referencia: solicitud.comprobantePago?.referencia ?? null
-			},
-			items: itemsFinales,
-			subtotalUSD,
-			cupon: cuponesValidados.length > 0 ? cuponesValidados.map((c) => c.codigo).join(' + ') : null,
-			descuentoUSD,
-			totalUSD,
-			tasaBCV,
-			totalVES,
-			estado: 'pendiente_contacto',
-			stockDescontado: false,
-			puntosMoon,
-			puntosOtorgados: false,
-			fechaCreacion: FieldValue.serverTimestamp()
+			transaccion.set(refPedido, {
+				numeroPedido,
+				usuarioId: uid,
+				contacto: {
+					nombre: solicitud.contacto.nombre.trim(),
+					correo: solicitud.contacto.correo?.trim() ?? '',
+					telefono: solicitud.contacto.telefono?.trim() ?? ''
+				},
+				tipoEntrega: solicitud.tipoEntrega,
+				entrega: solicitud.entrega,
+				envioNacional: solicitud.envioNacional ?? null,
+				metodoPago: solicitud.metodoPago,
+				comprobantePago: {
+					url: solicitud.comprobantePago?.url ?? null,
+					referencia: solicitud.comprobantePago?.referencia ?? null
+				},
+				items: itemsFinales,
+				subtotalUSD,
+				cupon: cuponesValidados.length > 0 ? cuponesValidados.map((c) => c.codigo).join(' + ') : null,
+				descuentoUSD,
+				totalUSD,
+				tasaBCV,
+				totalVES,
+				estado: 'pendiente_contacto',
+				stockDescontado: false,
+				puntosMoon,
+				puntosOtorgados: false,
+				fechaCreacion: FieldValue.serverTimestamp()
+			});
 		});
-	});
+	} catch (err) {
+		if (err instanceof ErrorPedido) {
+			return json({ ok: false, error: err.message }, { status: 409 });
+		}
+		throw err;
+	}
 
 	return json({
 		ok: true,

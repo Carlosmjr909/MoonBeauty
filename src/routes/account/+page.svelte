@@ -745,9 +745,8 @@
 									</button>
 
 									<p class="text-xs leading-relaxed text-slate-400">
-										Cada código sirve una sola vez y solo con tu cuenta. Aplica en pagos en
-										divisas (efectivo, Binance, Zelle y Zinli) y no se combina con otros
-										cupones.
+										Cada código sirve una sola vez y solo con tu cuenta. Aplica en todos los
+										métodos de pago, y si pagas en divisas lo puedes sumar al cupón MOON20.
 									</p>
 								</form>
 							</section>

@@ -621,7 +621,7 @@
 			>
 				<p
 					in:fly={{ x: desplazamiento, duration: 800, delay: 250, easing: cubicOut }}
-					class="font-Manrope text-sm font-bold uppercase tracking-[0.2em] text-sky-400 sm:text-base"
+					class="font-Manrope text-sm font-bold uppercase tracking-[0.2em] text-[#accce4] sm:text-base"
 				>
 					{slideHeroActual.etiqueta}
 				</p>

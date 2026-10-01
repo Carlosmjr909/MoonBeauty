@@ -307,6 +307,8 @@
 
 	let comprobanteArchivo = $state<File | null>(null);
 	let comprobanteReferencia = $state('');
+	/** Si el pedido se hizo sin comprobante ni referencia. */
+	let comprobantePendiente = $state(false);
 	let inputComprobante = $state<HTMLInputElement | null>(null);
 
 	let procesando = $state(false);
@@ -433,12 +435,14 @@
 		errorCupon = '';
 	}
 
-	// Solo se puede sumar otro cupón si todavía hay espacio y alguno de
-	// los aplicados es combinable (o no hay ninguno aún).
+	// Mientras haya espacio se puede intentar sumar otro cupón, sin
+	// importar en qué orden se escriban: validarCupon ya rechaza los que
+	// no se pueden combinar (dos cupones no combinables entre sí). Antes
+	// el campo desaparecía si el primero no era combinable, y un código
+	// personal escrito antes que MOON20 impedía agregar MOON20 aunque al
+	// revés sí funcionaba.
 	const puedeSumarOtroCupon = $derived(
-		cuponesAplicados.length === 0 ||
-			(cuponesAplicados.length < MAXIMO_CUPONES &&
-				cuponesAplicados.some((cupon) => cupon.combinable))
+		cuponesAplicados.length < MAXIMO_CUPONES
 	);
 
 	const descuentoUSD = $derived(
@@ -493,7 +497,7 @@
 
 	const mensajeWhatsapp = $derived(
 		numeroPedido
-			? `Hola Moon Beauty, acabo de realizar el pedido ${numeroPedido}. Mi nombre es ${nombre}. Elegí ${etiquetaMetodoPago(metodoPago)} como método de pago y deseo continuar con el proceso.`
+			? `Hola Moon Beauty, acabo de realizar el pedido ${numeroPedido}. Mi nombre es ${nombre}. Elegí ${etiquetaMetodoPago(metodoPago)} como método de pago y deseo continuar con el proceso.${comprobantePendiente ? ' Les envío el comprobante de pago por aquí.' : ''}`
 			: ''
 	);
 
@@ -586,12 +590,10 @@
 			return;
 		}
 
-		if (!comprobanteArchivo && !comprobanteReferencia.trim()) {
-			error =
-				'Sube tu comprobante de pago o ingresa el número de referencia.';
-
-			return;
-		}
+		// El comprobante es opcional: si no lo adjunta, lo envía después
+		// por WhatsApp (se le recuerda en el mensaje y al terminar).
+		comprobantePendiente =
+			!comprobanteArchivo && !comprobanteReferencia.trim();
 
 		procesando = true;
 
@@ -794,6 +796,15 @@ carrito.vaciar();
 					WhatsApp para recibir las instrucciones
 					de pago y confirmar tu pedido.
 				</p>
+
+				{#if comprobantePendiente}
+					<p
+						class="mx-auto mt-4 max-w-xl rounded-2xl bg-sky-50 px-4 py-3 text-sm text-slate-600"
+					>
+						No adjuntaste comprobante de pago: envíanoslo por
+						WhatsApp junto con tu número de pedido.
+					</p>
+				{/if}
 
 				{#if whatsappEmpresa}
 					<a
@@ -1463,13 +1474,28 @@ carrito.vaciar();
 						<h2
 							class="text-xl font-semibold text-slate-700"
 						>
-							5. Comprobante de pago
+							5. Comprobante de pago (opcional)
 						</h2>
 
 						<p class="mt-2 text-sm text-slate-500">
-							Sube una captura de tu pago o ingresa el número de
+							Si ya pagaste, sube una captura o escribe el número de
 							referencia/confirmación — con uno de los dos alcanza.
 						</p>
+
+						<div
+							class="mt-4 flex gap-3 rounded-2xl bg-sky-50 px-4 py-3 text-sm text-slate-600"
+						>
+							<Icon
+								icon="mdi:whatsapp"
+								width="22"
+								class="mt-0.5 shrink-0 text-sky-900"
+							/>
+							<p>
+								¿Todavía no lo tienes? No es obligatorio: puedes
+								finalizar tu compra y enviarnos el comprobante después
+								por WhatsApp junto con tu número de pedido.
+							</p>
+						</div>
 
 						<div class="mt-5 grid min-w-0 gap-4 sm:grid-cols-2">
 							<div class="flex min-w-0 flex-col gap-1">

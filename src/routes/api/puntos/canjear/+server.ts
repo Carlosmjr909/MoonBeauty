@@ -16,11 +16,13 @@ import type { RequestHandler } from './$types';
  * así que no hay forma de canjear sin pasar por estas validaciones.
  *
  * El cupón queda atado a quien lo canjeó ("usuarioId"), sirve una sola
- * vez y solo en los métodos de pago en divisas, igual que el resto de
- * los cupones (pago móvil se cobra en bolívares al total sin descuento).
+ * vez y aplica en todos los métodos de pago (con pago móvil el checkout
+ * descuenta del total en bolívares). No es combinable por sí mismo, así
+ * que solo se puede sumar a un cupón que sí lo sea, como MOON20 en los
+ * pagos en divisas; dos códigos personales juntos no se permiten.
  */
 
-const METODOS_PAGO_EN_DIVISAS = ['efectivo', 'binance', 'zelle', 'zinli'];
+const TODOS_LOS_METODOS_DE_PAGO = ['efectivo', 'pago_movil', 'binance', 'zelle', 'zinli'];
 
 class ErrorCanje extends Error {}
 
@@ -101,7 +103,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				descripcion: `Canje de ${nivel.puntos} puntos Moon Beauty`,
 				tipo: 'porcentaje',
 				valor: nivel.porcentaje,
-				metodosPago: METODOS_PAGO_EN_DIVISAS,
+				metodosPago: TODOS_LOS_METODOS_DE_PAGO,
 				activo: true,
 				combinable: false,
 				limiteUsos: 1,
