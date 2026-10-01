@@ -11,7 +11,7 @@ import {
 	Timestamp
 } from 'firebase/firestore';
 
-import { db } from '$lib/firebase';
+import { db, obtenerAuth } from '$lib/firebase';
 import type { MetodoPago } from '$lib/pedidos';
 
 const COLECCION_CUPONES = 'cupones';
@@ -40,12 +40,18 @@ export type Cupon = {
 	usos: number;
 	/** Milisegundos desde epoch; null significa sin vencimiento. */
 	fechaVencimiento: number | null;
+	/**
+	 * Solo en los cupones canjeados con puntos Moon Beauty: la cuenta que
+	 * lo canjeó, que es la única que lo puede usar. null en los cupones
+	 * normales del panel.
+	 */
+	usuarioId: string | null;
 };
 
 /** Máximo de cupones que se pueden aplicar a un mismo pedido. */
 export const MAXIMO_CUPONES = 2;
 
-export type NuevoCupon = Omit<Cupon, 'usos'>;
+export type NuevoCupon = Omit<Cupon, 'usos' | 'usuarioId'>;
 
 /**
  * Métodos de pago que se cobran en dólares. Un cupón en pago móvil no
@@ -87,7 +93,8 @@ function convertirCupon(id: string, datos: Record<string, unknown>): Cupon {
 		fechaVencimiento:
 			vencimiento && typeof vencimiento.toMillis === 'function'
 				? vencimiento.toMillis()
-				: null
+				: null,
+		usuarioId: datos.usuarioId ? String(datos.usuarioId) : null
 	};
 }
 
@@ -231,6 +238,20 @@ export async function validarCupon(
 			valido: false,
 			error: 'Este cupón ya alcanzó su límite de usos.'
 		};
+	}
+
+	if (cupon.usuarioId) {
+		const auth = await obtenerAuth();
+		// La sesión se restaura de forma asíncrona al cargar la página.
+		await auth.authStateReady();
+
+		if (auth.currentUser?.uid !== cupon.usuarioId) {
+			return {
+				valido: false,
+				error:
+					'Este código es personal. Inicia sesión con la cuenta que lo canjeó para usarlo.'
+			};
+		}
 	}
 
 	if (!cupon.metodosPago.includes(metodoPago)) {

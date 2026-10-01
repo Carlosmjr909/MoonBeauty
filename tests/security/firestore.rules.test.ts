@@ -286,3 +286,109 @@ describe('cupones', () => {
 		await assertSucceeds(db.collection('cupones').doc('NUEVO').delete());
 	});
 });
+
+describe('cupones personales (canjeados con puntos)', () => {
+	beforeEach(async () => {
+		await testEnv.withSecurityRulesDisabled(async (context) => {
+			const db = context.firestore();
+			await db.collection('cupones').doc('ALICIA10').set({
+				activo: true,
+				usos: 0,
+				limiteUsos: 1,
+				usuarioId: 'alicia-uid'
+			});
+			await db.collection('cupones').doc('BOB20').set({
+				activo: true,
+				usos: 0,
+				limiteUsos: 1,
+				usuarioId: 'bob-uid'
+			});
+		});
+	});
+
+	it('una clienta SÍ puede listar sus propios códigos canjeados', async () => {
+		const db = testEnv.authenticatedContext('alicia-uid').firestore();
+		await assertSucceeds(
+			db.collection('cupones').where('usuarioId', '==', 'alicia-uid').get()
+		);
+	});
+
+	it('una clienta NO puede listar los códigos de otra cuenta', async () => {
+		const db = testEnv.authenticatedContext('alicia-uid').firestore();
+		await assertFails(db.collection('cupones').where('usuarioId', '==', 'bob-uid').get());
+	});
+
+	it('una clienta NO puede crearse un cupón personal desde el cliente', async () => {
+		const db = testEnv.authenticatedContext('alicia-uid').firestore();
+		await assertFails(
+			db.collection('cupones').doc('GRATIS').set({
+				activo: true,
+				usos: 0,
+				limiteUsos: 1,
+				valor: 100,
+				usuarioId: 'alicia-uid'
+			})
+		);
+	});
+});
+
+describe('puntos Moon Beauty', () => {
+	beforeEach(async () => {
+		await testEnv.withSecurityRulesDisabled(async (context) => {
+			const db = context.firestore();
+			await db.collection('puntos').doc('alicia-uid').set({ saldo: 12 });
+			await db
+				.collection('puntos')
+				.doc('alicia-uid')
+				.collection('movimientos')
+				.doc('mov-1')
+				.set({ tipo: 'ganados', puntos: 12 });
+		});
+	});
+
+	it('una clienta SÍ puede leer su saldo y su historial', async () => {
+		const db = testEnv.authenticatedContext('alicia-uid').firestore();
+		await assertSucceeds(db.collection('puntos').doc('alicia-uid').get());
+		await assertSucceeds(
+			db.collection('puntos').doc('alicia-uid').collection('movimientos').get()
+		);
+	});
+
+	it('una clienta NO puede leer los puntos de otra cuenta', async () => {
+		const db = testEnv.authenticatedContext('bob-uid').firestore();
+		await assertFails(db.collection('puntos').doc('alicia-uid').get());
+		await assertFails(
+			db.collection('puntos').doc('alicia-uid').collection('movimientos').get()
+		);
+	});
+
+	it('una clienta NO puede subirse el saldo ni inventar movimientos', async () => {
+		const db = testEnv.authenticatedContext('alicia-uid').firestore();
+		await assertFails(db.collection('puntos').doc('alicia-uid').update({ saldo: 9999 }));
+		await assertFails(db.collection('puntos').doc('bob-uid').set({ saldo: 9999 }));
+		await assertFails(
+			db
+				.collection('puntos')
+				.doc('alicia-uid')
+				.collection('movimientos')
+				.add({ tipo: 'ganados', puntos: 500 })
+		);
+	});
+
+	it('sin sesión no se puede leer ningún saldo', async () => {
+		const db = testEnv.unauthenticatedContext().firestore();
+		await assertFails(db.collection('puntos').doc('alicia-uid').get());
+	});
+
+	it('un admin SÍ puede sumar puntos y registrar el movimiento', async () => {
+		const db = testEnv.authenticatedContext('admin-uid').firestore();
+		await assertSucceeds(db.collection('puntos').doc('alicia-uid').update({ saldo: 20 }));
+		await assertSucceeds(
+			db
+				.collection('puntos')
+				.doc('alicia-uid')
+				.collection('movimientos')
+				.add({ tipo: 'ganados', puntos: 8 })
+		);
+	});
+});

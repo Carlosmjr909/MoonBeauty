@@ -68,7 +68,7 @@
 		},
 	]);
 
-	const DURACION_SLIDE = 6500;
+	const DURACION_SLIDE = 5000;
 
 	let indiceHero = $state(0);
 	let heroPausado = $state(false);
@@ -621,7 +621,7 @@
 			>
 				<p
 					in:fly={{ x: desplazamiento, duration: 800, delay: 250, easing: cubicOut }}
-					class="font-Manrope text-sm font-bold uppercase tracking-[0.2em] text-sky-700 sm:text-base"
+					class="font-Manrope text-sm font-bold uppercase tracking-[0.2em] text-sky-400 sm:text-base"
 				>
 					{slideHeroActual.etiqueta}
 				</p>
@@ -792,7 +792,10 @@
 </section>
 
 
-<DiagnosticoRutina tasaBCV={data?.tasaBCV?.promedio ?? null} />
+<DiagnosticoRutina
+	tasaBCV={data?.tasaBCV?.promedio ?? null}
+	productos={data?.productos ?? []}
+/>
 
 
 

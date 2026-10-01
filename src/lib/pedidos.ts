@@ -1,11 +1,13 @@
 import {
 	collection,
 	doc,
+	increment,
 	onSnapshot,
 	orderBy,
 	query,
 	runTransaction,
-	updateDoc
+	serverTimestamp,
+	where
 } from 'firebase/firestore';
 
 import {
@@ -113,6 +115,10 @@ export type PedidoAdmin = {
 	estado: EstadoPedido;
 	/** Milisegundos desde epoch, 0 si el pedido no trae fecha. */
 	fechaCreacion: number;
+	/** Puntos Moon Beauty que da el pedido (0 en compras como invitado). */
+	puntosMoon: number;
+	/** Si esos puntos ya se sumaron al saldo de la clienta. */
+	puntosOtorgados: boolean;
 };
 
 /**
@@ -334,7 +340,9 @@ function normalizarPedido(id: string, datos: Record<string, unknown>): PedidoAdm
 		tasaBCV: Number(datos.tasaBCV ?? 0),
 		totalVES: Number(datos.totalVES ?? 0),
 		estado: ESTADOS_VALIDOS.includes(estado) ? estado : 'pendiente_contacto',
-		fechaCreacion
+		fechaCreacion,
+		puntosMoon: Number(datos.puntosMoon ?? 0),
+		puntosOtorgados: Boolean(datos.puntosOtorgados)
 	};
 }
 
@@ -367,24 +375,29 @@ export function escucharPedidos(
 	);
 }
 
+/** Estados en los que el pago ya está verificado: el pedido da puntos. */
+const ESTADOS_CON_PUNTOS: EstadoPedido[] = ['confirmado', 'enviado', 'entregado'];
+
 /**
- * Cambia el estado del pedido. Al pasar a "confirmado" descuenta el stock
- * de cada producto una sola vez (protegido por "stockDescontado" para
- * que no se reste dos veces si el pedido se vuelve a marcar como
- * confirmado más adelante); el stock nunca baja de 0. Esto es
- * independiente de la edición manual de stock del panel de inventario,
- * que sigue funcionando igual — ambas formas escriben el mismo campo,
- * pero por caminos distintos y en momentos distintos.
+ * Cambia el estado del pedido. Todo va en una sola transacción:
+ *
+ * - Al pasar a "confirmado" descuenta el stock de cada producto una sola
+ *   vez (protegido por "stockDescontado" para que no se reste dos veces
+ *   si el pedido se vuelve a marcar como confirmado más adelante); el
+ *   stock nunca baja de 0. Esto es independiente de la edición manual de
+ *   stock del panel de inventario, que sigue funcionando igual — ambas
+ *   formas escriben el mismo campo, pero por caminos distintos y en
+ *   momentos distintos.
+ * - Al confirmarse (o pasar directo a enviado/entregado) suma al saldo de
+ *   la clienta los puntos Moon Beauty que el servidor calculó al crear el
+ *   pedido ("puntosMoon"), una sola vez gracias a "puntosOtorgados". Si
+ *   después se cancela, se le restan (sin dejar el saldo en negativo si
+ *   ya los había canjeado).
  */
 export async function actualizarEstadoPedido(
 	id: string,
 	estado: EstadoPedido
 ) {
-	if (estado !== 'confirmado') {
-		await updateDoc(doc(db, 'pedidos', id), { estado });
-		return;
-	}
-
 	await runTransaction(db, async (transaccion) => {
 		const refPedido = doc(db, 'pedidos', id);
 		const snapPedido = await transaccion.get(refPedido);
@@ -394,39 +407,129 @@ export async function actualizarEstadoPedido(
 		}
 
 		const datosPedido = snapPedido.data();
+		const cambios: Record<string, unknown> = { estado };
 
-		if (datosPedido.stockDescontado) {
-			transaccion.update(refPedido, { estado });
-			return;
-		}
+		/* ---------- Lecturas (Firestore exige leer antes de escribir) ---------- */
+
+		const descontarStock =
+			estado === 'confirmado' && !datosPedido.stockDescontado;
 
 		const items = Array.isArray(datosPedido.items) ? datosPedido.items : [];
 
-		const lineas = items.flatMap(
-			(item: { id?: string | number; cantidad?: number }) => {
-				const cantidad = Number(item?.cantidad ?? 0);
-				if (item?.id == null || cantidad <= 0) return [];
-				return [{ cantidad, ref: doc(db, 'productos', String(item.id)) }];
-			}
-		);
+		const lineas = descontarStock
+			? items.flatMap((item: { id?: string | number; cantidad?: number }) => {
+					const cantidad = Number(item?.cantidad ?? 0);
+					if (item?.id == null || cantidad <= 0) return [];
+					return [{ cantidad, ref: doc(db, 'productos', String(item.id)) }];
+				})
+			: [];
 
-		// Firestore exige leer todo antes de escribir nada en una transacción.
 		const snapsProductos = await Promise.all(
 			lineas.map((linea) => transaccion.get(linea.ref))
 		);
 
-		lineas.forEach((linea, indice) => {
-			const snapProducto = snapsProductos[indice];
-			// El producto pudo haberse eliminado del catálogo desde que se
-			// hizo el pedido; en ese caso no hay stock que descontar.
-			if (!snapProducto.exists()) return;
+		const puntos = Number(datosPedido.puntosMoon ?? 0);
+		const usuarioId = String(datosPedido.usuarioId ?? '');
 
-			const stockActual = Number(snapProducto.data()?.stock ?? 0);
-			const nuevoStock = Math.max(0, stockActual - linea.cantidad);
+		const otorgarPuntos =
+			ESTADOS_CON_PUNTOS.includes(estado) &&
+			puntos > 0 &&
+			usuarioId !== '' &&
+			!datosPedido.puntosOtorgados;
 
-			transaccion.update(linea.ref, { stock: nuevoStock });
-		});
+		const revertirPuntos =
+			estado === 'cancelado' &&
+			puntos > 0 &&
+			usuarioId !== '' &&
+			Boolean(datosPedido.puntosOtorgados);
 
-		transaccion.update(refPedido, { estado, stockDescontado: true });
+		const refPuntos = usuarioId ? doc(db, 'puntos', usuarioId) : null;
+		const snapPuntos =
+			refPuntos && (otorgarPuntos || revertirPuntos)
+				? await transaccion.get(refPuntos)
+				: null;
+
+		/* ------------------------------ Escrituras ----------------------------- */
+
+		if (descontarStock) {
+			lineas.forEach((linea, indice) => {
+				const snapProducto = snapsProductos[indice];
+				// El producto pudo haberse eliminado del catálogo desde que se
+				// hizo el pedido; en ese caso no hay stock que descontar.
+				if (!snapProducto.exists()) return;
+
+				const stockActual = Number(snapProducto.data()?.stock ?? 0);
+				const nuevoStock = Math.max(0, stockActual - linea.cantidad);
+
+				transaccion.update(linea.ref, { stock: nuevoStock });
+			});
+
+			cambios.stockDescontado = true;
+		}
+
+		if (refPuntos && snapPuntos && (otorgarPuntos || revertirPuntos)) {
+			const saldo = Number(snapPuntos.data()?.saldo ?? 0);
+			const numero = String(datosPedido.numeroPedido ?? '');
+
+			// Al revertir no se baja de 0: si la clienta ya canjeó esos
+			// puntos, el cupón que creó sigue siendo suyo.
+			const variacion = otorgarPuntos ? puntos : -Math.min(puntos, saldo);
+
+			transaccion.set(
+				refPuntos,
+				{
+					saldo: saldo + variacion,
+					...(otorgarPuntos ? { ganados: increment(puntos) } : {}),
+					actualizadoEn: serverTimestamp()
+				},
+				{ merge: true }
+			);
+
+			transaccion.set(doc(collection(db, 'puntos', usuarioId, 'movimientos')), {
+				tipo: otorgarPuntos ? 'ganados' : 'revertidos',
+				puntos: variacion,
+				descripcion: otorgarPuntos
+					? `Compra ${numero}`
+					: `Pedido ${numero} cancelado`,
+				pedidoId: id,
+				fecha: serverTimestamp()
+			});
+
+			cambios.puntosOtorgados = otorgarPuntos;
+		}
+
+		transaccion.update(refPedido, cambios);
 	});
+}
+
+/**
+ * Escucha en vivo los pedidos de una clienta, del más reciente al más
+ * viejo, para su perfil. Se filtra por "usuarioId" porque las reglas
+ * solo dejan leer los pedidos propios; el orden se hace aquí para no
+ * necesitar un índice compuesto en Firestore.
+ */
+export function escucharPedidosDeUsuario(
+	uid: string,
+	callback: (pedidos: PedidoAdmin[]) => void,
+	alError?: (error: Error) => void
+) {
+	const referencia = query(
+		collection(db, 'pedidos'),
+		where('usuarioId', '==', uid)
+	);
+
+	return onSnapshot(
+		referencia,
+		(snapshot) => {
+			callback(
+				snapshot.docs
+					.map((docSnap) => normalizarPedido(docSnap.id, docSnap.data()))
+					.sort((a, b) => b.fechaCreacion - a.fechaCreacion)
+			);
+		},
+		(error) => {
+			console.error('Error escuchando los pedidos del usuario:', error);
+			alError?.(error);
+		}
+	);
 }

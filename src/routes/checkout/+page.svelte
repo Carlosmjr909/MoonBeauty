@@ -34,6 +34,9 @@
 	} from '$lib/cupones';
 
 	import { ESTADOS_VENEZUELA } from '$lib/estadosVenezuela';
+	import { usuario } from '$lib/auth';
+	import { escucharPerfil, type Direccion } from '$lib/cuenta';
+	import { calcularPuntos } from '$lib/puntosMoon';
 	import type {
 		ConfiguracionContacto,
 		ConfiguracionPagos
@@ -81,6 +84,53 @@
 			estadoEntrega = 'Carabobo';
 		}
 	});
+
+	/* ------------------ Datos guardados en la cuenta ------------------ */
+
+	// Si compra con su cuenta, se completan solos los datos de contacto
+	// (solo los campos vacíos, para no pisar lo que ya escribió) y puede
+	// elegir una de sus direcciones guardadas en vez de escribirla.
+	let direccionesGuardadas = $state<Direccion[]>([]);
+	let direccionElegidaId = $state('');
+	let contactoAutocompletado = false;
+
+	const tieneCuenta = $derived(Boolean($usuario && !$usuario.isAnonymous));
+
+	$effect(() => {
+		const actual = $usuario;
+		if (!actual || actual.isAnonymous) {
+			direccionesGuardadas = [];
+			return;
+		}
+
+		return escucharPerfil(actual, (perfil) => {
+			direccionesGuardadas = perfil.direcciones;
+
+			if (!contactoAutocompletado) {
+				contactoAutocompletado = true;
+				if (!nombre.trim()) nombre = perfil.nombre;
+				if (!correo.trim()) correo = actual.email ?? '';
+				if (!telefono.trim()) telefono = perfil.telefono;
+			}
+		});
+	});
+
+	function usarDireccionGuardada(guardada: Direccion) {
+		direccionElegidaId = guardada.id;
+
+		// El delivery y la entrega gratis están atados a una ciudad: si la
+		// dirección es de una de ellas, se elige esa modalidad.
+		const ciudadGuardada = guardada.ciudad.trim().toLowerCase();
+		if (ciudadGuardada.includes('naguanagua')) {
+			tipoEntrega = 'entrega_naguanagua';
+		} else if (ciudadGuardada.includes('valencia')) {
+			tipoEntrega = 'delivery';
+		}
+
+		direccion = guardada.direccion;
+		casaApartamento = guardada.casaApartamento;
+		codigoPostal = guardada.codigoPostal;
+	}
 
 	/* ------------------- Envío nacional por encomienda ------------------- */
 
@@ -400,6 +450,9 @@
 	const totalConDescuentoUSD = $derived(
 		Math.max(0, $totalCarritoUSD - descuentoUSD)
 	);
+
+	// Mismo cálculo que hace el servidor al crear el pedido.
+	const puntosDeEstaCompra = $derived(calcularPuntos(totalConDescuentoUSD));
 
 	const tasaBCV = $derived(
 		typeof data?.tasaBCV?.promedio === 'number'
@@ -1001,6 +1054,38 @@ carrito.vaciar();
 						</div>
 
 						{#if tipoEntrega === 'delivery' || tipoEntrega === 'entrega_naguanagua'}
+						{#if direccionesGuardadas.length > 0}
+							<div class="mt-5">
+								<p class="text-sm font-semibold text-slate-600">
+									Tus direcciones guardadas
+								</p>
+								<div class="mt-2 flex flex-wrap gap-2">
+									{#each direccionesGuardadas as guardada (guardada.id)}
+										<button
+											type="button"
+											onclick={() => usarDireccionGuardada(guardada)}
+											class="flex max-w-full items-center gap-2 rounded-2xl border px-4 py-2.5 text-left text-sm transition {direccionElegidaId ===
+											guardada.id
+												? 'border-sky-400 bg-sky-50 text-slate-700'
+												: 'border-slate-200 text-slate-600 hover:border-slate-300'}"
+										>
+											<Icon
+												icon="material-symbols:location-on-outline-rounded"
+												width="18"
+												class="shrink-0 text-sky-700"
+											/>
+											<span class="min-w-0">
+												<span class="block font-semibold">{guardada.alias}</span>
+												<span class="block truncate text-xs text-slate-500">
+													{guardada.direccion}, {guardada.ciudad}
+												</span>
+											</span>
+										</button>
+									{/each}
+								</div>
+							</div>
+						{/if}
+
 						<p class="mt-5 text-sm text-slate-500">
 							{tipoEntrega === 'delivery'
 								? 'Dinos dónde te llevamos el pedido, dentro de Valencia.'
@@ -1582,6 +1667,31 @@ carrito.vaciar();
 							</strong>
 						</div>
 					</div>
+
+					{#if puntosDeEstaCompra > 0}
+						<div
+							class="mt-5 flex items-center gap-3 rounded-2xl bg-sky-50 px-4 py-3 text-sm text-slate-600"
+						>
+							<Icon
+								icon="material-symbols:star-rounded"
+								width="22"
+								class="shrink-0 text-sky-700"
+							/>
+							{#if tieneCuenta}
+								<p>
+									Con esta compra ganas
+									<strong class="text-slate-700">{puntosDeEstaCompra} puntos Moon</strong>.
+								</p>
+							{:else}
+								<p>
+									<a href="/login" class="font-semibold text-sky-700 underline">Inicia sesión</a>
+									y gana
+									<strong class="text-slate-700">{puntosDeEstaCompra} puntos Moon</strong>
+									con esta compra.
+								</p>
+							{/if}
+						</div>
+					{/if}
 				</aside>
 			</div>
 		{/if}

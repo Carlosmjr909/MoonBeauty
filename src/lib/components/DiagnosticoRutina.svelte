@@ -7,11 +7,25 @@
 		formatearVES,
 	} from "$lib/utils/moneda";
 
+	/** Lo mínimo que esta sección necesita de cada producto del catálogo. */
+	type ProductoCatalogo = {
+		id: string;
+		Nombre: string;
+		marca?: string;
+		imagen: string;
+		precio: number;
+		stock: number;
+		Tipo?: string;
+		categorias?: string[];
+	};
+
 	interface PropTypes {
 		tasaBCV?: number | null;
+		/** Catálogo real; de aquí salen nombre, foto, precio y stock. */
+		productos?: ProductoCatalogo[];
 	}
 
-	const { tasaBCV = null }: PropTypes = $props();
+	const { tasaBCV = null, productos = [] }: PropTypes = $props();
 
 	type TipoPiel = "Seca" | "Grasa" | "Mixta" | "Normal" | "Sensible";
 	type Preocupacion =
@@ -32,6 +46,14 @@
 		beneficio: string;
 	};
 
+	/**
+	 * Productos recomendados para un paso, en orden de preferencia (por su
+	 * id en el inventario). Se muestra el primero que siga existiendo y
+	 * tenga stock; así, si uno se elimina o se agota, entra el siguiente
+	 * sin tocar el código.
+	 */
+	type Opcion = { ids: string[]; beneficio: string };
+
 	const tiposPiel: TipoPiel[] = ["Seca", "Grasa", "Mixta", "Normal", "Sensible"];
 	const preocupaciones: Preocupacion[] = [
 		"Hidratación",
@@ -43,176 +65,202 @@
 	];
 
 	// Paso 1 — Limpiador, elegido según el tipo de piel.
-	const limpiadores: Record<TipoPiel, ProductoRutina> = {
+	const limpiadores: Record<TipoPiel, Opcion> = {
 		Grasa: {
-			id: "9ttpK1YiaSF8tNDe2M2Q",
-			Nombre: "BHA+ PORE ZERO Cleansing Foam 150ml",
-			marca: "Be The Skin",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2F3c697ae2-1088-4ffe-81f6-6985b5ac3376-IMG_3545.jpeg?alt=media&token=b367d108-f319-4662-bcad-c2f43bb41b48",
-			precio: 12,
-			stock: 2,
+			ids: [
+				"9ttpK1YiaSF8tNDe2M2Q", // Be The Skin BHA+ Pore Zero Cleansing Foam
+				"z3ToOEGCXE41SWCqREeT", // Sungboon Editor Green Tomato Deep Pore Foam
+				"O7VqdvmM0AIYlVtwpcq0", // Tocobo Coconut Clay Cleansing Foam
+				"K3KtPslI6ULkwu1Y0ueP", // COSRX Salicylic Acid Cleanser (mini)
+			],
 			beneficio: "Limpieza profunda y control de brillo",
 		},
 		Seca: {
-			id: "6ZsTWjI26HBznC6p38EM",
-			Nombre: "Bean Cleansing Oil 195ml",
-			marca: "Mixsoon",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2F0ccc27ce-0edc-4f97-9243-54095898025f-IMG_3605.jpeg?alt=media&token=0fdf2827-780a-43f3-a839-456aec5b9513",
-			precio: 25,
-			stock: 10,
+			ids: [
+				"6ZsTWjI26HBznC6p38EM", // Mixsoon Bean Cleansing Oil
+				"i39nSty6ezUjx8Z5E8Gs", // Pyunkang Yul Deep Cleansing Oil
+				"Xt0HXKQuTxWa9FBjXix6", // Mixsoon PDRN Collagen Gel Cleanser
+			],
 			beneficio: "Primer paso suave y muy hidratante",
 		},
 		Mixta: {
-			id: "JAi7uO5HSSeDov7yZjTT",
-			Nombre: "Heartleaf Pore Cleansing Foam Double Set",
-			marca: "Anua",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2Fb6ec106c-f44d-44fc-ae9c-7d31c19779dd-IMG_3528.webp?alt=media&token=d26d5552-099e-4782-8562-ccb68496eee2",
-			precio: 32,
-			stock: 1,
+			ids: [
+				"JAi7uO5HSSeDov7yZjTT", // Anua Heartleaf Pore Cleansing Foam Double Set
+				"jQGhofSZtNkjvJdHFZCE", // Anua Heartleaf Quercetinol Pore Deep Cleansing Foam
+				"bPwiboeYX3et5O5s0jt9", // Round Lab 1025 Dokdo Cleanser
+				"N5KXTLrGDZ9Jyd7TVXow", // Fully Green Tomato Clay Pack Cleanser
+			],
 			beneficio: "Paso de limpieza profunda",
 		},
 		Normal: {
-			id: "Sp4umofUowF7CxyMkLut",
-			Nombre: "Centella Cleansing Foam 150ml",
-			marca: "Mixsoon",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2Faac1c501-e8ac-4bf0-af73-adc30c1dd579-IMG_3604.jpeg?alt=media&token=bf312980-ad3f-4519-9932-fc2263d39859",
-			precio: 20,
-			stock: 5,
+			ids: [
+				"Sp4umofUowF7CxyMkLut", // Mixsoon Centella Cleansing Foam
+				"bPwiboeYX3et5O5s0jt9", // Round Lab 1025 Dokdo Cleanser
+				"OCLddqZGb0V54XD96HWD", // COSRX Low pH Good Morning Cleanser (mini)
+			],
 			beneficio: "Limpieza equilibrada para uso diario",
 		},
 		Sensible: {
-			id: "9SaFx8L7bg4rf41xjzA4",
-			Nombre: "Low pH Cleansing Water 290ml",
-			marca: "Pyunkang Yul",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2F24b57ccd-6b58-414a-b276-784fa050141b-IMG_3593.jpeg?alt=media&token=4fb212af-9c64-4616-9777-1b6100bdd73e",
-			precio: 18,
-			stock: 10,
+			ids: [
+				"9SaFx8L7bg4rf41xjzA4", // Pyunkang Yul Low pH Cleansing Water
+				"esb1HBfpOiJjvqu5Mwwk", // Celimax Madecica pH Balancing Foam
+				"gW64dChslnCJH9gBM1pm", // Purito Mighty Bamboo Panthenol Cleanser
+			],
 			beneficio: "Limpieza suave, ideal para piel reactiva",
 		},
 	};
 
 	// Paso 2 — Tratamiento o activo, elegido según la preocupación principal.
-	const tratamientos: Record<Preocupacion, ProductoRutina> = {
+	const tratamientos: Record<Preocupacion, Opcion> = {
 		Hidratación: {
-			id: "7DUzhmKfaM99FM564WTS",
-			Nombre: "PDRN Collagen Serum 30ml",
-			marca: "Mixsoon",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2F7e1aceb8-1272-4630-8c95-09c8ba3475a0-IMG_3809.jpeg?alt=media&token=1affcf57-4de6-465c-906e-2a2c10cda023",
-			precio: 28,
-			stock: 5,
+			ids: [
+				"7DUzhmKfaM99FM564WTS", // Mixsoon PDRN Collagen Serum
+				"iIzoml2gZgdy6LwApLTC", // Medicube PDRN Pink Peptide Serum
+				"VJarqTRTMK3hTkmLnGKP", // Medicube Triple Collagen Serum 4.0
+			],
 			beneficio: "Hidratación profunda y efecto plump",
 		},
 		Manchas: {
-			id: "qOEZvukkZOLx1dnQArkz",
-			Nombre: "TXA 6 Niacinamide 10 Retinal Serum 30ml",
-			marca: "Purito Seoul",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2F9f799530-3ac3-4063-8686-ee955142f378-IMG_3550.jpeg?alt=media&token=42654b94-f57e-44a2-93bb-4eb853e059fd",
-			precio: 25,
-			stock: 1,
+			ids: [
+				"qOEZvukkZOLx1dnQArkz", // Purito TXA 6 Niacinamide 10 Retinal Serum
+				"p1OGARH1wW83X5ZPHsxk", // Nineless B-Boost 10% Niacinamide Serum
+				"srL7Deb4Yq30gNGt6qCR", // Arencia Vitamin C Booster Shot
+			],
 			beneficio: "Ataca manchas oscuras y marcas",
 		},
 		Acné: {
-			id: "jrc3U2jdRzgwxWsuuCnO",
-			Nombre: "Madagascar Centella Tone Brightening Capsule Ampoule 50ml",
-			marca: "Skin1004",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2F0ac0738c-9b95-4e14-9fd1-7c84d3e14fc3-IMG_3549.jpeg?alt=media&token=d9dcd678-2104-4e24-a538-35e317a50bed",
-			precio: 12,
-			stock: 1,
+			ids: [
+				"jrc3U2jdRzgwxWsuuCnO", // Skin1004 Centella Tone Brightening Capsule Ampoule
+				"nFcTNX3rlKLNbDL0QPXx", // Medicube Azelaic Acid 16 BB Soothing Serum
+				"pbZrUpejonjcRenJiLqD", // Fully Green Tomato Serum
+			],
 			beneficio: "Calma brotes e irritación",
 		},
 		"Poros Dilatados": {
-			id: "OOpbOHIr2BaqUjTzHQJW",
-			Nombre: "Shrink Pore Spicule 300 Ampoule 50ml",
-			marca: "Veramore",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2F9d1a3a96-d42f-4c37-8c7c-5aecc0928490-IMG_3582.jpeg?alt=media&token=de80a8da-52cf-42af-ab29-8caee1c808a8",
-			precio: 15,
-			stock: 10,
+			ids: [
+				"OOpbOHIr2BaqUjTzHQJW", // Veramore Shrink Pore Spicule 300 Ampoule
+				"gf7vVCJeTlpHAO5zZtKt", // VT Cosmetics Reedle Shot 100
+				"pbZrUpejonjcRenJiLqD", // Fully Green Tomato Serum
+			],
 			beneficio: "Minimiza poros visiblemente",
 		},
 		Luminosidad: {
-			id: "rIbEPQE7O4GyX8yAjco4",
-			Nombre: "AGE-R Glutathione Glow Serum 30ml",
-			marca: "Medicube",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2F7673827d-dcc6-4888-81a6-40206f8344e3-IMG_3843.jpeg?alt=media&token=1ab04dd5-5ef4-4bde-8793-3e65a4b4e36f",
-			precio: 29,
-			stock: 10,
+			ids: [
+				"QLVgs3laCH12NlYIEgBQ", // Medicube Collagen Glow Booster Serum
+				"srL7Deb4Yq30gNGt6qCR", // Arencia Vitamin C Booster Shot
+				"w4bGv40RNEdnK73m60U1", // Dr. Melaxin Peel Shot White Rice Ampoule
+			],
 			beneficio: "Ilumina y da luminosidad",
 		},
 		"Barrera Cutánea": {
-			id: "xIVkOB4xUV5Of51xLlLO",
-			Nombre: "Wonder Releaf Centella Serum Unscented",
-			marca: "Purito Seoul",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2F12e8c175-ee8e-4417-867b-a6f20fb1e011-IMG_3627.jpeg?alt=media&token=98d16cb2-c00b-4cd2-8f8e-b40d717e1467",
-			precio: 18,
-			stock: 8,
+			ids: [
+				"xIVkOB4xUV5Of51xLlLO", // Purito Wonder Releaf Centella Serum
+				"29nhSrP4GhNh27fKcr5j", // Medicube Exosome Cica Ampoule
+			],
 			beneficio: "Repara y fortalece la barrera",
 		},
 	};
 
 	// Paso 3 — Hidratante o protector solar, elegido según el tipo de piel.
-	const hidratantes: Record<TipoPiel, ProductoRutina> = {
+	const hidratantes: Record<TipoPiel, Opcion> = {
 		Grasa: {
-			id: "jDgb2lxBflQFwzc6f0AN",
-			Nombre: "Oil Control Mattifying Sun Stick",
-			marca: "Celimax",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2F80cac599-c903-45e9-b022-0ebbbe2b448f-IMG_3639.webp?alt=media&token=74c96ce5-f3ec-453c-9b62-9bf9c79d2a77",
-			precio: 18,
-			stock: 1,
+			ids: [
+				"jDgb2lxBflQFwzc6f0AN", // Celimax Oil Control Mattifying Sun Stick
+				"hmk80QTxsD9qOVBKQxLZ", // Medicube Zero Pore Moisture Sun Serum
+				"YZ4Ih8Tii0UNesASD58Z", // Tocobo Bio Watery Sun Cream
+			],
 			beneficio: "Protección sin sensación grasa",
 		},
 		Seca: {
-			id: "HjlpWEJqgfUfgph89E9l",
-			Nombre: "Expert Madeca Cream Active Renew PDRN 50ml",
-			marca: "Centellian24",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2Fda8916c9-db8b-489b-baee-03d9f6e66e41-IMG_3838.jpeg?alt=media&token=46bd27aa-a8ec-4fa0-9098-f60978b585b3",
-			precio: 32,
-			stock: 10,
+			ids: [
+				"HjlpWEJqgfUfgph89E9l", // Centellian24 Expert Madeca Cream PDRN
+				"D5RyNL5y7X410JzVV6bH", // Mixsoon PDRN Collagen Cream
+				"Np4sztcj6OFDC7DwL50f", // Fully Rice Ceramide Moisture Sun Cream
+			],
 			beneficio: "Hidratación intensa y nutrición",
 		},
 		Mixta: {
-			id: "f1RBmZPgnDnZdAhnVFfg",
-			Nombre: "Relief Sun: Rice + Probiotics 50ml",
-			marca: "Beauty of Joseon",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2Fbe989e5f-98ea-4c49-a65d-9a859e78d767-IMG_3529.jpeg?alt=media&token=ec61c994-757b-4eb5-a301-b6e6fe721792",
-			precio: 25,
-			stock: 1,
+			ids: [
+				"f1RBmZPgnDnZdAhnVFfg", // Beauty of Joseon Relief Sun Rice + Probiotics
+				"Np4sztcj6OFDC7DwL50f", // Fully Rice Ceramide Moisture Sun Cream
+				"YZ4Ih8Tii0UNesASD58Z", // Tocobo Bio Watery Sun Cream
+			],
 			beneficio: "Protección sin sensación grasa",
 		},
 		Normal: {
-			id: "YZ4Ih8Tii0UNesASD58Z",
-			Nombre: "Bio Watery Sun Cream SPF50 PA++++ 50ml",
-			marca: "Tocobo",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2Fc3dc0bab-6622-40b7-a0b8-c7297000c748-IMG_3591.jpeg?alt=media&token=2aac8092-4fd6-457e-818c-67b60ddd0949",
-			precio: 18,
-			stock: 10,
+			ids: [
+				"YZ4Ih8Tii0UNesASD58Z", // Tocobo Bio Watery Sun Cream
+				"1", // Tocobo Cotton Soft Sun Stick
+				"Np4sztcj6OFDC7DwL50f", // Fully Rice Ceramide Moisture Sun Cream
+			],
 			beneficio: "Protección diaria ligera",
 		},
 		Sensible: {
-			id: "pa1XcmQfzXSpO5sVJvMF",
-			Nombre: "Green Tea Fresh Sunscreen 45ml",
-			marca: "Dr. Althea",
-			imagen:
-				"https://firebasestorage.googleapis.com/v0/b/moonbeauty-9ba8f.firebasestorage.app/o/productos%2Fdb6063cf-57bb-405e-837e-6a235ea09591-IMG_3642.webp?alt=media&token=1151ae35-f4e9-43d5-9386-47e76a2f6275",
-			precio: 18,
-			stock: 8,
+			ids: [
+				"pa1XcmQfzXSpO5sVJvMF", // Dr. Althea Green Tea Fresh Sunscreen
+				"Yy9WLCni7qr3qCbhDi9n", // Round Lab Pine Calming Cica Cream
+				"QImTOBorN2i8bxouQGuJ", // Pyunkang Yul Ultimate Calming Solution Cream
+			],
 			beneficio: "Protección suave para piel sensible",
 		},
 	};
+
+	// Si ninguno de los recomendados está disponible, se usa el producto
+	// con más stock de la categoría del paso, para que nunca quede vacío.
+	const categoriasRespaldo = {
+		limpiador: ["Limpiadores Faciales"],
+		tratamiento: ["Serums o Ampollas"],
+		hidratante: ["Protector solar", "Cremas Faciales"],
+	};
+
+	const productosPorId = $derived(
+		new Map(productos.map((producto) => [String(producto.id), producto])),
+	);
+
+	function categoriasDe(producto: ProductoCatalogo): string[] {
+		return producto.categorias?.length
+			? producto.categorias
+			: producto.Tipo
+				? [producto.Tipo]
+				: [];
+	}
+
+	function elegirProducto(
+		opcion: Opcion,
+		respaldo: string[],
+	): ProductoRutina | null {
+		const disponible = (producto?: ProductoCatalogo) =>
+			!!producto && Number(producto.stock) > 0;
+
+		let elegido = opcion.ids
+			.map((id) => productosPorId.get(id))
+			.find(disponible);
+
+		if (!elegido) {
+			elegido = productos
+				.filter(
+					(producto) =>
+						disponible(producto) &&
+						categoriasDe(producto).some((categoria) =>
+							respaldo.includes(categoria),
+						) &&
+						!categoriasDe(producto).includes("Kits"),
+				)
+				.sort((a, b) => Number(b.stock) - Number(a.stock))[0];
+		}
+
+		if (!elegido) return null;
+
+		return {
+			id: String(elegido.id),
+			Nombre: elegido.Nombre,
+			marca: elegido.marca ?? "",
+			imagen: elegido.imagen,
+			precio: Number(elegido.precio) || 0,
+			stock: Number(elegido.stock) || 0,
+			beneficio: opcion.beneficio,
+		};
+	}
 
 	const notasPiel: Record<TipoPiel, string> = {
 		Seca: "En el clima venezolano, tu piel seca necesita capas que sellen la humedad sin sentirse pesadas — priorizamos aceites limpiadores suaves y cremas ricas en ceramidas.",
@@ -227,25 +275,46 @@
 		Manchas: "Incorporamos activos como niacinamida y TXA para unificar el tono y atenuar manchas post-sol o post-acné, muy comunes en climas soleados.",
 		Acné: "Elige activos calmantes y no comedogénicos que traten los brotes sin resecar ni irritar más la piel.",
 		"Poros Dilatados": "Sumamos un tratamiento con espículas o niacinamida para minimizar la apariencia de los poros dilatados por el calor y la grasa.",
-		Luminosidad: "Un sérum con glutatión o vitamina C te da ese brillo tipo 'piel de cristal' que tanto se busca en las rutinas coreanas.",
+		Luminosidad: "Un sérum con vitamina C o activos iluminadores te da ese brillo tipo 'piel de cristal' que tanto se busca en las rutinas coreanas.",
 		"Barrera Cutánea": "Priorizamos fórmulas calmantes con Centella Asiática y pantenol para reforzar tu barrera cutánea, clave antes de cualquier tratamiento activo.",
 	};
 
 	let tipoPielSeleccionado = $state<TipoPiel>("Mixta");
 	let preocupacionSeleccionada = $state<Preocupacion>("Hidratación");
 
-	const limpiador = $derived(limpiadores[tipoPielSeleccionado]);
-	const tratamiento = $derived(tratamientos[preocupacionSeleccionada]);
-	const hidratante = $derived(hidratantes[tipoPielSeleccionado]);
-
-	const pasos = $derived([
-		{ numero: 1, etiqueta: "Limpiador", producto: limpiador },
-		{ numero: 2, etiqueta: "Tratamiento", producto: tratamiento },
-		{ numero: 3, etiqueta: "Hidratante / Protector", producto: hidratante },
-	]);
+	const pasos = $derived(
+		[
+			{
+				etiqueta: "Limpiador",
+				producto: elegirProducto(
+					limpiadores[tipoPielSeleccionado],
+					categoriasRespaldo.limpiador,
+				),
+			},
+			{
+				etiqueta: "Tratamiento",
+				producto: elegirProducto(
+					tratamientos[preocupacionSeleccionada],
+					categoriasRespaldo.tratamiento,
+				),
+			},
+			{
+				etiqueta: "Hidratante / Protector",
+				producto: elegirProducto(
+					hidratantes[tipoPielSeleccionado],
+					categoriasRespaldo.hidratante,
+				),
+			},
+		]
+			.filter(
+				(paso): paso is { etiqueta: string; producto: ProductoRutina } =>
+					paso.producto !== null,
+			)
+			.map((paso, indice) => ({ ...paso, numero: indice + 1 })),
+	);
 
 	const subtotal = $derived(
-		limpiador.precio + tratamiento.precio + hidratante.precio,
+		pasos.reduce((total, paso) => total + paso.producto.precio, 0),
 	);
 	const totalConDescuento = $derived(Math.round(subtotal * 0.9 * 100) / 100);
 	const totalVES = $derived(
@@ -415,7 +484,8 @@
 				<button
 					type="button"
 					onclick={crearRutina}
-					class="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sky-200 px-8 py-3 font-Manrope text-base font-semibold text-slate-600 transition duration-300 hover:-translate-y-1 hover:bg-slate-600 hover:text-white"
+					disabled={pasos.length === 0}
+					class="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sky-200 px-8 py-3 font-Manrope text-base font-semibold text-slate-600 transition duration-300 hover:-translate-y-1 hover:bg-slate-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
 				>
 					{#if agregado}
 						<Icon icon="material-symbols:check-rounded" width="20" />

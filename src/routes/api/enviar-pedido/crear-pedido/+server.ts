@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { FieldValue } from 'firebase-admin/firestore';
 
 import { adminAuth, adminDb } from '$lib/server/firebase-admin';
+import { calcularPuntos } from '$lib/puntosMoon';
 import type { RequestHandler } from './$types';
 
 /**
@@ -92,7 +93,9 @@ async function obtenerTasaBCV(): Promise<number> {
 	return tasa;
 }
 
-async function verificarUsuario(request: Request): Promise<string | null> {
+async function verificarUsuario(
+	request: Request
+): Promise<{ uid: string; anonimo: boolean } | null> {
 	const encabezado = request.headers.get('authorization') ?? '';
 	if (!encabezado.startsWith('Bearer ')) return null;
 
@@ -101,7 +104,10 @@ async function verificarUsuario(request: Request): Promise<string | null> {
 
 	try {
 		const decodificado = await adminAuth.verifyIdToken(token);
-		return decodificado.uid;
+		return {
+			uid: decodificado.uid,
+			anonimo: decodificado.firebase?.sign_in_provider === 'anonymous'
+		};
 	} catch (err) {
 		console.error('Token inválido al crear pedido:', err);
 		return null;
@@ -109,11 +115,13 @@ async function verificarUsuario(request: Request): Promise<string | null> {
 }
 
 export const POST: RequestHandler = async ({ request }) => {
-	const uid = await verificarUsuario(request);
+	const sesion = await verificarUsuario(request);
 
-	if (!uid) {
+	if (!sesion) {
 		return json({ ok: false, error: 'No autorizado.' }, { status: 401 });
 	}
+
+	const { uid } = sesion;
 
 	const solicitud = (await request.json()) as SolicitudPedido;
 
@@ -254,6 +262,15 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ ok: false, error: `El cupón "${codigo}" ya alcanzó su límite de usos.` }, { status: 400 });
 		}
 
+		// Los cupones canjeados con puntos Moon Beauty son personales: solo
+		// los puede usar la cuenta que los canjeó.
+		if (datos.usuarioId && datos.usuarioId !== uid) {
+			return json(
+				{ ok: false, error: `El cupón "${codigo}" es personal y pertenece a otra cuenta.` },
+				{ status: 400 }
+			);
+		}
+
 		const metodosPago = Array.isArray(datos.metodosPago) ? datos.metodosPago : [];
 		if (!metodosPago.includes(solicitud.metodoPago)) {
 			return json(
@@ -309,6 +326,12 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const totalVES = Math.round(totalUSD * tasaBCV * 100) / 100;
 
+	// Puntos Moon Beauty que da esta compra. Se calculan aquí, con el
+	// total real, pero se suman al saldo recién cuando el pedido se
+	// confirma desde el panel (ver actualizarEstadoPedido). Las compras
+	// como invitado (sesión anónima) no acumulan puntos.
+	const puntosMoon = sesion.anonimo ? 0 : calcularPuntos(totalUSD);
+
 	const fecha = new Date().toISOString().slice(0, 10).replaceAll('-', '');
 	const codigoPedido = crypto.randomUUID().replaceAll('-', '').slice(0, 6).toUpperCase();
 	const numeroPedido = `MB-${fecha}-${codigoPedido}`;
@@ -361,6 +384,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			totalVES,
 			estado: 'pendiente_contacto',
 			stockDescontado: false,
+			puntosMoon,
+			puntosOtorgados: false,
 			fechaCreacion: FieldValue.serverTimestamp()
 		});
 	});

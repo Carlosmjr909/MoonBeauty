@@ -982,17 +982,10 @@
 	href="{enlaceWhatsapp}?text=¡Hola! Estoy interesado/a en algunos productos de Moon Beauty. ¿Podrían asesorarme?"
 	target="_blank"
 	rel="noopener noreferrer"
-	class="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-sky-200 py-1.5 pl-1.5 pr-4 text-slate-700 sm:bottom-6 sm:right-6 sm:gap-3 sm:py-2 sm:pl-2 sm:pr-6 shadow-2xl ring-1 ring-white/70 transition-all duration-300 hover:-translate-y-1 hover:bg-sky-300 hover:shadow-sky-300/50"
+	class="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-sky-200 text-sky-900 shadow-2xl ring-1 ring-white/70 transition-all duration-300 hover:scale-110 hover:bg-sky-300 hover:shadow-sky-300/50 sm:bottom-6 sm:right-6 sm:h-16 sm:w-16"
 	aria-label="Escríbenos por WhatsApp"
 >
-	<img
-		src="/favicon-192.png"
-		alt=""
-		width="44"
-		height="44"
-		class="h-9 w-9 rounded-full object-cover sm:h-11 sm:w-11"
-	/>
-	<span class="font-Manrope text-sm font-semibold sm:text-base">WhatsApp</span>
+	<Icon icon="mdi:whatsapp" class="h-8 w-8 sm:h-9 sm:w-9" />
 </a>
 
 <style>

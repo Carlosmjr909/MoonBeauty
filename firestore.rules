@@ -85,7 +85,12 @@ service cloud.firestore {
     // cupones que todavía no se han anunciado.
     match /cupones/{codigoCupon} {
       allow get: if true;
-      allow list: if esAdmin();
+      // Además del admin, cada clienta puede listar los cupones que ella
+      // misma canjeó con sus puntos (la consulta debe filtrar por su
+      // usuarioId; cualquier otra consulta se rechaza).
+      allow list: if esAdmin() ||
+        (request.auth != null &&
+          resource.data.usuarioId == request.auth.uid);
       allow write: if esAdmin();
 
       // Antes un comprador podía sumar 1 al contador de usos directo
@@ -96,6 +101,23 @@ service cloud.firestore {
       // cualquier sesión anónima agotara el límite de un cupón sin
       // comprar nada. Auditoría de seguridad, pentest de cupones.
       allow update: if false;
+    }
+
+    // Puntos Moon Beauty. La clienta solo puede leer su saldo y su
+    // historial: los suma el panel al confirmar un pedido (admin) y los
+    // descuenta POST /api/puntos/canjear con el Admin SDK. Si el saldo
+    // viviera en /usuarios, que cada quien puede editar, cualquiera
+    // podría regalarse puntos.
+    match /puntos/{uid} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == uid || esAdmin());
+      allow write: if esAdmin();
+
+      match /movimientos/{movimientoId} {
+        allow read: if request.auth != null &&
+          (request.auth.uid == uid || esAdmin());
+        allow write: if esAdmin();
+      }
     }
 
     // Reseñas internas (1 a 5 estrellas por producto). Nunca se muestran
