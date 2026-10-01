@@ -253,6 +253,10 @@
 	}
 
 	function activarZoom() {
+		// En celulares y tablets el toque dispara mouseenter y dejaba la
+		// foto ampliada; el zoom queda solo para mouse o trackpad.
+		if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+
 		zoomActivo = true;
 	}
 

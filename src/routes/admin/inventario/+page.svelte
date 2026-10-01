@@ -183,6 +183,7 @@
 	/* ---------------- Fotos adicionales y tonos ---------------- */
 
 	let productoEditandoMedios = $state<Producto | null>(null);
+	let imagenPrincipalEdicion = $state("");
 	let galeriaEdicion = $state<string[]>([]);
 	let tonosEdicion = $state<Tono[]>([]);
 	let subiendoMedios = $state(false);
@@ -190,9 +191,11 @@
 	let progresoMedios = $state("");
 	let inputGaleria = $state<HTMLInputElement | null>(null);
 	let inputTono = $state<HTMLInputElement | null>(null);
+	let inputPrincipal = $state<HTMLInputElement | null>(null);
 
 	function abrirMedios(producto: Producto) {
 		productoEditandoMedios = producto;
+		imagenPrincipalEdicion = producto.imagen;
 		galeriaEdicion = [...producto.imagenes];
 		tonosEdicion = producto.tonos.map((tono) => ({ ...tono }));
 		progresoMedios = "";
@@ -201,10 +204,34 @@
 
 	function cerrarMedios() {
 		productoEditandoMedios = null;
+		imagenPrincipalEdicion = "";
 		galeriaEdicion = [];
 		tonosEdicion = [];
 		if (inputGaleria) inputGaleria.value = "";
 		if (inputTono) inputTono.value = "";
+		if (inputPrincipal) inputPrincipal.value = "";
+	}
+
+	async function cambiarImagenPrincipal(evento: Event) {
+		const archivo = (evento.target as HTMLInputElement).files?.[0];
+		if (!archivo) return;
+
+		subiendoMedios = true;
+		error = null;
+
+		try {
+			progresoMedios = "Subiendo la foto principal...";
+			imagenPrincipalEdicion = await subirImagenProducto(archivo);
+		} catch (err) {
+			error =
+				err instanceof Error
+					? err.message
+					: "No se pudo subir la foto principal.";
+		} finally {
+			subiendoMedios = false;
+			progresoMedios = "";
+			if (inputPrincipal) inputPrincipal.value = "";
+		}
 	}
 
 	async function subirAGaleria(evento: Event) {
@@ -275,6 +302,7 @@
 
 		try {
 			await actualizarProducto(producto.id, {
+				imagen: imagenPrincipalEdicion || producto.imagen,
 				imagenes: [...galeriaEdicion],
 				// Un tono sin nombre confundiría al comprador, así que se
 				// le pone uno por defecto antes de guardar.
@@ -1228,17 +1256,26 @@
 			<!-- Foto principal -->
 			<div class="mt-5 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
 				<img
-					src={productoEditandoMedios.imagen}
+					src={imagenPrincipalEdicion}
 					alt=""
-					class="h-16 w-16 rounded-lg object-cover"
+					class="h-16 w-16 shrink-0 rounded-lg object-cover"
 				/>
-				<div>
+				<div class="min-w-0">
 					<p class="text-sm font-semibold text-slate-700">
 						Foto principal
 					</p>
 					<p class="text-xs text-slate-500">
 						Es la que se ve en el catálogo y al compartir el link.
 					</p>
+					<input
+						type="file"
+						accept="image/*"
+						aria-label="Cambiar foto principal"
+						bind:this={inputPrincipal}
+						onchange={cambiarImagenPrincipal}
+						disabled={subiendoMedios}
+						class="mt-2 text-sm"
+					/>
 				</div>
 			</div>
 
