@@ -56,10 +56,11 @@
 		fondoMovil?: string;
 		/**
 		 * Color del degradado de celular detrás del texto en las fotos
-		 * oscuras: por defecto casi negro; "azul" usa el azul oscuro de la
-		 * marca (sky-900, el del ícono de WhatsApp).
+		 * oscuras: por defecto casi negro (texto blanco); "logo" usa el
+		 * celeste del logo (#accce4), y como es claro, en celular ese
+		 * slide lleva texto oscuro, etiqueta azul y botón blanco.
 		 */
-		degradadoMovil?: "azul";
+		degradadoMovil?: "logo";
 		/**
 		 * "angosto": en lg el texto ocupa solo el primer tercio, porque la
 		 * foto tiene contenido en casi todo el ancho.
@@ -80,8 +81,8 @@
 			lado: "izquierda",
 			tono: "oscuro",
 			encuadreMovil: "arriba",
-			fondoMovil: "#0c4a6e", // sky-900
-			degradadoMovil: "azul",
+			fondoMovil: "#accce4", // celeste del logo
+			degradadoMovil: "logo",
 			etiqueta: textos.heroEtiqueta,
 			titulo: textos.heroTitulo,
 			subtitulo: textos.heroSubtitulo,
@@ -107,8 +108,8 @@
 			lado: "izquierda",
 			tono: "oscuro",
 			encuadreMovil: "arriba",
-			fondoMovil: "#0c4a6e", // sky-900
-			degradadoMovil: "azul",
+			fondoMovil: "#accce4", // celeste del logo
+			degradadoMovil: "logo",
 			anchoTexto: "angosto",
 			etiqueta: "CALMA · CENTELLA",
 			titulo: "Menos pasos,\nmás glow.",
@@ -133,18 +134,40 @@
 	// celular y en lg el texto va encima de la foto; en tablet va debajo,
 	// sobre blanco, así que ahí siempre es gris.
 	const fotoOscura = $derived(slideHeroActual.tono === "oscuro");
+	// Con el degradado celeste del logo, en celular el fondo del texto es
+	// claro: texto oscuro (en tablet sigue gris y en lg blanco sobre la foto).
+	const degradadoClaro = $derived(slideHeroActual.degradadoMovil === "logo");
 	const claseTituloHero = $derived(
-		fotoOscura ? "text-white md:text-slate-600 lg:text-white" : "text-slate-600",
+		!fotoOscura
+			? "text-slate-600"
+			: degradadoClaro
+				? "text-slate-700 md:text-slate-600 lg:text-white"
+				: "text-white md:text-slate-600 lg:text-white",
 	);
 	const claseSubtituloHero = $derived(
-		fotoOscura
-			? "text-white/90 md:text-slate-600 lg:text-white/90"
-			: "text-slate-600",
+		!fotoOscura
+			? "text-slate-600"
+			: degradadoClaro
+				? "text-slate-700 md:text-slate-600 lg:text-white/90"
+				: "text-white/90 md:text-slate-600 lg:text-white/90",
+	);
+	// La etiqueta es del mismo celeste del logo: sobre ese fondo, en
+	// celular, va en azul oscuro.
+	const claseEtiquetaHero = $derived(
+		degradadoClaro ? "text-sky-800 md:text-[#accce4]" : "text-[#accce4]",
+	);
+	const claseBotonHero = $derived(
+		degradadoClaro ? "bg-white md:bg-sky-200" : "bg-sky-200",
 	);
 
 	function clasePuntoHero(activo: boolean) {
 		if (!fotoOscura) {
 			return activo ? "w-8 bg-slate-600" : "w-2 bg-slate-600/30 hover:bg-slate-600/60";
+		}
+		if (degradadoClaro) {
+			return activo
+				? "w-8 bg-slate-700 md:bg-slate-600 lg:bg-white"
+				: "w-2 bg-slate-700/30 hover:bg-slate-700/60 md:bg-slate-600/30 md:hover:bg-slate-600/60 lg:bg-white/40 lg:hover:bg-white/70";
 		}
 		return activo
 			? "w-8 bg-white md:bg-slate-600 lg:bg-white"
@@ -694,8 +717,8 @@
 				<div
 					class="absolute inset-0 bg-linear-to-t to-transparent md:hidden {slide.tono ===
 					'oscuro'
-						? slide.degradadoMovil === 'azul'
-							? 'from-sky-900/90 via-sky-900/45 to-75%'
+						? slide.degradadoMovil === 'logo'
+							? 'from-[#accce4] via-[#accce4]/70 to-75%'
 							: 'from-slate-950/80 via-slate-950/35 to-75%'
 						: 'from-white via-white/80 to-70%'}"
 				></div>
@@ -740,7 +763,7 @@
 			>
 				<p
 					in:fly={{ x: desplazamiento, duration: 800, delay: 250, easing: cubicOut }}
-					class="font-Manrope text-sm font-bold uppercase tracking-[0.2em] text-[#accce4] sm:text-base"
+					class="font-Manrope text-sm font-bold uppercase tracking-[0.2em] sm:text-base {claseEtiquetaHero}"
 				>
 					{slideHeroActual.etiqueta}
 				</p>
@@ -771,7 +794,7 @@
 
 				<a
 					in:fly={{ y: 20, duration: 700, delay: 600, easing: cubicOut }}
-					class="mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-sky-200 px-8 py-3 font-Manrope text-base font-semibold text-slate-600 transition duration-300 hover:-translate-y-1 hover:bg-slate-600 hover:text-white hover:shadow-lg sm:px-10 sm:text-lg lg:mt-8 lg:px-12"
+					class="mt-6 inline-flex min-h-12 items-center justify-center rounded-full {claseBotonHero} px-8 py-3 font-Manrope text-base font-semibold text-slate-600 transition duration-300 hover:-translate-y-1 hover:bg-slate-600 hover:text-white hover:shadow-lg sm:px-10 sm:text-lg lg:mt-8 lg:px-12"
 					href="/products"
 				>
 					{slideHeroActual.boton}
