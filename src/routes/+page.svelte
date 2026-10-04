@@ -7,6 +7,7 @@
 	import DiagnosticoRutina from "$lib/components/DiagnosticoRutina.svelte";
 	import MoonBeautyClub from "$lib/components/MoonBeautyClub.svelte";
 	import Icon from "@iconify/svelte";
+	import { agruparPorMarca, claveMarca } from "$lib/marcas";
 
 	let { data } = $props();
 
@@ -19,6 +20,17 @@
 	// avanzan en sentidos opuestos.
 	const logosFilaUno = $derived(logos.slice(0, Math.ceil(logos.length / 2)));
 	const logosFilaDos = $derived(logos.slice(Math.ceil(logos.length / 2)));
+
+	// Cada logo lleva a la vista de su marca, si esa marca tiene productos
+	// en el catálogo (se comparan los nombres sin mayúsculas ni signos).
+	const slugPorMarca = $derived(
+		new Map(
+			agruparPorMarca(data.productos ?? []).map((marca) => [
+				claveMarca(marca.nombre),
+				marca.slug,
+			]),
+		),
+	);
 
 	// Textos editables del hero y de "Nuestra esencia".
 	const textos = $derived(data.configuracionPortada);
@@ -562,10 +574,16 @@
 	<title>Moon Beauty · Skincare coreano en Venezuela</title>
 </svelte:head>
 
+<!-- En celular y tablet la foto va arriba y el texto debajo, en el flujo
+normal de la página: así nunca se tapan, aunque el teléfono tenga la
+letra agrandada (con <meta name="text-scale"> el sitio entero escala con
+el tamaño de fuente del sistema, y antes el texto quedaba encima de los
+productos). Desde lg la foto pasa a ser el fondo de todo el hero y el
+texto va encima, del lado libre de cada foto. -->
 <section
 	aria-roledescription="carrusel"
 	aria-label="Destacados"
-	class="isolate relative flex min-h-[calc(100svh-5rem)] items-end justify-center overflow-hidden px-4 pb-32 pt-20 sm:px-6 lg:min-h-[calc(100svh-6rem)] lg:items-center lg:px-8 lg:py-20"
+	class="relative isolate overflow-hidden bg-white lg:flex lg:min-h-[calc(100svh-6rem)] lg:items-center lg:bg-transparent lg:px-8 lg:py-20"
 	onmouseenter={() => (heroPausado = true)}
 	onmouseleave={() => (heroPausado = false)}
 	onfocusin={() => (heroPausado = true)}
@@ -575,41 +593,53 @@
 >
 	<!-- Las fotos se apilan y solo la activa es visible; se cruzan con
 	un fundido y la activa hace un leve zoom-out mientras se muestra.
-	Celular y tablet en vertical usan una versión vertical de cada foto. -->
-	{#each slidesHero as slide, indice (slide.imagen)}
-		<div
-			aria-hidden="true"
-			class="absolute -top-30 left-0 -z-10 h-[calc(100%+7.5rem)] w-full overflow-hidden transition-opacity duration-1000 ease-out lg:-top-34 lg:h-[calc(100%+8.5rem)]"
-			class:opacity-0={indice !== indiceHero}
-		>
-			<picture>
-				<source media="(min-width: 1024px)" srcset={slide.imagen} />
-				<img
-					src={slide.imagenMovil}
-					alt=""
-					loading={indice === 0 ? "eager" : "lazy"}
-					fetchpriority={indice === 0 ? "high" : "auto"}
-					class="h-full w-full object-cover transition-transform duration-[7000ms] ease-out motion-reduce:transition-none {indice ===
-					indiceHero
-						? 'scale-100'
-						: 'scale-[1.06] motion-reduce:scale-100'}"
-				/>
-			</picture>
-
-			<!-- Velo blanco del lado del texto para que siempre se lea. -->
+	Los celulares usan la versión vertical de cada foto; en tablet, la
+	horizontal se encuadra hacia el lado donde están los productos. -->
+	<div
+		aria-hidden="true"
+		class="hero-fotos relative w-full overflow-hidden lg:absolute lg:inset-x-0 lg:-top-34 lg:-z-10"
+	>
+		{#each slidesHero as slide, indice (slide.imagen)}
 			<div
-				class="absolute inset-0 bg-linear-to-t from-white/85 via-white/25 to-transparent to-60% {slide.lado ===
-				'derecha'
-					? 'lg:bg-linear-to-l'
-					: 'lg:bg-linear-to-r'} lg:from-white/60 lg:via-white/15 lg:to-55%"
-			></div>
-		</div>
-	{/each}
+				class="absolute inset-0 transition-opacity duration-1000 ease-out"
+				class:opacity-0={indice !== indiceHero}
+			>
+				<picture>
+					<source media="(min-width: 768px)" srcset={slide.imagen} />
+					<img
+						src={slide.imagenMovil}
+						alt=""
+						loading={indice === 0 ? "eager" : "lazy"}
+						fetchpriority={indice === 0 ? "high" : "auto"}
+						class="h-full w-full object-cover object-[center_20%] transition-transform duration-[7000ms] ease-out motion-reduce:transition-none lg:object-center {slide.lado ===
+						'derecha'
+							? 'md:object-[20%_center]'
+							: 'md:object-[80%_center]'} {indice === indiceHero
+							? 'scale-100'
+							: 'scale-[1.06] motion-reduce:scale-100'}"
+					/>
+				</picture>
+
+				<!-- Velo blanco del lado del texto (solo cuando va encima). -->
+				<div
+					class="absolute inset-0 hidden from-white/60 via-white/15 to-transparent to-55% lg:block {slide.lado ===
+					'derecha'
+						? 'bg-linear-to-l'
+						: 'bg-linear-to-r'}"
+				></div>
+			</div>
+		{/each}
+
+		<!-- Fundido de la foto hacia el bloque de texto de abajo. -->
+		<div
+			class="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-white to-transparent lg:hidden"
+		></div>
+	</div>
 
 	<!-- El texto de cada diapositiva entra desde su lado, por partes; la
 	anterior y la nueva comparten celda para que no salte el alto. -->
 	<div
-		class="mx-auto grid w-full px-2 *:[grid-area:1/1] sm:px-8 lg:px-12 2xl:max-w-[1600px]"
+		class="mx-auto grid w-full px-6 pb-20 pt-2 *:[grid-area:1/1] sm:px-10 lg:px-12 lg:pb-0 lg:pt-0 2xl:max-w-[1600px]"
 		aria-live={heroAutomatico && !heroPausado ? "off" : "polite"}
 	>
 		{#key indiceHero}
@@ -656,7 +686,7 @@
 	</div>
 
 	<div
-		class="absolute bottom-16 left-5 flex items-center gap-2 sm:left-13 lg:bottom-12 lg:left-1/2 lg:-translate-x-1/2"
+		class="absolute bottom-8 left-5 flex items-center gap-2 sm:left-9 lg:bottom-12 lg:left-1/2 lg:-translate-x-1/2"
 	>
 		{#each slidesHero as _, indice (indice)}
 			<button
@@ -757,8 +787,11 @@
 	<div class="marquee">
 		<div class="marquee__track">
 			{#each [...logosFilaUno, ...logosFilaUno] as logo}
-				<div
-					class="flex h-40 w-[50vw] shrink-0 items-center justify-center px-4 sm:h-44 sm:px-6 lg:h-56 lg:w-[20vw] lg:px-10"
+				{@const slug = slugPorMarca.get(claveMarca(logo.nombre))}
+				<svelte:element
+					this={slug ? "a" : "div"}
+					href={slug ? `/marcas/${slug}` : undefined}
+					class="flex h-40 w-[50vw] shrink-0 items-center justify-center px-4 transition hover:opacity-70 sm:h-44 sm:px-6 lg:h-56 lg:w-[20vw] lg:px-10"
 				>
 					<img
 						src={logo.imagen}
@@ -767,7 +800,7 @@
 						style="max-height: {logo.alto}"
 						loading="lazy"
 					/>
-				</div>
+				</svelte:element>
 			{/each}
 		</div>
 	</div>
@@ -775,8 +808,11 @@
 	<div class="marquee mt-6">
 		<div class="marquee__track marquee__track--reversa">
 			{#each [...logosFilaDos, ...logosFilaDos] as logo}
-				<div
-					class="flex h-40 w-[50vw] shrink-0 items-center justify-center px-4 sm:h-44 sm:px-6 lg:h-56 lg:w-[20vw] lg:px-10"
+				{@const slug = slugPorMarca.get(claveMarca(logo.nombre))}
+				<svelte:element
+					this={slug ? "a" : "div"}
+					href={slug ? `/marcas/${slug}` : undefined}
+					class="flex h-40 w-[50vw] shrink-0 items-center justify-center px-4 transition hover:opacity-70 sm:h-44 sm:px-6 lg:h-56 lg:w-[20vw] lg:px-10"
 				>
 					<img
 						src={logo.imagen}
@@ -785,7 +821,7 @@
 						style="max-height: {logo.alto}"
 						loading="lazy"
 					/>
-				</div>
+				</svelte:element>
 			{/each}
 		</div>
 	</div>
@@ -1295,6 +1331,31 @@
 
 	.pista-scroll::-webkit-scrollbar {
 		display: none;
+	}
+
+	/* Alto de las fotos del hero. "vh" va primero como respaldo para
+	   navegadores que no entienden "svh" (Samsung Internet viejo): si
+	   no, ignorarían el alto y las fotos quedarían en 0. */
+	.hero-fotos {
+		height: 50vh;
+		height: 50svh;
+		min-height: 18rem;
+	}
+
+	@media (min-width: 768px) {
+		.hero-fotos {
+			height: 56vh;
+			height: 56svh;
+		}
+	}
+
+	/* Desde lg la foto es el fondo del hero y sube por detrás del
+	   encabezado translúcido (8.5rem = encabezado + cinta del cupón). */
+	@media (min-width: 1024px) {
+		.hero-fotos {
+			height: calc(100% + 8.5rem);
+			min-height: 0;
+		}
 	}
 
 	.marquee {

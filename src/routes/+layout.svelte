@@ -21,6 +21,7 @@
 		type ConfiguracionContacto,
 	} from "$lib/configuracion";
 	import { SEO_POR_DEFECTO, SITIO_URL, type DatosSeo } from "$lib/seo";
+	import { agruparPorMarca, marcaBuscada } from "$lib/marcas";
 
 	injectAnalytics({ mode: dev ? "development" : "production" });
 
@@ -149,6 +150,14 @@
 	let buscadorAbierto = $state(false);
 	let textoBusqueda = $state("");
 
+	const marcasCatalogo = $derived(agruparPorMarca(productosLayout));
+
+	// Si lo que se escribe es una marca, el buscador muestra primero sus
+	// productos y "Ver todos" lleva a la vista de esa marca.
+	const marcaEncontrada = $derived(
+		textoBusqueda.trim() ? marcaBuscada(marcasCatalogo, textoBusqueda) : null,
+	);
+
 	const productosEncontrados = $derived(
 		textoBusqueda.trim().length === 0
 			? []
@@ -166,8 +175,16 @@
 							nombre.includes(texto) ||
 							tipo.includes(texto) ||
 							marca.includes(texto) ||
-							especificacion.includes(texto)
+							especificacion.includes(texto) ||
+							// "dr althea" (sin punto) también encuentra "Dr. Althea".
+							(marcaEncontrada?.productos.includes(producto) ?? false)
 						);
+					})
+					.sort((a, b) => {
+						if (!marcaEncontrada) return 0;
+						const deLaMarca = (producto: Producto) =>
+							marcaEncontrada.productos.includes(producto) ? 1 : 0;
+						return deLaMarca(b) - deLaMarca(a);
 					})
 					.slice(0, 6),
 	);
@@ -445,6 +462,13 @@
 				>
 					Categorías
 				</a>
+
+				<a
+					href="/marcas"
+					class="font-Manrope font-bold text-slate-500 transition-all duration-300 hover:-translate-y-1 hover:text-slate-800 hover:underline"
+				>
+					Marcas
+				</a>
 			</nav>
 
 			<div class="flex items-center gap-2 sm:gap-4 lg:gap-5">
@@ -576,6 +600,14 @@
 					</a>
 
 					<a
+						href="/marcas"
+						onclick={cerrarMenu}
+						class="rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800"
+					>
+						Marcas
+					</a>
+
+					<a
 						href="/create_account"
 						onclick={cerrarMenu}
 						class="flex items-center gap-3 rounded-xl px-4 py-3 font-Manrope font-bold text-slate-600 transition hover:bg-sky-50 hover:text-sky-800 sm:hidden"
@@ -694,14 +726,19 @@
 								{/each}
 
 								<!-- La lista solo muestra los primeros resultados; al
-								final se ofrece ir al catálogo completo. -->
+								final se ofrece ir a la vista de la marca buscada
+								o, si no es una marca, al catálogo completo. -->
 								<div class="p-3">
 									<a
-										href="/products"
+										href={marcaEncontrada
+											? `/marcas/${marcaEncontrada.slug}`
+											: "/products"}
 										onclick={cerrarBuscador}
 										class="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sky-200 px-6 py-3 font-Manrope text-sm font-semibold text-slate-600 transition duration-300 hover:bg-slate-600 hover:text-white sm:text-base"
 									>
-										Ver todos
+										{marcaEncontrada
+											? `Ver todos los productos de ${marcaEncontrada.nombre}`
+											: "Ver todos"}
 										<Icon
 											icon="material-symbols:arrow-forward-rounded"
 											width="20"
@@ -739,7 +776,12 @@
 	</header>
 </div>
 
-<div class="grid grid-cols-1 *:[grid-area:1/1] *:min-w-0">
+<!-- overflow-x-clip: varias animaciones de entrada (GSAP) dejan los
+elementos corridos hacia un lado hasta que se hace scroll hacia ellos.
+Sin esto, en celulares angostos esos elementos ensanchaban la página
+y el navegador la mostraba alejada o corrida ("deformada"). "clip" en
+vez de "hidden" para no romper los elementos sticky de las vistas. -->
+<div class="grid grid-cols-1 overflow-x-clip *:[grid-area:1/1] *:min-w-0">
 	{#key page.url.pathname}
 		<div
 			in:fade={{ duration: 350, delay: 150, easing: cubicOut }}

@@ -2,6 +2,7 @@ import type { RequestHandler } from './$types';
 import { obtenerProductosPublicos } from '$lib/server/productos';
 import { SITIO_URL } from '$lib/seo';
 import { SLUGS_LEGALES } from '$lib/server/legales';
+import { agruparPorMarca } from '$lib/marcas';
 
 type Entrada = {
 	ruta: string;
@@ -41,6 +42,7 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
 		{ ruta: '/', prioridad: '1.0', frecuencia: 'daily' },
 		{ ruta: '/products', prioridad: '0.9', frecuencia: 'daily' },
 		{ ruta: '/categorias', prioridad: '0.8', frecuencia: 'weekly' },
+		{ ruta: '/marcas', prioridad: '0.8', frecuencia: 'weekly' },
 		{ ruta: '/preguntas-frecuentes', prioridad: '0.5', frecuencia: 'monthly' }
 	];
 
@@ -55,6 +57,15 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
 			ruta: `/products/${producto.id}`,
 			fecha: comoFecha(producto.fechaCreacion),
 			prioridad: '0.8',
+			frecuencia: 'weekly'
+		});
+	}
+
+	// Cada marca tiene su propia página con todos sus productos.
+	for (const marca of agruparPorMarca(productos)) {
+		entradas.push({
+			ruta: `/marcas/${marca.slug}`,
+			prioridad: '0.7',
 			frecuencia: 'weekly'
 		});
 	}
