@@ -45,6 +45,14 @@
 		imagenMovil: string;
 		lado: "izquierda" | "derecha";
 		tono: "claro" | "oscuro";
+		/**
+		 * Encuadre de la foto de celular. Por defecto la foto cubre todo
+		 * el hero. Con "arriba" va a lo ancho de la pantalla, pegada
+		 * arriba y con su alto natural (el resto del hero queda del color
+		 * oscuro en que se funde la foto): así la cara queda siempre a la
+		 * misma altura respecto del ancho, por encima del texto.
+		 */
+		encuadreMovil?: "arriba";
 		etiqueta: string;
 		titulo: string;
 		subtitulo: string;
@@ -54,9 +62,12 @@
 	const slidesHero = $derived<SlideHero[]>([
 		{
 			imagen: "/hero/hero-modelo.webp",
+			// En celular la foto va arriba y abajo se funde en un fondo
+			// oscuro, para que la cara y los hombros queden sobre el texto.
 			imagenMovil: "/hero/hero-modelo-movil.webp",
 			lado: "izquierda",
 			tono: "oscuro",
+			encuadreMovil: "arriba",
 			etiqueta: textos.heroEtiqueta,
 			titulo: textos.heroTitulo,
 			subtitulo: textos.heroSubtitulo,
@@ -633,7 +644,10 @@
 	>
 		{#each slidesHero as slide, indice (slide.imagen)}
 			<div
-				class="absolute inset-0 transition-opacity duration-1000 ease-out"
+				class="absolute inset-0 transition-opacity duration-1000 ease-out {slide.encuadreMovil ===
+				'arriba'
+					? 'bg-[#17100d] md:bg-transparent'
+					: ''}"
 				class:opacity-0={indice !== indiceHero}
 			>
 				<picture>
@@ -643,7 +657,9 @@
 						alt=""
 						loading={indice === 0 ? "eager" : "lazy"}
 						fetchpriority={indice === 0 ? "high" : "auto"}
-						class="h-full w-full object-cover object-[center_20%] transition-transform duration-[7000ms] ease-out motion-reduce:transition-none lg:object-center {slide.lado ===
+						class="w-full object-cover md:h-full {slide.encuadreMovil === 'arriba'
+							? 'h-auto'
+							: 'h-full object-[center_20%]'} transition-transform duration-[7000ms] ease-out motion-reduce:transition-none lg:object-center {slide.lado ===
 						'derecha'
 							? 'md:object-[20%_center]'
 							: 'md:object-[80%_center]'} {indice === indiceHero
@@ -685,7 +701,7 @@
 	<!-- El texto de cada diapositiva entra desde su lado, por partes; la
 	anterior y la nueva comparten celda para que no salte el alto. -->
 	<div
-		class="mx-auto grid w-full px-6 pb-24 pt-40 *:[grid-area:1/1] sm:px-10 md:pb-20 md:pt-2 lg:px-12 lg:pb-0 lg:pt-0 2xl:max-w-[1600px]"
+		class="mx-auto grid w-full px-6 pb-24 pt-[85vw] *:[grid-area:1/1] sm:px-10 md:pb-20 md:pt-2 lg:px-12 lg:pb-0 lg:pt-0 2xl:max-w-[1600px]"
 		aria-live={heroAutomatico && !heroPausado ? "off" : "polite"}
 	>
 		{#key indiceHero}
@@ -1382,8 +1398,10 @@
 	   "svh" (Samsung Internet viejo): si no, ignorarían el alto. */
 
 	/* Celular: el hero ocupa la pantalla (menos el encabezado) y la foto
-	   lo cubre entero, detrás del texto. Es un alto mínimo: con la letra
-	   agrandada el hero crece y la foto lo sigue cubriendo. */
+	   va detrás del texto. Es un alto mínimo: con la letra agrandada el
+	   hero crece. El texto empieza siempre después de un espacio de 85vw
+	   (pt-[85vw]) que deja libre la cara y los hombros de la foto, sin
+	   importar el tamaño de la letra ni el alto de la pantalla. */
 	@media (max-width: 767px) {
 		.hero-seccion {
 			min-height: calc(100vh - 5rem);
