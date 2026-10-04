@@ -96,9 +96,13 @@ export function buscarMarcaPorSlug<P>(marcas: MarcaCatalogo<P>[], slug: string) 
 
 /**
  * La marca que alguien está buscando en el buscador: la que se llama
- * exactamente así, o si no, la única cuyo nombre empieza con lo escrito
- * (desde 2 letras, para que "vt" encuentre VT Cosmetics; si varias
- * empiezan igual, como "dr", no se adivina).
+ * exactamente así, o si no, la que empieza con lo escrito (desde 2
+ * letras, para que "vt" encuentre VT Cosmetics).
+ *
+ * Si varias empiezan igual: con 4 letras o más gana la que tiene más
+ * productos, porque casi siempre la otra es la misma marca mal escrita
+ * en algún producto ("Purito Seoul" y un "Purito Será" del corrector);
+ * con menos letras, como "dr" (Dr. Althea, Dr. Melaxin...), no se adivina.
  */
 export function marcaBuscada<P>(marcas: MarcaCatalogo<P>[], texto: string) {
 	const clave = claveMarca(texto);
@@ -108,5 +112,8 @@ export function marcaBuscada<P>(marcas: MarcaCatalogo<P>[], texto: string) {
 	if (exacta) return exacta;
 
 	const empiezan = marcas.filter((marca) => claveMarca(marca.nombre).startsWith(clave));
-	return empiezan.length === 1 ? empiezan[0] : null;
+	if (empiezan.length === 1) return empiezan[0];
+	if (empiezan.length === 0 || clave.length < 4) return null;
+
+	return [...empiezan].sort((a, b) => b.productos.length - a.productos.length)[0];
 }
