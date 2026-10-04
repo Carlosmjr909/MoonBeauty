@@ -49,7 +49,7 @@
 		 * Encuadre de la foto de celular. Por defecto la foto cubre todo
 		 * el hero. Con "arriba" va a lo ancho de la pantalla, pegada
 		 * arriba y con su alto natural, y el resto del hero queda del
-		 * color "fondoMovil" (el azul en que se funde la foto): así lo
+		 * color "fondoMovil" (el oscuro en que se funde la foto): así lo
 		 * importante de la foto queda siempre por encima del texto.
 		 */
 		encuadreMovil?: "arriba";
@@ -74,7 +74,7 @@
 			lado: "izquierda",
 			tono: "oscuro",
 			encuadreMovil: "arriba",
-			fondoMovil: "#0c4a6e", // sky-900, igual que el degradado
+			fondoMovil: "#17100d",
 			etiqueta: textos.heroEtiqueta,
 			titulo: textos.heroTitulo,
 			subtitulo: textos.heroSubtitulo,
@@ -92,15 +92,15 @@
 			boton: "Ver productos",
 		},
 		{
-			// Flat lay girado a horizontal: en escritorio la pana se
-			// extiende a la izquierda para el texto; en celular la foto va
-			// arriba con los productos en fila (ver /static/hero).
+			// Flat lay: en escritorio, girado a horizontal y con la pana
+			// extendida a la izquierda para el texto; en celular, la foto
+			// vertical original arriba, grande (ver /static/hero).
 			imagen: "/hero/hero-productos.webp",
 			imagenMovil: "/hero/hero-productos-movil.webp",
 			lado: "izquierda",
 			tono: "oscuro",
 			encuadreMovil: "arriba",
-			fondoMovil: "#0c4a6e", // sky-900, igual que el degradado
+			fondoMovil: "#201811",
 			anchoTexto: "angosto",
 			etiqueta: "CALMA · CENTELLA",
 			titulo: "Menos pasos,\nmás glow.",
@@ -682,12 +682,11 @@
 				</picture>
 
 				<!-- Celular: degradado desde abajo para que el texto se lea
-				encima de la foto. En las fotos oscuras es del azul oscuro de
-				la marca (sky-900, el del ícono de WhatsApp). -->
+				encima de la foto. -->
 				<div
 					class="absolute inset-0 bg-linear-to-t to-transparent md:hidden {slide.tono ===
 					'oscuro'
-						? 'from-sky-900/90 via-sky-900/45 to-75%'
+						? 'from-slate-950/80 via-slate-950/35 to-75%'
 						: 'from-white via-white/80 to-70%'}"
 				></div>
 
