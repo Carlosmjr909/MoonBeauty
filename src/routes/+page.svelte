@@ -48,11 +48,17 @@
 		/**
 		 * Encuadre de la foto de celular. Por defecto la foto cubre todo
 		 * el hero. Con "arriba" va a lo ancho de la pantalla, pegada
-		 * arriba y con su alto natural (el resto del hero queda del color
-		 * oscuro en que se funde la foto): así la cara queda siempre a la
-		 * misma altura respecto del ancho, por encima del texto.
+		 * arriba y con su alto natural, y el resto del hero queda del
+		 * color "fondoMovil" (el azul en que se funde la foto): así lo
+		 * importante de la foto queda siempre por encima del texto.
 		 */
 		encuadreMovil?: "arriba";
+		fondoMovil?: string;
+		/**
+		 * "angosto": en lg el texto ocupa solo el primer tercio, porque la
+		 * foto tiene contenido en casi todo el ancho.
+		 */
+		anchoTexto?: "angosto";
 		etiqueta: string;
 		titulo: string;
 		subtitulo: string;
@@ -68,6 +74,7 @@
 			lado: "izquierda",
 			tono: "oscuro",
 			encuadreMovil: "arriba",
+			fondoMovil: "#0c4a6e", // sky-900, igual que el degradado
 			etiqueta: textos.heroEtiqueta,
 			titulo: textos.heroTitulo,
 			subtitulo: textos.heroSubtitulo,
@@ -85,10 +92,16 @@
 			boton: "Ver productos",
 		},
 		{
-			imagen: "/hero/hero-3.webp",
-			imagenMovil: "/hero/hero-3-movil.webp",
+			// Flat lay girado a horizontal: en escritorio la pana se
+			// extiende a la izquierda para el texto; en celular la foto va
+			// arriba con los productos en fila (ver /static/hero).
+			imagen: "/hero/hero-productos.webp",
+			imagenMovil: "/hero/hero-productos-movil.webp",
 			lado: "izquierda",
-			tono: "claro",
+			tono: "oscuro",
+			encuadreMovil: "arriba",
+			fondoMovil: "#0c4a6e", // sky-900, igual que el degradado
+			anchoTexto: "angosto",
 			etiqueta: "CALMA · CENTELLA",
 			titulo: "Menos pasos,\nmás glow.",
 			subtitulo:
@@ -644,10 +657,10 @@
 	>
 		{#each slidesHero as slide, indice (slide.imagen)}
 			<div
-				class="absolute inset-0 transition-opacity duration-1000 ease-out {slide.encuadreMovil ===
-				'arriba'
-					? 'bg-[#17100d] md:bg-transparent'
+				class="absolute inset-0 transition-opacity duration-1000 ease-out {slide.fondoMovil
+					? 'bg-(--fondo-movil) md:bg-transparent'
 					: ''}"
+				style:--fondo-movil={slide.fondoMovil}
 				class:opacity-0={indice !== indiceHero}
 			>
 				<picture>
@@ -659,7 +672,7 @@
 						fetchpriority={indice === 0 ? "high" : "auto"}
 						class="w-full object-cover md:h-full {slide.encuadreMovil === 'arriba'
 							? 'h-auto'
-							: 'h-full object-[center_20%]'} transition-transform duration-[7000ms] ease-out motion-reduce:transition-none lg:object-center {slide.lado ===
+							: 'h-full object-[center_20%]'} transition-transform duration-7000 ease-out motion-reduce:transition-none lg:object-center {slide.lado ===
 						'derecha'
 							? 'md:object-[20%_center]'
 							: 'md:object-[80%_center]'} {indice === indiceHero
@@ -669,11 +682,12 @@
 				</picture>
 
 				<!-- Celular: degradado desde abajo para que el texto se lea
-				encima de la foto. -->
+				encima de la foto. En las fotos oscuras es del azul oscuro de
+				la marca (sky-900, el del ícono de WhatsApp). -->
 				<div
 					class="absolute inset-0 bg-linear-to-t to-transparent md:hidden {slide.tono ===
 					'oscuro'
-						? 'from-slate-950/80 via-slate-950/35 to-75%'
+						? 'from-sky-900/90 via-sky-900/45 to-75%'
 						: 'from-white via-white/80 to-70%'}"
 				></div>
 
@@ -683,7 +697,9 @@
 				<div
 					class="absolute inset-0 hidden to-transparent lg:block {slide.tono ===
 					'oscuro'
-						? 'from-slate-950/55 via-slate-950/20 to-60%'
+						? slide.anchoTexto === 'angosto'
+							? 'from-slate-950/60 via-slate-950/30 via-20% to-42%'
+							: 'from-slate-950/55 via-slate-950/20 to-60%'
 						: 'from-white/60 via-white/15 to-55%'} {slide.lado ===
 					'derecha'
 						? 'bg-linear-to-l'
@@ -707,7 +723,9 @@
 		{#key indiceHero}
 			<div
 				out:fade={{ duration: 250 }}
-				class="max-w-xl lg:max-w-[46%] {slideHeroActual.lado === 'derecha'
+				class="max-w-xl {slideHeroActual.anchoTexto === 'angosto'
+					? 'lg:max-w-[27%] xl:max-w-[31%]'
+					: 'lg:max-w-[46%]'} {slideHeroActual.lado === 'derecha'
 					? 'lg:justify-self-end'
 					: 'lg:justify-self-start'}"
 			>
@@ -724,14 +742,20 @@
 				portada y antes no había ningún <h1> en toda la página. -->
 				<h1
 					in:fly={{ x: desplazamiento, duration: 900, delay: 350, easing: cubicOut }}
-					class="font-Manrope my-4 whitespace-pre-line text-5xl leading-none sm:text-6xl lg:text-6xl xl:text-7xl 2xl:text-8xl {claseTituloHero}"
+					class="font-Manrope my-4 whitespace-pre-line text-5xl leading-none sm:text-6xl {slideHeroActual.anchoTexto ===
+					'angosto'
+						? 'lg:text-5xl xl:text-6xl 2xl:text-7xl'
+						: 'lg:text-6xl xl:text-7xl 2xl:text-8xl'} {claseTituloHero}"
 				>
 					{slideHeroActual.titulo}
 				</h1>
 
 				<p
 					in:fly={{ x: desplazamiento, duration: 900, delay: 470, easing: cubicOut }}
-					class="mt-4 font-Manrope text-base sm:text-xl lg:mt-5 lg:text-2xl {claseSubtituloHero}"
+					class="mt-4 font-Manrope text-base sm:text-xl lg:mt-5 {slideHeroActual.anchoTexto ===
+					'angosto'
+						? 'lg:text-lg xl:text-xl 2xl:text-2xl'
+						: 'lg:text-2xl'} {claseSubtituloHero}"
 				>
 					{slideHeroActual.subtitulo}
 				</p>
