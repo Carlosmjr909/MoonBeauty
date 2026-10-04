@@ -37,11 +37,14 @@
 
 	// Slider del hero. La primera diapositiva usa los textos editables
 	// del panel; "lado" es dónde va el texto en pantallas grandes (la
-	// foto ya viene armada del lado contrario, ver /static/hero).
+	// foto ya viene armada del lado contrario, ver /static/hero) y "tono"
+	// si esa foto es clara (texto gris sobre velo blanco) u oscura (texto
+	// blanco sobre un velo oscuro suave), solo cuando el texto va encima.
 	type SlideHero = {
 		imagen: string;
 		imagenMovil: string;
 		lado: "izquierda" | "derecha";
+		tono: "claro" | "oscuro";
 		etiqueta: string;
 		titulo: string;
 		subtitulo: string;
@@ -50,18 +53,20 @@
 
 	const slidesHero = $derived<SlideHero[]>([
 		{
-			imagen: "/hero/hero-1.webp",
-			imagenMovil: "/hero/hero-1-movil.webp",
+			imagen: "/hero/hero-modelo.webp",
+			imagenMovil: "/hero/hero-modelo-movil.webp",
 			lado: "izquierda",
+			tono: "oscuro",
 			etiqueta: textos.heroEtiqueta,
 			titulo: textos.heroTitulo,
 			subtitulo: textos.heroSubtitulo,
 			boton: textos.heroBoton,
 		},
 		{
-			imagen: "/hero/hero-2.webp",
-			imagenMovil: "/hero/hero-2-movil.webp",
+			imagen: "/hero/hero-modelo-2.webp",
+			imagenMovil: "/hero/hero-modelo-2-movil.webp",
 			lado: "derecha",
+			tono: "oscuro",
 			etiqueta: "RITUAL DE NOCHE",
 			titulo: "Hidratación\nque se siente.",
 			subtitulo:
@@ -72,6 +77,7 @@
 			imagen: "/hero/hero-3.webp",
 			imagenMovil: "/hero/hero-3-movil.webp",
 			lado: "izquierda",
+			tono: "claro",
 			etiqueta: "CALMA · CENTELLA",
 			titulo: "Menos pasos,\nmás glow.",
 			subtitulo:
@@ -90,6 +96,28 @@
 	let inicioToqueX = 0;
 
 	const slideHeroActual = $derived(slidesHero[indiceHero]);
+
+	// Colores del texto y de los puntos según el tono de la foto. En
+	// celular y en lg el texto va encima de la foto; en tablet va debajo,
+	// sobre blanco, así que ahí siempre es gris.
+	const fotoOscura = $derived(slideHeroActual.tono === "oscuro");
+	const claseTituloHero = $derived(
+		fotoOscura ? "text-white md:text-slate-600 lg:text-white" : "text-slate-600",
+	);
+	const claseSubtituloHero = $derived(
+		fotoOscura
+			? "text-white/90 md:text-slate-600 lg:text-white/90"
+			: "text-slate-600",
+	);
+
+	function clasePuntoHero(activo: boolean) {
+		if (!fotoOscura) {
+			return activo ? "w-8 bg-slate-600" : "w-2 bg-slate-600/30 hover:bg-slate-600/60";
+		}
+		return activo
+			? "w-8 bg-white md:bg-slate-600 lg:bg-white"
+			: "w-2 bg-white/45 hover:bg-white/70 md:bg-slate-600/30 md:hover:bg-slate-600/60 lg:bg-white/40 lg:hover:bg-white/70";
+	}
 	// El texto entra desde el lado donde se ubica.
 	const desplazamiento = $derived(slideHeroActual.lado === "derecha" ? 60 : -60);
 
@@ -574,16 +602,20 @@
 	<title>Moon Beauty · Skincare coreano en Venezuela</title>
 </svelte:head>
 
-<!-- En celular y tablet la foto va arriba y el texto debajo, en el flujo
-normal de la página: así nunca se tapan, aunque el teléfono tenga la
-letra agrandada (con <meta name="text-scale"> el sitio entero escala con
-el tamaño de fuente del sistema, y antes el texto quedaba encima de los
-productos). Desde lg la foto pasa a ser el fondo de todo el hero y el
-texto va encima, del lado libre de cada foto. -->
+<!-- Tres formas según el ancho:
+- Celular: la foto llena el hero y el texto va abajo, encima de ella, sobre
+  un degradado (oscuro en las fotos oscuras, blanco en las claras). El
+  texto está en el flujo normal y el hero tiene alto mínimo, no fijo: si
+  el teléfono tiene la letra agrandada (con <meta name="text-scale"> el
+  sitio entero escala con la fuente del sistema), el hero crece en vez de
+  que el texto se desborde, y la foto lo sigue cubriendo.
+- Tablet: la foto arriba y el texto debajo.
+- Desde lg: la foto es el fondo de todo el hero y el texto va encima, del
+  lado libre de cada foto. -->
 <section
 	aria-roledescription="carrusel"
 	aria-label="Destacados"
-	class="relative isolate overflow-hidden bg-white lg:flex lg:min-h-[calc(100svh-6rem)] lg:items-center lg:bg-transparent lg:px-8 lg:py-20"
+	class="hero-seccion relative isolate flex flex-col justify-end overflow-hidden bg-white md:block lg:flex lg:min-h-[calc(100svh-6rem)] lg:flex-row lg:items-center lg:justify-start lg:bg-transparent lg:px-8 lg:py-20"
 	onmouseenter={() => (heroPausado = true)}
 	onmouseleave={() => (heroPausado = false)}
 	onfocusin={() => (heroPausado = true)}
@@ -597,7 +629,7 @@ texto va encima, del lado libre de cada foto. -->
 	horizontal se encuadra hacia el lado donde están los productos. -->
 	<div
 		aria-hidden="true"
-		class="hero-fotos relative w-full overflow-hidden lg:absolute lg:inset-x-0 lg:-top-34 lg:-z-10"
+		class="hero-fotos w-full overflow-hidden"
 	>
 		{#each slidesHero as slide, indice (slide.imagen)}
 			<div
@@ -620,9 +652,23 @@ texto va encima, del lado libre de cada foto. -->
 					/>
 				</picture>
 
-				<!-- Velo blanco del lado del texto (solo cuando va encima). -->
+				<!-- Celular: degradado desde abajo para que el texto se lea
+				encima de la foto. -->
 				<div
-					class="absolute inset-0 hidden from-white/60 via-white/15 to-transparent to-55% lg:block {slide.lado ===
+					class="absolute inset-0 bg-linear-to-t to-transparent md:hidden {slide.tono ===
+					'oscuro'
+						? 'from-slate-950/80 via-slate-950/35 to-75%'
+						: 'from-white via-white/80 to-70%'}"
+				></div>
+
+				<!-- lg: velo del lado del texto (solo cuando va encima): blanco en
+				las fotos claras y oscuro y suave en las oscuras, para que el
+				texto se lea sin difuminar la foto. -->
+				<div
+					class="absolute inset-0 hidden to-transparent lg:block {slide.tono ===
+					'oscuro'
+						? 'from-slate-950/55 via-slate-950/20 to-60%'
+						: 'from-white/60 via-white/15 to-55%'} {slide.lado ===
 					'derecha'
 						? 'bg-linear-to-l'
 						: 'bg-linear-to-r'}"
@@ -630,16 +676,16 @@ texto va encima, del lado libre de cada foto. -->
 			</div>
 		{/each}
 
-		<!-- Fundido de la foto hacia el bloque de texto de abajo. -->
+		<!-- Tablet: fundido de la foto hacia el bloque de texto de abajo. -->
 		<div
-			class="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-white to-transparent lg:hidden"
+			class="absolute inset-x-0 bottom-0 hidden h-16 bg-linear-to-t from-white to-transparent md:block lg:hidden"
 		></div>
 	</div>
 
 	<!-- El texto de cada diapositiva entra desde su lado, por partes; la
 	anterior y la nueva comparten celda para que no salte el alto. -->
 	<div
-		class="mx-auto grid w-full px-6 pb-20 pt-2 *:[grid-area:1/1] sm:px-10 lg:px-12 lg:pb-0 lg:pt-0 2xl:max-w-[1600px]"
+		class="mx-auto grid w-full px-6 pb-24 pt-40 *:[grid-area:1/1] sm:px-10 md:pb-20 md:pt-2 lg:px-12 lg:pb-0 lg:pt-0 2xl:max-w-[1600px]"
 		aria-live={heroAutomatico && !heroPausado ? "off" : "polite"}
 	>
 		{#key indiceHero}
@@ -662,14 +708,14 @@ texto va encima, del lado libre de cada foto. -->
 				portada y antes no había ningún <h1> en toda la página. -->
 				<h1
 					in:fly={{ x: desplazamiento, duration: 900, delay: 350, easing: cubicOut }}
-					class="font-Manrope my-4 whitespace-pre-line text-5xl leading-none text-slate-600 sm:text-6xl lg:text-6xl xl:text-7xl 2xl:text-8xl"
+					class="font-Manrope my-4 whitespace-pre-line text-5xl leading-none sm:text-6xl lg:text-6xl xl:text-7xl 2xl:text-8xl {claseTituloHero}"
 				>
 					{slideHeroActual.titulo}
 				</h1>
 
 				<p
 					in:fly={{ x: desplazamiento, duration: 900, delay: 470, easing: cubicOut }}
-					class="mt-4 font-Manrope text-base text-slate-600 sm:text-xl lg:mt-5 lg:text-2xl"
+					class="mt-4 font-Manrope text-base sm:text-xl lg:mt-5 lg:text-2xl {claseSubtituloHero}"
 				>
 					{slideHeroActual.subtitulo}
 				</p>
@@ -697,10 +743,9 @@ texto va encima, del lado libre de cada foto. -->
 				class="flex h-6 items-center justify-center px-1"
 			>
 				<span
-					class="block h-2 rounded-full transition-all duration-500 {indice ===
-					indiceHero
-						? 'w-8 bg-slate-600'
-						: 'w-2 bg-slate-600/30 hover:bg-slate-600/60'}"
+					class="block h-2 rounded-full transition-all duration-500 {clasePuntoHero(
+						indice === indiceHero,
+					)}"
 				></span>
 			</button>
 		{/each}
@@ -1333,19 +1378,34 @@ texto va encima, del lado libre de cada foto. -->
 		display: none;
 	}
 
-	/* Alto de las fotos del hero. "vh" va primero como respaldo para
-	   navegadores que no entienden "svh" (Samsung Internet viejo): si
-	   no, ignorarían el alto y las fotos quedarían en 0. */
-	.hero-fotos {
-		height: 50vh;
-		height: 50svh;
-		min-height: 18rem;
+	/* "vh" va primero como respaldo para navegadores que no entienden
+	   "svh" (Samsung Internet viejo): si no, ignorarían el alto. */
+
+	/* Celular: el hero ocupa la pantalla (menos el encabezado) y la foto
+	   lo cubre entero, detrás del texto. Es un alto mínimo: con la letra
+	   agrandada el hero crece y la foto lo sigue cubriendo. */
+	@media (max-width: 767px) {
+		.hero-seccion {
+			min-height: calc(100vh - 5rem);
+			min-height: calc(100svh - 5rem);
+		}
 	}
 
+	.hero-fotos {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+	}
+
+	/* Tablet: la foto es un bloque arriba del texto. */
 	@media (min-width: 768px) {
 		.hero-fotos {
+			position: relative;
+			inset: auto;
+			z-index: auto;
 			height: 56vh;
 			height: 56svh;
+			min-height: 18rem;
 		}
 	}
 
@@ -1353,6 +1413,11 @@ texto va encima, del lado libre de cada foto. -->
 	   encabezado translúcido (8.5rem = encabezado + cinta del cupón). */
 	@media (min-width: 1024px) {
 		.hero-fotos {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: -8.5rem;
+			z-index: -10;
 			height: calc(100% + 8.5rem);
 			min-height: 0;
 		}
