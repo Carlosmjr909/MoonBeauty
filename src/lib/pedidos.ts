@@ -1,5 +1,6 @@
 import {
 	collection,
+	deleteField,
 	doc,
 	increment,
 	onSnapshot,
@@ -17,6 +18,7 @@ import {
 } from 'firebase/storage';
 
 import { db, storage, obtenerAuth } from '$lib/firebase';
+import { calcularPuntos } from '$lib/puntosMoon';
 
 export type MetodoPago =
 	| 'efectivo'
@@ -119,6 +121,8 @@ export type PedidoAdmin = {
 	puntosMoon: number;
 	/** Si esos puntos ya se sumaron al saldo de la clienta. */
 	puntosOtorgados: boolean;
+	/** "reserva_expirada" si se canceló solo porque nadie lo confirmó a tiempo. */
+	motivoCancelacion: string | null;
 };
 
 /**
@@ -144,6 +148,12 @@ export type CrearPedidoInput = {
 	/** Códigos de cupón tal como los escribió el comprador; el servidor
 	 * los valida y calcula el descuento, no se manda ya calculado. */
 	codigosCupones?: string[];
+	/**
+	 * Id de este intento de compra. Se genera una vez y se reutiliza si se
+	 * reintenta: el servidor lo usa para no crear dos pedidos ni descontar
+	 * el stock dos veces (doble clic, reintento tras un corte de red).
+	 */
+	checkoutId?: string;
 };
 
 /**
@@ -196,6 +206,20 @@ export async function asegurarSesion() {
  * podía fabricar un pedido con precios inventados llamando a Firestore
  * manualmente desde el navegador.
  */
+/**
+ * Error al crear un pedido. "codigo" vale "reserva_expirada" o
+ * "pedido_cancelado" cuando el intento de compra apunta a un pedido que
+ * ya no está vigente: el checkout debe empezar un intento nuevo.
+ */
+export class ErrorCrearPedido extends Error {
+	constructor(
+		mensaje: string,
+		readonly codigo: string | null
+	) {
+		super(mensaje);
+	}
+}
+
 export async function crearPedido(
 	input: CrearPedidoInput
 ): Promise<{
@@ -221,7 +245,7 @@ export async function crearPedido(
 	const datos = await respuesta.json();
 
 	if (!respuesta.ok || !datos.ok) {
-		throw new Error(datos.error ?? 'No se pudo crear el pedido.');
+		throw new ErrorCrearPedido(datos.error ?? 'No se pudo crear el pedido.', datos.codigo ?? null);
 	}
 
 	return {
@@ -342,7 +366,8 @@ function normalizarPedido(id: string, datos: Record<string, unknown>): PedidoAdm
 		estado: ESTADOS_VALIDOS.includes(estado) ? estado : 'pendiente_contacto',
 		fechaCreacion,
 		puntosMoon: Number(datos.puntosMoon ?? 0),
-		puntosOtorgados: Boolean(datos.puntosOtorgados)
+		puntosOtorgados: Boolean(datos.puntosOtorgados),
+		motivoCancelacion: datos.motivoCancelacion ? String(datos.motivoCancelacion) : null
 	};
 }
 
@@ -379,20 +404,37 @@ export function escucharPedidos(
 const ESTADOS_CON_PUNTOS: EstadoPedido[] = ['confirmado', 'enviado', 'entregado'];
 
 /**
- * Cambia el estado del pedido. Todo va en una sola transacción:
+ * Cambia el estado del pedido. Todo va en una sola transacción: el estado,
+ * el stock y los puntos se aplican juntos o no se aplica nada, y como la
+ * transacción relee el pedido, cambiar dos veces al mismo estado (o desde
+ * dos pestañas a la vez) no repite ningún efecto.
  *
- * - Al pasar a "confirmado" descuenta el stock de cada producto una sola
- *   vez (protegido por "stockDescontado" para que no se reste dos veces
- *   si el pedido se vuelve a marcar como confirmado más adelante); el
- *   stock nunca baja de 0. Esto es independiente de la edición manual de
- *   stock del panel de inventario, que sigue funcionando igual — ambas
- *   formas escriben el mismo campo, pero por caminos distintos y en
- *   momentos distintos.
- * - Al confirmarse (o pasar directo a enviado/entregado) suma al saldo de
- *   la clienta los puntos Moon Beauty que el servidor calculó al crear el
- *   pedido ("puntosMoon"), una sola vez gracias a "puntosOtorgados". Si
- *   después se cancela, se le restan (sin dejar el saldo en negativo si
- *   ya los había canjeado).
+ * Stock — "stockDescontado" dice si el pedido tiene ahora mismo su stock
+ * apartado:
+ * - Pedidos NUEVOS (reservaEnCheckout: true): el stock se reservó al
+ *   crearlos. Confirmar/enviar/entregar no lo vuelve a descontar. Al
+ *   cancelar se devuelve exactamente lo reservado, una sola vez
+ *   (stockDescontado pasa a false y stockDevuelto a true). Si un pedido
+ *   cancelado se reabre, se vuelve a reservar validando el stock.
+ * - Pedidos LEGACY (creados antes de la reserva, sin reservaEnCheckout):
+ *   como siempre, el stock se descuenta al pasar a "confirmado" si todavía
+ *   no se había descontado, y cancelarlos no lo devuelve.
+ * En ambos casos, si no alcanza el stock el cambio falla con un mensaje
+ * claro y no se modifica nada. Antes se usaba Math.max(0, stock - cantidad),
+ * que dejaba el stock en 0 en silencio y ocultaba ventas de más.
+ *
+ * Vencimiento — al pasar a cualquier estado distinto de
+ * "pendiente_contacto" se borra "reservaExpiraEn", así un pedido ya
+ * gestionado nunca se cancela solo (ver $lib/server/reservas.ts). Si se
+ * reabre un pedido cuya reserva venció, se vuelve a reservar su stock y a
+ * consumir el uso de sus cupones (que se habían liberado), validando que
+ * queden usos; un pedido reabierto no vuelve a vencer.
+ *
+ * Puntos — al confirmarse (o pasar directo a enviado/entregado) se suman
+ * una sola vez ("puntosOtorgados"); al cancelar se restan. Lo que se suma
+ * nunca supera lo que corresponde al total del pedido: un "puntosMoon"
+ * mayor (p. ej. en un pedido viejo escrito desde el navegador cuando las
+ * reglas todavía lo permitían) no da puntos de más.
  */
 export async function actualizarEstadoPedido(
 	id: string,
@@ -409,39 +451,70 @@ export async function actualizarEstadoPedido(
 		const datosPedido = snapPedido.data();
 		const cambios: Record<string, unknown> = { estado };
 
-		/* ---------- Lecturas (Firestore exige leer antes de escribir) ---------- */
+		/* ---------------------------- Qué hacer ---------------------------- */
 
-		const descontarStock =
-			estado === 'confirmado' && !datosPedido.stockDescontado;
+		const reservaEnCheckout = datosPedido.reservaEnCheckout === true;
+		const stockApartado = Boolean(datosPedido.stockDescontado);
 
+		let accionStock: 'descontar' | 'devolver' | null = null;
+		if (reservaEnCheckout) {
+			if (estado === 'cancelado' && stockApartado) accionStock = 'devolver';
+			else if (estado !== 'cancelado' && !stockApartado) accionStock = 'descontar';
+		} else if (estado === 'confirmado' && !stockApartado) {
+			accionStock = 'descontar';
+		}
+
+		const codigosCupones =
+			accionStock === 'descontar' &&
+			reservaEnCheckout &&
+			datosPedido.cuponesLiberados === true &&
+			Array.isArray(datosPedido.cuponesCodigos)
+				? [...new Set((datosPedido.cuponesCodigos as unknown[]).map(String))].filter(
+						(codigo) => codigo && !codigo.includes('/')
+					)
+				: [];
+
+		// Cantidades por producto (un pedido viejo podía repetir líneas).
+		const cantidades = new Map<string, number>();
 		const items = Array.isArray(datosPedido.items) ? datosPedido.items : [];
-
-		const lineas = descontarStock
-			? items.flatMap((item: { id?: string | number; cantidad?: number }) => {
-					const cantidad = Number(item?.cantidad ?? 0);
-					if (item?.id == null || cantidad <= 0) return [];
-					return [{ cantidad, ref: doc(db, 'productos', String(item.id)) }];
-				})
+		for (const item of items as Array<{ id?: string | number; cantidad?: number }>) {
+			const cantidad = Number(item?.cantidad ?? 0);
+			if (item?.id == null || !(cantidad > 0)) continue;
+			cantidades.set(String(item.id), (cantidades.get(String(item.id)) ?? 0) + cantidad);
+		}
+		const lineas = accionStock
+			? [...cantidades].map(([idProducto, cantidad]) => ({
+					idProducto,
+					cantidad,
+					ref: doc(db, 'productos', idProducto)
+				}))
 			: [];
 
-		const snapsProductos = await Promise.all(
-			lineas.map((linea) => transaccion.get(linea.ref))
-		);
-
-		const puntos = Number(datosPedido.puntosMoon ?? 0);
 		const usuarioId = String(datosPedido.usuarioId ?? '');
+		const puntosPedido = Number(datosPedido.puntosMoon ?? 0);
+		const puntosAOtorgar = Math.max(
+			0,
+			Math.min(puntosPedido, calcularPuntos(Number(datosPedido.totalUSD ?? 0)))
+		);
+		const puntosYaOtorgados = Number(datosPedido.puntosOtorgadosCantidad ?? puntosPedido);
 
 		const otorgarPuntos =
 			ESTADOS_CON_PUNTOS.includes(estado) &&
-			puntos > 0 &&
+			puntosAOtorgar > 0 &&
 			usuarioId !== '' &&
 			!datosPedido.puntosOtorgados;
 
 		const revertirPuntos =
 			estado === 'cancelado' &&
-			puntos > 0 &&
+			puntosYaOtorgados > 0 &&
 			usuarioId !== '' &&
 			Boolean(datosPedido.puntosOtorgados);
+
+		/* ---------- Lecturas (Firestore exige leer antes de escribir) ---------- */
+
+		const snapsProductos = await Promise.all(
+			lineas.map((linea) => transaccion.get(linea.ref))
+		);
 
 		const refPuntos = usuarioId ? doc(db, 'puntos', usuarioId) : null;
 		const snapPuntos =
@@ -449,22 +522,88 @@ export async function actualizarEstadoPedido(
 				? await transaccion.get(refPuntos)
 				: null;
 
+		const snapsCupones = await Promise.all(
+			codigosCupones.map((codigo) => transaccion.get(doc(db, 'cupones', codigo)))
+		);
+
+		/* ------------- Validación (antes de cualquier escritura) ------------- */
+
+		const nuevosStocks: Array<{ ref: (typeof lineas)[number]['ref']; stock: number }> = [];
+
+		lineas.forEach((linea, indice) => {
+			const snapProducto = snapsProductos[indice];
+
+			if (!snapProducto.exists()) {
+				// Un pedido legacy puede tener un producto que ya se borró del
+				// catálogo: no hay stock que mover (como antes). En un pedido
+				// nuevo que se reabre, faltar el producto es un error.
+				if (accionStock === 'descontar' && reservaEnCheckout) {
+					throw new Error(
+						`El producto "${linea.idProducto}" ya no existe en el inventario: no se puede reservar este pedido.`
+					);
+				}
+				return;
+			}
+
+			const stockActual = Number(snapProducto.data()?.stock ?? 0);
+
+			if (accionStock === 'devolver') {
+				nuevosStocks.push({ ref: linea.ref, stock: stockActual + linea.cantidad });
+				return;
+			}
+
+			if (stockActual < linea.cantidad) {
+				const nombre = String(snapProducto.data()?.Nombre ?? linea.idProducto);
+				throw new Error(
+					`No hay stock suficiente de "${nombre}": quedan ${stockActual} y el pedido necesita ${linea.cantidad}. ` +
+						'Ajusta el inventario antes de cambiar el estado; no se modificó nada.'
+				);
+			}
+
+			nuevosStocks.push({ ref: linea.ref, stock: stockActual - linea.cantidad });
+		});
+
+		const usosCupones: Array<{ ref: (typeof snapsCupones)[number]['ref']; usos: number }> = [];
+
+		snapsCupones.forEach((snapCupon, indice) => {
+			if (!snapCupon.exists()) return;
+			const usos = Number(snapCupon.data()?.usos ?? 0);
+			const limite = snapCupon.data()?.limiteUsos;
+			if (limite !== null && limite !== undefined && usos >= Number(limite)) {
+				throw new Error(
+					`El cupón "${codigosCupones[indice]}" de este pedido ya no tiene usos disponibles ` +
+						'(se liberó cuando venció la reserva). Ajusta el cupón antes de reabrir el pedido; no se modificó nada.'
+				);
+			}
+			usosCupones.push({ ref: snapCupon.ref, usos: usos + 1 });
+		});
+
 		/* ------------------------------ Escrituras ----------------------------- */
 
-		if (descontarStock) {
-			lineas.forEach((linea, indice) => {
-				const snapProducto = snapsProductos[indice];
-				// El producto pudo haberse eliminado del catálogo desde que se
-				// hizo el pedido; en ese caso no hay stock que descontar.
-				if (!snapProducto.exists()) return;
+		for (const { ref, stock } of nuevosStocks) {
+			transaccion.update(ref, { stock });
+		}
 
-				const stockActual = Number(snapProducto.data()?.stock ?? 0);
-				const nuevoStock = Math.max(0, stockActual - linea.cantidad);
+		for (const { ref, usos } of usosCupones) {
+			transaccion.update(ref, { usos });
+		}
+		if (codigosCupones.length > 0) cambios.cuponesLiberados = false;
 
-				transaccion.update(linea.ref, { stock: nuevoStock });
-			});
+		// Un pedido gestionado ya no vence; uno reabierto deja de figurar
+		// como cancelado por vencimiento.
+		if (estado !== 'pendiente_contacto' && datosPedido.reservaExpiraEn !== undefined) {
+			cambios.reservaExpiraEn = deleteField();
+		}
+		if (estado !== 'cancelado' && datosPedido.motivoCancelacion !== undefined) {
+			cambios.motivoCancelacion = deleteField();
+		}
 
+		if (accionStock === 'descontar') {
 			cambios.stockDescontado = true;
+			if (reservaEnCheckout) cambios.stockDevuelto = false;
+		} else if (accionStock === 'devolver') {
+			cambios.stockDescontado = false;
+			cambios.stockDevuelto = true;
 		}
 
 		if (refPuntos && snapPuntos && (otorgarPuntos || revertirPuntos)) {
@@ -473,13 +612,15 @@ export async function actualizarEstadoPedido(
 
 			// Al revertir no se baja de 0: si la clienta ya canjeó esos
 			// puntos, el cupón que creó sigue siendo suyo.
-			const variacion = otorgarPuntos ? puntos : -Math.min(puntos, saldo);
+			const variacion = otorgarPuntos
+				? puntosAOtorgar
+				: -Math.min(puntosYaOtorgados, saldo);
 
 			transaccion.set(
 				refPuntos,
 				{
 					saldo: saldo + variacion,
-					...(otorgarPuntos ? { ganados: increment(puntos) } : {}),
+					...(otorgarPuntos ? { ganados: increment(puntosAOtorgar) } : {}),
 					actualizadoEn: serverTimestamp()
 				},
 				{ merge: true }
@@ -496,6 +637,7 @@ export async function actualizarEstadoPedido(
 			});
 
 			cambios.puntosOtorgados = otorgarPuntos;
+			if (otorgarPuntos) cambios.puntosOtorgadosCantidad = puntosAOtorgar;
 		}
 
 		transaccion.update(refPedido, cambios);

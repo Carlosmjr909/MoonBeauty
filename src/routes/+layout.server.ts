@@ -1,4 +1,6 @@
+import { waitUntil } from '@vercel/functions';
 import type { LayoutServerLoad } from './$types';
+import { barrerReservasVencidas } from '$lib/server/barridoReservas';
 import {
 	obtenerCategoriasPublicasConCache,
 	obtenerConfiguracionSitioConCache,
@@ -37,6 +39,11 @@ async function cargarTasaBCV(
 }
 
 export const load: LayoutServerLoad = async ({ fetch, setHeaders }) => {
+	// Libera en segundo plano el stock de las reservas vencidas (como mucho
+	// una vez por minuto por instancia). No demora la página ni puede
+	// romperla: ver $lib/server/barridoReservas.ts.
+	waitUntil(barrerReservasVencidas());
+
 	const [datosTasaBCV, productos, categorias, configuracion] =
 		await Promise.all([
 			cargarTasaBCV(fetch, setHeaders),

@@ -1,7 +1,11 @@
 import { json } from '@sveltejs/kit';
-import { FieldValue } from 'firebase-admin/firestore';
+import { createHash } from 'node:crypto';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
+import { env } from '$env/dynamic/private';
 import { adminAuth, adminDb } from '$lib/server/firebase-admin';
+import { barrerReservasVencidas } from '$lib/server/barridoReservas';
+import { expirarReservaPedido, minutosReserva, reservaVencida } from '$lib/server/reservas';
 import { calcularPuntos } from '$lib/puntosMoon';
 import type { RequestHandler } from './$types';
 
@@ -14,6 +18,17 @@ import type { RequestHandler } from './$types';
  * directo desde el cliente con el precio/total que el propio navegador
  * calculaba, así que cualquiera podía fabricar un pedido con precios
  * inventados con solo llamar a Firestore manualmente desde la consola.
+ *
+ * Auditoría de concurrencia: el stock se reserva aquí mismo. Leer los
+ * productos del carrito, validar el stock, descontarlo, consumir los
+ * cupones y crear el pedido ocurren en UNA transacción: o se aplica todo
+ * o no se aplica nada. Antes el stock solo se validaba (sin reservarlo) y
+ * se descontaba recién al confirmar, así que se aceptaban más pedidos
+ * que unidades disponibles. El pedido queda con reservaEnCheckout: true.
+ *
+ * La reserva dura RESERVA_STOCK_MINUTOS (45 por defecto): si para entonces
+ * el pedido sigue pendiente, se cancela solo y devuelve el stock (ver
+ * $lib/server/reservas.ts).
  */
 
 type MetodoPago = 'efectivo' | 'pago_movil' | 'binance' | 'zelle' | 'zinli';
@@ -66,12 +81,21 @@ type SolicitudPedido = {
 	comprobantePago?: ComprobantePago;
 	items: ItemSolicitado[];
 	codigosCupones?: string[];
+	/** Id del intento de compra, para que un reintento no duplique el pedido. */
+	checkoutId?: string;
 };
 
 const MAXIMO_CUPONES = 2;
 
-/** Error que se le muestra tal cual al comprador. */
-class ErrorPedido extends Error {}
+/** Error que se le muestra tal cual al comprador, con su código HTTP. */
+class ErrorPedido extends Error {
+	constructor(
+		mensaje: string,
+		readonly estado: number
+	) {
+		super(mensaje);
+	}
+}
 
 function normalizarCodigoCupon(codigo: string): string {
 	return codigo.trim().toUpperCase().replace(/\s+/g, '');
@@ -117,6 +141,24 @@ async function verificarUsuario(
 	}
 }
 
+/**
+ * El checkoutId lo genera el navegador una vez por intento de compra y lo
+ * reutiliza si reintenta. Se valida el formato y nunca se usa tal cual:
+ * el id del pedido sale de un hash de (uid + checkoutId), así que el
+ * mismo checkoutId de otra cuenta da otro pedido y nadie puede elegir ni
+ * adivinar el id de un pedido ajeno.
+ */
+const FORMATO_CHECKOUT_ID = /^[A-Za-z0-9_-]{16,80}$/;
+const MAXIMO_LINEAS = 50;
+
+function idPedidoIdempotente(uid: string, checkoutId: string): string {
+	return 'ck_' + createHash('sha256').update(`${uid}:${checkoutId}`).digest('hex').slice(0, 40);
+}
+
+type ResultadoTransaccion =
+	| { repetido: true; datos: FirebaseFirestore.DocumentData }
+	| { repetido: false; numeroPedido: string; totalUSD: number; totalVES: number };
+
 export const POST: RequestHandler = async ({ request }) => {
 	const sesion = await verificarUsuario(request);
 
@@ -141,181 +183,104 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ ok: false, error: 'Método de pago no válido.' }, { status: 400 });
 	}
 
-	// Se piden todos los productos reales de una vez (el catálogo es chico);
-	// evita N idas y vueltas a Firestore por cada línea del carrito.
-	const productosSnap = await adminDb.collection('productos').get();
-	const productosPorId = new Map<string, FirebaseFirestore.DocumentData>();
-	for (const doc of productosSnap.docs) {
-		productosPorId.set(doc.id, doc.data());
-	}
-
 	// Se acumulan por id: si el navegador manda la misma línea repetida,
 	// cuenta como una sola cantidad total, no como pedidos duplicados.
 	const cantidadPorId = new Map<string, number>();
 	for (const item of solicitud.items) {
 		const id = String(item?.id ?? '').trim();
 		const cantidad = Math.floor(Number(item?.cantidad ?? 0));
-		if (!id || !Number.isFinite(cantidad) || cantidad <= 0) {
+		if (!id || id.includes('/') || !Number.isFinite(cantidad) || cantidad <= 0) {
 			return json({ ok: false, error: 'Hay un producto con cantidad inválida.' }, { status: 400 });
 		}
 		cantidadPorId.set(id, (cantidadPorId.get(id) ?? 0) + cantidad);
 	}
 
-	const itemsFinales: Array<{
-		id: string;
-		nombre: string;
-		tipo: string;
-		imagen: string;
-		precioUSD: number;
-		cantidad: number;
-		subtotalUSD: number;
-	}> = [];
-
-	let subtotalUSD = 0;
-
-	for (const [id, cantidad] of cantidadPorId) {
-		const producto = productosPorId.get(id);
-
-		if (!producto) {
-			return json(
-				{ ok: false, error: `Uno de los productos de tu carrito ya no está disponible (id ${id}).` },
-				{ status: 400 }
-			);
-		}
-
-		const stock = Number(producto.stock ?? 0);
-		if (cantidad > stock) {
-			return json(
-				{
-					ok: false,
-					error: `Solo quedan ${stock} unidades de "${producto.Nombre ?? id}". Ajusta la cantidad en tu carrito.`
-				},
-				{ status: 409 }
-			);
-		}
-
-		const precioUSD = Number(producto.precio ?? 0);
-		const subtotalLinea = Math.round(precioUSD * cantidad * 100) / 100;
-		subtotalUSD += subtotalLinea;
-
-		itemsFinales.push({
-			id,
-			nombre: String(producto.Nombre ?? ''),
-			tipo: String(producto.Tipo ?? ''),
-			imagen: String(producto.imagen ?? ''),
-			precioUSD,
-			cantidad,
-			subtotalUSD: subtotalLinea
-		});
+	if (cantidadPorId.size > MAXIMO_LINEAS) {
+		return json({ ok: false, error: 'El carrito tiene demasiados productos distintos.' }, { status: 400 });
 	}
 
-	subtotalUSD = Math.round(subtotalUSD * 100) / 100;
-
-	// Cupones: se validan de nuevo contra el documento real, con la misma
-	// lógica que ya aplican las reglas de Firestore para el contador de
-	// usos — pero acá además se verifica que exista, esté vigente y
-	// aplique al método de pago, algo que las reglas por sí solas no
-	// pueden validar completo.
 	const codigosPedidos = [
 		...new Set(
 			(solicitud.codigosCupones ?? [])
 				.map((codigo) => normalizarCodigoCupon(String(codigo ?? '')))
-				.filter(Boolean)
+				.filter((codigo) => codigo && !codigo.includes('/'))
 		)
 	].slice(0, MAXIMO_CUPONES);
 
-	type CuponValidado = {
-		ref: FirebaseFirestore.DocumentReference;
-		codigo: string;
-		tipo: string;
-		valor: number;
-		combinable: boolean;
-		usosActuales: number;
-		limiteUsos: number | null;
+	// Idempotencia: con checkoutId el pedido tiene un id fijo para esta
+	// cuenta y este intento de compra. Sin checkoutId (una pestaña con el
+	// código anterior) se crea con un id nuevo, como antes.
+	const checkoutId = solicitud.checkoutId === undefined ? null : String(solicitud.checkoutId);
+	if (checkoutId !== null && !FORMATO_CHECKOUT_ID.test(checkoutId)) {
+		return json({ ok: false, error: 'Identificador de compra inválido.' }, { status: 400 });
+	}
+
+	const refPedido = checkoutId
+		? adminDb.collection('pedidos').doc(idPedidoIdempotente(uid, checkoutId))
+		: adminDb.collection('pedidos').doc();
+
+	const respuestaRepetida = (datos: FirebaseFirestore.DocumentData) => {
+		// Un reintento nunca reactiva un pedido que ya no está vigente: se
+		// avisa con un código para que el checkout empiece un intento nuevo
+		// (otro checkoutId) si la clienta quiere comprar otra vez.
+		const vencido = datos.motivoCancelacion === 'reserva_expirada' || reservaVencida(datos);
+		if (vencido || datos.estado === 'cancelado') {
+			const numero = String(datos.numeroPedido ?? '');
+			return json(
+				{
+					ok: false,
+					codigo: vencido ? 'reserva_expirada' : 'pedido_cancelado',
+					id: refPedido.id,
+					numeroPedido: numero,
+					error: vencido
+						? `La reserva de tu pedido ${numero} venció y los productos se liberaron. Vuelve a confirmar para hacer un pedido nuevo.`
+						: `El pedido ${numero} fue cancelado. Vuelve a confirmar para hacer un pedido nuevo.`
+				},
+				{ status: 409 }
+			);
+		}
+		return json({
+			ok: true,
+			id: refPedido.id,
+			numeroPedido: String(datos.numeroPedido ?? ''),
+			totalUSD: Number(datos.totalUSD ?? 0),
+			totalVES: Number(datos.totalVES ?? 0),
+			tasaBCV: Number(datos.tasaBCV ?? 0),
+			repetido: true
+		});
 	};
 
-	const cuponesValidados: CuponValidado[] = [];
-
-	for (const codigo of codigosPedidos) {
-		const ref = adminDb.collection('cupones').doc(codigo);
-		const snap = await ref.get();
-
-		if (!snap.exists) {
-			return json({ ok: false, error: `El cupón "${codigo}" no existe.` }, { status: 400 });
-		}
-
-		const datos = snap.data()!;
-
-		if (!datos.activo) {
-			return json({ ok: false, error: `El cupón "${codigo}" ya no está disponible.` }, { status: 400 });
-		}
-
-		const vencimiento = datos.fechaVencimiento;
-		const vencimientoMs =
-			vencimiento && typeof vencimiento.toMillis === 'function' ? vencimiento.toMillis() : null;
-
-		if (vencimientoMs && Date.now() > vencimientoMs) {
-			return json({ ok: false, error: `El cupón "${codigo}" ya venció.` }, { status: 400 });
-		}
-
-		const limiteUsos = datos.limiteUsos === null || datos.limiteUsos === undefined ? null : Number(datos.limiteUsos);
-		const usosActuales = Number(datos.usos ?? 0);
-
-		if (limiteUsos !== null && usosActuales >= limiteUsos) {
-			return json({ ok: false, error: `El cupón "${codigo}" ya alcanzó su límite de usos.` }, { status: 400 });
-		}
-
-		// Los cupones canjeados con puntos Moon Beauty son personales: solo
-		// los puede usar la cuenta que los canjeó.
-		if (datos.usuarioId && datos.usuarioId !== uid) {
-			return json(
-				{ ok: false, error: `El cupón "${codigo}" es personal y pertenece a otra cuenta.` },
-				{ status: 400 }
-			);
-		}
-
-		const metodosPago = Array.isArray(datos.metodosPago) ? datos.metodosPago : [];
-		if (!metodosPago.includes(solicitud.metodoPago)) {
-			return json(
-				{ ok: false, error: `El cupón "${codigo}" no aplica para el método de pago elegido.` },
-				{ status: 400 }
-			);
-		}
-
-		cuponesValidados.push({
-			ref,
-			codigo,
-			tipo: datos.tipo === 'monto' ? 'monto' : 'porcentaje',
-			valor: Number(datos.valor ?? 0),
-			combinable: Boolean(datos.combinable ?? false),
-			usosActuales,
-			limiteUsos
-		});
-	}
-
-	if (cuponesValidados.length === 2) {
-		const [a, b] = cuponesValidados;
-		if (!a.combinable && !b.combinable) {
-			return json(
-				{ ok: false, error: `Los cupones "${a.codigo}" y "${b.codigo}" no se pueden combinar.` },
-				{ status: 400 }
-			);
+	// Atajo para un reintento de un pedido que ya se creó: responde lo
+	// mismo sin volver a consultar la tasa (que podría estar caída). La
+	// comprobación que de verdad cuenta es la de dentro de la transacción.
+	if (checkoutId) {
+		const existente = await refPedido.get();
+		if (existente.exists) {
+			if (existente.data()?.usuarioId !== uid) {
+				return json({ ok: false, error: 'Identificador de compra inválido.' }, { status: 409 });
+			}
+			// Si su reserva venció y todavía no la procesó ningún barrido,
+			// se vence ahora mismo, así el stock se libera ya.
+			if (reservaVencida(existente.data()!)) {
+				try {
+					await expirarReservaPedido(adminDb, refPedido.id);
+					const actual = await refPedido.get();
+					return respuestaRepetida(actual.data() ?? existente.data()!);
+				} catch (err) {
+					console.error('[reservas] No se pudo vencer la reserva en un reintento:', err);
+				}
+			}
+			return respuestaRepetida(existente.data()!);
 		}
 	}
 
-	const descuentoUSD = Math.round(
-		Math.min(
-			cuponesValidados.reduce((suma, cupon) => {
-				const descuentoCupon =
-					cupon.tipo === 'porcentaje' ? subtotalUSD * (cupon.valor / 100) : cupon.valor;
-				return suma + Math.max(0, Math.min(descuentoCupon, subtotalUSD));
-			}, 0),
-			subtotalUSD
-		) * 100
-	) / 100;
+	// Antes de reservar, libera las reservas que ya vencieron (como mucho
+	// una vez por minuto en esta instancia; nunca falla el pedido).
+	await barrerReservasVencidas();
+	const minutosDeReserva = minutosReserva(env.RESERVA_STOCK_MINUTOS);
 
-	const totalUSD = Math.round((subtotalUSD - descuentoUSD) * 100) / 100;
-
+	// La tasa se consulta antes de la transacción: una llamada de red
+	// dentro de ella se repetiría en cada reintento por contención.
 	let tasaBCV: number;
 	try {
 		tasaBCV = await obtenerTasaBCV();
@@ -327,54 +292,174 @@ export const POST: RequestHandler = async ({ request }) => {
 		);
 	}
 
-	const totalVES = Math.round(totalUSD * tasaBCV * 100) / 100;
+	const idsProductos = [...cantidadPorId.keys()];
+	const refsProductos = idsProductos.map((id) => adminDb.collection('productos').doc(id));
+	const refsCupones = codigosPedidos.map((codigo) => adminDb.collection('cupones').doc(codigo));
 
-	// Puntos Moon Beauty que da esta compra. Se calculan aquí, con el
-	// total real, pero se suman al saldo recién cuando el pedido se
-	// confirma desde el panel (ver actualizarEstadoPedido). Las compras
-	// como invitado (sesión anónima) no acumulan puntos.
-	const puntosMoon = sesion.anonimo ? 0 : calcularPuntos(totalUSD);
-
-	const fecha = new Date().toISOString().slice(0, 10).replaceAll('-', '');
-	const codigoPedido = crypto.randomUUID().replaceAll('-', '').slice(0, 6).toUpperCase();
-	const numeroPedido = `MB-${fecha}-${codigoPedido}`;
-
-	// Todo lo que puede chocar con otra compra simultánea (el límite de un
-	// cupón) se re-verifica y se escribe dentro de la misma transacción:
-	// si dos personas usan el último cupo del mismo cupón al mismo tiempo,
-	// solo una de las dos transacciones puede ganar.
-	const refPedido = adminDb.collection('pedidos').doc();
+	let resultado: ResultadoTransaccion;
 
 	try {
-		await adminDb.runTransaction(async (transaccion) => {
+		// Una sola transacción para todo lo que puede chocar con otra compra
+		// simultánea: leer el stock de los productos del carrito, validarlo,
+		// descontarlo, consumir los cupones y crear el pedido. Se aplica
+		// completa o no se aplica nada; si otra compra cambió el stock o un
+		// cupón entre medio, Firestore la reintenta con los datos nuevos.
+		resultado = await adminDb.runTransaction(async (transaccion): Promise<ResultadoTransaccion> => {
 			// Firestore exige hacer todas las lecturas antes de cualquier
-			// escritura. Antes se leía y se actualizaba cada cupón dentro del
-			// mismo ciclo, así que un pedido con dos cupones fallaba siempre
-			// al leer el segundo.
-			const snapsCupones = await Promise.all(
-				cuponesValidados.map((cupon) => transaccion.get(cupon.ref))
-			);
+			// escritura: el pedido (idempotencia), los productos del carrito
+			// (no todo el catálogo) y los cupones, en una sola ida.
+			const [snapPedido, ...snaps] = await transaccion.getAll(refPedido, ...refsProductos, ...refsCupones);
+			const snapsProductos = snaps.slice(0, refsProductos.length);
+			const snapsCupones = snaps.slice(refsProductos.length);
 
-			cuponesValidados.forEach((cupon, indice) => {
-				const datosActuales = snapsCupones[indice].data() ?? {};
-				const usosActuales = Number(datosActuales.usos ?? 0);
-				const limiteActual =
-					datosActuales.limiteUsos === null || datosActuales.limiteUsos === undefined
-						? null
-						: Number(datosActuales.limiteUsos);
-
-				if (limiteActual !== null && usosActuales >= limiteActual) {
-					throw new ErrorPedido(`El cupón "${cupon.codigo}" se agotó justo ahora. Intenta sin ese código.`);
+			if (snapPedido.exists) {
+				if (snapPedido.data()?.usuarioId !== uid) {
+					throw new ErrorPedido('Identificador de compra inválido.', 409);
 				}
+				return { repetido: true, datos: snapPedido.data()! };
+			}
+
+			/* --------------------- Productos y stock --------------------- */
+
+			const itemsFinales: Array<{
+				id: string;
+				nombre: string;
+				tipo: string;
+				imagen: string;
+				precioUSD: number;
+				cantidad: number;
+				subtotalUSD: number;
+			}> = [];
+			const nuevosStocks: Array<{ ref: FirebaseFirestore.DocumentReference; stock: number }> = [];
+			let subtotalUSD = 0;
+
+			idsProductos.forEach((id, indice) => {
+				const snap = snapsProductos[indice];
+				const cantidad = cantidadPorId.get(id)!;
+
+				if (!snap.exists) {
+					throw new ErrorPedido(`Uno de los productos de tu carrito ya no está disponible (id ${id}).`, 400);
+				}
+
+				const producto = snap.data()!;
+				const stock = Number(producto.stock ?? 0);
+
+				if (!Number.isFinite(stock) || cantidad > stock) {
+					throw new ErrorPedido(
+						`Solo quedan ${Math.max(0, stock)} unidades de "${producto.Nombre ?? id}". Ajusta la cantidad en tu carrito.`,
+						409
+					);
+				}
+
+				const precioUSD = Number(producto.precio ?? 0);
+				const subtotalLinea = Math.round(precioUSD * cantidad * 100) / 100;
+				subtotalUSD += subtotalLinea;
+
+				itemsFinales.push({
+					id,
+					nombre: String(producto.Nombre ?? ''),
+					tipo: String(producto.Tipo ?? ''),
+					imagen: String(producto.imagen ?? ''),
+					precioUSD,
+					cantidad,
+					subtotalUSD: subtotalLinea
+				});
+				nuevosStocks.push({ ref: snap.ref, stock: stock - cantidad });
 			});
 
-			for (const cupon of cuponesValidados) {
+			subtotalUSD = Math.round(subtotalUSD * 100) / 100;
+
+			/* -------------------------- Cupones -------------------------- */
+
+			// Se validan con los datos leídos en esta misma transacción: el
+			// uso del cupón se cuenta junto con el pedido, nunca uno sin el
+			// otro.
+			const cupones = codigosPedidos.map((codigo, indice) => {
+				const snap = snapsCupones[indice];
+				if (!snap.exists) throw new ErrorPedido(`El cupón "${codigo}" no existe.`, 400);
+
+				const datos = snap.data()!;
+				if (!datos.activo) throw new ErrorPedido(`El cupón "${codigo}" ya no está disponible.`, 400);
+
+				const vencimiento = datos.fechaVencimiento;
+				const vencimientoMs =
+					vencimiento && typeof vencimiento.toMillis === 'function' ? vencimiento.toMillis() : null;
+				if (vencimientoMs && Date.now() > vencimientoMs) {
+					throw new ErrorPedido(`El cupón "${codigo}" ya venció.`, 400);
+				}
+
+				const limiteUsos =
+					datos.limiteUsos === null || datos.limiteUsos === undefined ? null : Number(datos.limiteUsos);
+				if (limiteUsos !== null && Number(datos.usos ?? 0) >= limiteUsos) {
+					throw new ErrorPedido(`El cupón "${codigo}" ya alcanzó su límite de usos.`, 409);
+				}
+
+				// Los cupones canjeados con puntos Moon Beauty son personales:
+				// solo los puede usar la cuenta que los canjeó.
+				if (datos.usuarioId && datos.usuarioId !== uid) {
+					throw new ErrorPedido(`El cupón "${codigo}" es personal y pertenece a otra cuenta.`, 400);
+				}
+
+				const metodosPago = Array.isArray(datos.metodosPago) ? datos.metodosPago : [];
+				if (!metodosPago.includes(solicitud.metodoPago)) {
+					throw new ErrorPedido(`El cupón "${codigo}" no aplica para el método de pago elegido.`, 400);
+				}
+
+				return {
+					ref: snap.ref,
+					codigo,
+					tipo: datos.tipo === 'monto' ? 'monto' : 'porcentaje',
+					valor: Number(datos.valor ?? 0),
+					combinable: Boolean(datos.combinable ?? false)
+				};
+			});
+
+			if (cupones.length === 2 && !cupones[0].combinable && !cupones[1].combinable) {
+				throw new ErrorPedido(
+					`Los cupones "${cupones[0].codigo}" y "${cupones[1].codigo}" no se pueden combinar.`,
+					400
+				);
+			}
+
+			const descuentoUSD = Math.round(
+				Math.min(
+					cupones.reduce((suma, cupon) => {
+						const descuentoCupon =
+							cupon.tipo === 'porcentaje' ? subtotalUSD * (cupon.valor / 100) : cupon.valor;
+						return suma + Math.max(0, Math.min(descuentoCupon, subtotalUSD));
+					}, 0),
+					subtotalUSD
+				) * 100
+			) / 100;
+
+			const totalUSD = Math.round((subtotalUSD - descuentoUSD) * 100) / 100;
+			const totalVES = Math.round(totalUSD * tasaBCV * 100) / 100;
+
+			// Puntos Moon Beauty que da esta compra, calculados con el total
+			// real. Se suman al saldo cuando el pedido se confirma (ver
+			// actualizarEstadoPedido). Las compras como invitado no acumulan.
+			const puntosMoon = sesion.anonimo ? 0 : calcularPuntos(totalUSD);
+
+			const fecha = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+			const codigoPedido = crypto.randomUUID().replaceAll('-', '').slice(0, 6).toUpperCase();
+			const numeroPedido = `MB-${fecha}-${codigoPedido}`;
+
+			/* ------------------------- Escrituras ------------------------- */
+
+			for (const { ref, stock } of nuevosStocks) {
+				transaccion.update(ref, { stock });
+			}
+
+			for (const cupon of cupones) {
 				transaccion.update(cupon.ref, { usos: FieldValue.increment(1) });
 			}
 
-			transaccion.set(refPedido, {
+			// create (no set): si otra solicitud con el mismo checkoutId ganó
+			// la carrera, esta falla y al reintentarse ve el pedido existente.
+			transaccion.create(refPedido, {
 				numeroPedido,
 				usuarioId: uid,
+				checkoutId,
 				contacto: {
 					nombre: solicitud.contacto.nombre.trim(),
 					correo: solicitud.contacto.correo?.trim() ?? '',
@@ -390,31 +475,46 @@ export const POST: RequestHandler = async ({ request }) => {
 				},
 				items: itemsFinales,
 				subtotalUSD,
-				cupon: cuponesValidados.length > 0 ? cuponesValidados.map((c) => c.codigo).join(' + ') : null,
+				cupon: cupones.length > 0 ? cupones.map((c) => c.codigo).join(' + ') : null,
+				// Para devolver el uso de los cupones si la reserva vence.
+				cuponesCodigos: cupones.map((c) => c.codigo),
 				descuentoUSD,
 				totalUSD,
 				tasaBCV,
 				totalVES,
 				estado: 'pendiente_contacto',
-				stockDescontado: false,
+				// El stock de este pedido ya está apartado desde ahora (ver
+				// actualizarEstadoPedido para confirmar/cancelar).
+				reservaEnCheckout: true,
+				stockDescontado: true,
+				stockDevuelto: false,
+				// Hasta cuándo se aparta el stock si nadie confirma el pedido
+				// (reloj del servidor; el navegador no lo puede cambiar).
+				reservaExpiraEn: Timestamp.fromMillis(Date.now() + minutosDeReserva * 60_000),
 				puntosMoon,
 				puntosOtorgados: false,
 				fechaCreacion: FieldValue.serverTimestamp()
 			});
+
+			return { repetido: false, numeroPedido, totalUSD, totalVES };
 		});
 	} catch (err) {
 		if (err instanceof ErrorPedido) {
-			return json({ ok: false, error: err.message }, { status: 409 });
+			return json({ ok: false, error: err.message }, { status: err.estado });
 		}
 		throw err;
+	}
+
+	if (resultado.repetido) {
+		return respuestaRepetida(resultado.datos);
 	}
 
 	return json({
 		ok: true,
 		id: refPedido.id,
-		numeroPedido,
-		totalUSD,
-		totalVES,
+		numeroPedido: resultado.numeroPedido,
+		totalUSD: resultado.totalUSD,
+		totalVES: resultado.totalVES,
 		tasaBCV
 	});
 };

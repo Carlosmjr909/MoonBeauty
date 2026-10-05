@@ -19,6 +19,7 @@
 	import {
 		asegurarSesion,
 		crearPedido,
+		ErrorCrearPedido,
 		subirComprobantePago,
 		type EmpresaEnvio,
 		type MetodoPago,
@@ -312,6 +313,11 @@
 	let inputComprobante = $state<HTMLInputElement | null>(null);
 
 	let procesando = $state(false);
+	// Id de este intento de compra: se crea una vez y se reutiliza si la
+	// persona reintenta (error de red, doble clic), para que el servidor
+	// no cree dos pedidos ni descuente el stock dos veces. Se descarta
+	// cuando el pedido se crea bien.
+	let checkoutId: string | null = null;
 	let error = $state('');
 	let numeroPedido = $state('');
 
@@ -683,10 +689,12 @@ const resultado = await crearPedido({
 	metodoPago,
 	comprobantePago: comprobanteFinal,
 	items,
-	codigosCupones
+	codigosCupones,
+	checkoutId: (checkoutId ??= crypto.randomUUID())
 });
 
 numeroPedido = resultado.numeroPedido;
+checkoutId = null;
 
 try {
 	// El servidor vuelve a leer el pedido completo de Firestore con el
@@ -732,6 +740,14 @@ try {
 carrito.vaciar();
 
 		} catch (e) {
+			// El pedido de este intento venció o se canceló: el próximo
+			// envío es una compra nueva, con otro checkoutId.
+			if (
+				e instanceof ErrorCrearPedido &&
+				(e.codigo === 'reserva_expirada' || e.codigo === 'pedido_cancelado')
+			) {
+				checkoutId = null;
+			}
 			error =
 				e instanceof Error
 					? e.message

@@ -316,6 +316,12 @@
 							{/each}
 						</select>
 
+						{#if pedido.estado === "cancelado" && pedido.motivoCancelacion === "reserva_expirada"}
+							<span class="text-xs text-slate-500">
+								Se canceló solo: nadie lo confirmó a tiempo y el stock volvió al inventario.
+							</span>
+						{/if}
+
 						{#if whatsapp}
 							<a
 								href={whatsapp}

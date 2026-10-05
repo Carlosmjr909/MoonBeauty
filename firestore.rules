@@ -27,10 +27,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Pedidos: un usuario crea/lee los suyos; los admins leen todos.
+    // Pedidos: SOLO los crea el servidor (POST /api/enviar-pedido/
+    // crear-pedido, con el Admin SDK, que no pasa por estas reglas), dentro
+    // de la transacción que valida precios, reserva el stock y consume los
+    // cupones. Antes cualquier usuario podía crear un pedido propio desde
+    // el navegador con precios, total o puntosMoon inventados (auditoría de
+    // concurrencia). Nadie lo crea desde el cliente, ni siquiera un admin.
+    // La compradora solo lee los suyos; el admin lee todos y cambia el
+    // estado desde el panel.
     match /pedidos/{pedidoId} {
-      allow create: if request.auth != null &&
-        request.resource.data.usuarioId == request.auth.uid;
+      allow create: if false;
       allow read: if request.auth != null &&
         (resource.data.usuarioId == request.auth.uid || esAdmin());
       allow update, delete: if esAdmin();

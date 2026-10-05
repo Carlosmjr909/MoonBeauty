@@ -135,11 +135,41 @@ describe('admins — roles y escalada de privilegios', () => {
 });
 
 describe('pedidos — propiedad y privacidad', () => {
-	it('un usuario autenticado SÍ puede crear un pedido propio', async () => {
+	// Los pedidos solo los crea el servidor (crear-pedido, Admin SDK), en la
+	// transacción que valida precios y reserva el stock. Crear uno directo
+	// desde el cliente permitía precios, total o puntosMoon inventados.
+	it('un usuario autenticado NO puede crear directamente un pedido propio', async () => {
 		const db = testEnv.authenticatedContext('bob-uid').firestore();
-		await assertSucceeds(
+		await assertFails(
 			db.collection('pedidos').add({ usuarioId: 'bob-uid', totalUSD: 10 })
 		);
+	});
+
+	it('NO se puede crear un pedido con id elegido, ni con puntos o precios inventados', async () => {
+		const db = testEnv.authenticatedContext('bob-uid').firestore();
+		await assertFails(
+			db.collection('pedidos').doc('ck_inventado').set({
+				usuarioId: 'bob-uid',
+				totalUSD: 0.01,
+				puntosMoon: 99999,
+				reservaEnCheckout: true,
+				stockDescontado: true,
+				estado: 'confirmado',
+				items: [{ id: 'producto-1', cantidad: 1, precioUSD: 0.01 }]
+			})
+		);
+	});
+
+	it('ni siquiera un admin crea pedidos desde el cliente', async () => {
+		const db = testEnv.authenticatedContext('admin-uid').firestore();
+		await assertFails(
+			db.collection('pedidos').add({ usuarioId: 'admin-uid', totalUSD: 10 })
+		);
+	});
+
+	it('sin sesión tampoco se puede crear un pedido', async () => {
+		const db = testEnv.unauthenticatedContext().firestore();
+		await assertFails(db.collection('pedidos').add({ usuarioId: 'x', totalUSD: 10 }));
 	});
 
 	it('un usuario NO puede crear un pedido a nombre de otro usuario', async () => {
@@ -164,6 +194,21 @@ describe('pedidos — propiedad y privacidad', () => {
 		await assertFails(
 			db.collection('pedidos').doc('pedido-de-alicia').update({ totalUSD: 0.01 })
 		);
+	});
+
+	it('la compradora NO puede tocar estado, stock ni puntos de su propio pedido', async () => {
+		const db = testEnv.authenticatedContext('alicia-uid').firestore();
+		for (const cambio of [
+			{ estado: 'confirmado' },
+			{ stockDescontado: false },
+			{ stockDevuelto: true },
+			{ puntosMoon: 99999 },
+			{ usuarioId: 'bob-uid' },
+			{ items: [] }
+		]) {
+			await assertFails(db.collection('pedidos').doc('pedido-de-alicia').update(cambio));
+		}
+		await assertFails(db.collection('pedidos').doc('pedido-de-alicia').delete());
 	});
 
 	it('un usuario NO puede modificar ni siquiera su propio pedido ya creado', async () => {
