@@ -22,6 +22,21 @@ html {
     font-family: MiTypografia3, sans-serif;
 }
 
+/*
+ * Celulares con la letra del sistema agrandada: <meta name="text-scale">
+ * (app.html) hace que 1rem siga ese tamaño, y como Tailwind mide en rem
+ * también los espacios y anchos, con la letra al 150–200 % el diseño
+ * quedaba como en una pantalla de 200 px (palabras sueltas por línea,
+ * tarjetas y formularios desbordados). En pantallas de menos de 1024px el
+ * tamaño base puede crecer solo hasta 18px (112,5 %); con la letra normal
+ * sigue en 16px, y en computadoras no se limita.
+ */
+@media (max-width: 1023.98px) {
+    html {
+        font-size: min(100%, 18px);
+    }
+}
+
 .font-Manrope {
     font-family: MiTypografia3;
 }

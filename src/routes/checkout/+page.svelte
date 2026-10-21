@@ -342,8 +342,7 @@
 				configuracion.pagoMovilBanco
 			].filter(Boolean),
 			binance: [configuracion.binanceCorreo].filter(Boolean),
-			zinli: [configuracion.zinliCorreo].filter(Boolean),
-			zelle: [configuracion.zelleCorreo].filter(Boolean)
+			zinli: [configuracion.zinliCorreo].filter(Boolean)
 		};
 	});
 

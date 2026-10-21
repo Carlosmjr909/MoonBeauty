@@ -576,7 +576,9 @@
 					</p>
 				{/if}
 
-				<div class="mt-8 flex gap-4 sm:flex-row sm:items-center">
+				<!-- max-[22rem]: solo en celulares con la letra del sistema
+				agrandada (ver layout.css) el selector y el botón se apilan. -->
+				<div class="mt-8 flex gap-4 max-[22rem]:flex-col sm:flex-row sm:items-center">
 					<div
 						class="flex h-14 w-full items-center rounded-full
 			border border-black/30 px-2 sm:w-auto"
