@@ -487,8 +487,26 @@
 
 				<div class="bg-slate-700 h-px w-24 my-8"></div>
 
+				<div class="gap-4 sm:flex-row sm:flex-wrap">
+					<div
+						class="rounded-4xl bg-sky-100 w-38 px-5 py-4 sm:min-w-52"
+					>
+						<p class="font-Manrope text-2xl text-sky-700 sm:text-3xl">
+							{formatearUSD(product.precio)}
+						</p>
+
+						{#if precioBolivares !== null}
+							<p
+								class="mt-1 text-lg font-semibold text-sky-700 sm:text-xl"
+							>
+								{formatearVES(precioBolivares)}
+							</p>
+						{/if}
+					</div>
+				</div>
+
 				<p
-					class="whitespace-pre-line font-Manrope text-base leading-7 text-gray-500
+					class="mt-6 whitespace-pre-line font-Manrope text-base leading-7 text-gray-500
 			sm:text-lg
 			lg:text-xl lg:leading-8
 			2xl:text-2xl"
@@ -546,23 +564,6 @@
 					</div>
 				{/if}
 
-				<div class="mt-6 gap-4 sm:flex-row sm:flex-wrap">
-					<div
-						class="rounded-4xl bg-sky-100 w-38 px-5 py-4 sm:min-w-52"
-					>
-						<p class="font-Manrope text-2xl text-sky-700 sm:text-3xl">
-							{formatearUSD(product.precio)}
-						</p>
-
-						{#if precioBolivares !== null}
-							<p
-								class="mt-1 text-lg font-semibold text-sky-700 sm:text-xl"
-							>
-								{formatearVES(precioBolivares)}
-							</p>
-						{/if}
-					</div>
-				</div>
 				{#if agotado}
 					<p
 						class="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-slate-900/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white"
@@ -575,7 +576,7 @@
 					</p>
 				{/if}
 
-				<div class="mt-4 flex gap-4 sm:flex-row sm:items-center">
+				<div class="mt-8 flex gap-4 sm:flex-row sm:items-center">
 					<div
 						class="flex h-14 w-full items-center rounded-full
 			border border-black/30 px-2 sm:w-auto"

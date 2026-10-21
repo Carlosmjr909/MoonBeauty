@@ -19,6 +19,7 @@ import {
 
 import { db, storage, obtenerAuth } from '$lib/firebase';
 import { calcularPuntos } from '$lib/puntosMoon';
+import type { RutinaElegida } from '$lib/rutinas';
 
 export type MetodoPago =
 	| 'efectivo'
@@ -154,6 +155,8 @@ export type CrearPedidoInput = {
 	 * el stock dos veces (doble clic, reintento tras un corte de red).
 	 */
 	checkoutId?: string;
+	/** Rutina armada en la portada, si el carrito la trae completa (10 %). */
+	rutina?: RutinaElegida;
 };
 
 /**

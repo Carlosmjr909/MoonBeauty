@@ -7,6 +7,13 @@ import { adminAuth, adminDb } from '$lib/server/firebase-admin';
 import { barrerReservasVencidas } from '$lib/server/barridoReservas';
 import { expirarReservaPedido, minutosReserva, reservaVencida } from '$lib/server/reservas';
 import { calcularPuntos } from '$lib/puntosMoon';
+import { obtenerProductosPublicosConCache } from '$lib/server/cachePublico';
+import {
+	calcularDescuentoRutina,
+	idsRecomendadosRutina,
+	rutinaUsaRespaldo,
+	validarRutina
+} from '$lib/rutinas';
 import type { RequestHandler } from './$types';
 
 /**
@@ -81,6 +88,8 @@ type SolicitudPedido = {
 	comprobantePago?: ComprobantePago;
 	items: ItemSolicitado[];
 	codigosCupones?: string[];
+	/** Rutina armada en la portada; el servidor la valida (ver $lib/rutinas). */
+	rutina?: unknown;
 	/** Id del intento de compra, para que un reintento no duplique el pedido. */
 	checkoutId?: string;
 };
@@ -292,6 +301,29 @@ export const POST: RequestHandler = async ({ request }) => {
 		);
 	}
 
+	// Rutina de la portada: solo cuenta si cada producto es uno de los
+	// recomendados para ese paso (ver validarRutina). El stock de los
+	// recomendados se lee en el momento, no de la caché. Si no es válida,
+	// el pedido sigue igual, sin el 10 %.
+	let idsRutina: string[] | null = null;
+	const recomendados = idsRecomendadosRutina(solicitud.rutina);
+	if (recomendados.length > 0) {
+		try {
+			const snaps = await adminDb.getAll(
+				...recomendados.map((id) => adminDb.collection('productos').doc(id))
+			);
+			const disponibles = new Set(
+				snaps.filter((snap) => snap.exists && Number(snap.data()?.stock ?? 0) > 0).map((snap) => snap.id)
+			);
+			const catalogo = rutinaUsaRespaldo(solicitud.rutina, disponibles)
+				? await obtenerProductosPublicosConCache().catch(() => null)
+				: null;
+			idsRutina = validarRutina(solicitud.rutina, disponibles, catalogo);
+		} catch (err) {
+			console.error('No se pudo validar la rutina del pedido:', err);
+		}
+	}
+
 	const idsProductos = [...cantidadPorId.keys()];
 	const refsProductos = idsProductos.map((id) => adminDb.collection('productos').doc(id));
 	const refsCupones = codigosPedidos.map((codigo) => adminDb.collection('cupones').doc(codigo));
@@ -421,16 +453,29 @@ export const POST: RequestHandler = async ({ request }) => {
 				);
 			}
 
-			const descuentoUSD = Math.round(
+			// 10 % por cada rutina completa, con los precios reales de
+			// Firestore. Se resta primero y los cupones se calculan sobre lo
+			// que queda.
+			const { rutinas, descuentoUSD: descuentoRutinaUSD } = idsRutina
+				? calcularDescuentoRutina(
+						itemsFinales.map((item) => ({ id: item.id, precio: item.precioUSD, cantidad: item.cantidad })),
+						idsRutina
+					)
+				: { rutinas: 0, descuentoUSD: 0 };
+			const baseCuponesUSD = Math.round((subtotalUSD - descuentoRutinaUSD) * 100) / 100;
+
+			const descuentoCuponesUSD = Math.round(
 				Math.min(
 					cupones.reduce((suma, cupon) => {
 						const descuentoCupon =
-							cupon.tipo === 'porcentaje' ? subtotalUSD * (cupon.valor / 100) : cupon.valor;
-						return suma + Math.max(0, Math.min(descuentoCupon, subtotalUSD));
+							cupon.tipo === 'porcentaje' ? baseCuponesUSD * (cupon.valor / 100) : cupon.valor;
+						return suma + Math.max(0, Math.min(descuentoCupon, baseCuponesUSD));
 					}, 0),
-					subtotalUSD
+					baseCuponesUSD
 				) * 100
 			) / 100;
+
+			const descuentoUSD = Math.round((descuentoRutinaUSD + descuentoCuponesUSD) * 100) / 100;
 
 			const totalUSD = Math.round((subtotalUSD - descuentoUSD) * 100) / 100;
 			const totalVES = Math.round(totalUSD * tasaBCV * 100) / 100;
@@ -475,10 +520,23 @@ export const POST: RequestHandler = async ({ request }) => {
 				},
 				items: itemsFinales,
 				subtotalUSD,
-				cupon: cupones.length > 0 ? cupones.map((c) => c.codigo).join(' + ') : null,
+				// Etiqueta del descuento que muestran el panel, la cuenta y el correo.
+				cupon:
+					[...(rutinas > 0 ? ['Rutina -10%'] : []), ...cupones.map((c) => c.codigo)].join(' + ') ||
+					null,
 				// Para devolver el uso de los cupones si la reserva vence.
 				cuponesCodigos: cupones.map((c) => c.codigo),
 				descuentoUSD,
+				descuentoRutinaUSD,
+				rutina:
+					rutinas > 0 && idsRutina
+						? {
+								tipoPiel: (solicitud.rutina as { tipoPiel: string }).tipoPiel,
+								preocupacion: (solicitud.rutina as { preocupacion: string }).preocupacion,
+								productos: idsRutina,
+								rutinas
+							}
+						: null,
 				totalUSD,
 				tasaBCV,
 				totalVES,

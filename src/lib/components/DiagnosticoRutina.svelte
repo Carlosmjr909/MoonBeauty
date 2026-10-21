@@ -1,266 +1,34 @@
 <script lang="ts">
 	import Icon from "@iconify/svelte";
 	import { carrito } from "$lib/cart.js";
+	import { rutinaGuardada } from "$lib/rutinaCarrito";
+	import {
+		armarRutina,
+		calcularDescuentoRutina,
+		PREOCUPACIONES,
+		TIPOS_PIEL,
+		type Preocupacion,
+		type ProductoParaRutina,
+		type TipoPiel,
+	} from "$lib/rutinas";
 	import {
 		convertirUSDaVES,
 		formatearUSD,
 		formatearVES,
 	} from "$lib/utils/moneda";
 
-	/** Lo mínimo que esta sección necesita de cada producto del catálogo. */
-	type ProductoCatalogo = {
-		id: string;
-		Nombre: string;
-		marca?: string;
-		imagen: string;
-		precio: number;
-		stock: number;
-		Tipo?: string;
-		categorias?: string[];
-	};
-
 	interface PropTypes {
 		tasaBCV?: number | null;
 		/** Catálogo real; de aquí salen nombre, foto, precio y stock. */
-		productos?: ProductoCatalogo[];
+		productos?: ProductoParaRutina[];
 	}
 
 	const { tasaBCV = null, productos = [] }: PropTypes = $props();
 
-	type TipoPiel = "Seca" | "Grasa" | "Mixta" | "Normal" | "Sensible";
-	type Preocupacion =
-		| "Hidratación"
-		| "Manchas"
-		| "Acné"
-		| "Poros Dilatados"
-		| "Luminosidad"
-		| "Barrera Cutánea";
-
-	type ProductoRutina = {
-		id: string;
-		Nombre: string;
-		marca: string;
-		imagen: string;
-		precio: number;
-		stock: number;
-		beneficio: string;
-	};
-
-	/**
-	 * Productos recomendados para un paso, en orden de preferencia (por su
-	 * id en el inventario). Se muestra el primero que siga existiendo y
-	 * tenga stock; así, si uno se elimina o se agota, entra el siguiente
-	 * sin tocar el código.
-	 */
-	type Opcion = { ids: string[]; beneficio: string };
-
-	const tiposPiel: TipoPiel[] = ["Seca", "Grasa", "Mixta", "Normal", "Sensible"];
-	const preocupaciones: Preocupacion[] = [
-		"Hidratación",
-		"Manchas",
-		"Acné",
-		"Poros Dilatados",
-		"Luminosidad",
-		"Barrera Cutánea",
-	];
-
-	// Paso 1 — Limpiador, elegido según el tipo de piel.
-	const limpiadores: Record<TipoPiel, Opcion> = {
-		Grasa: {
-			ids: [
-				"9ttpK1YiaSF8tNDe2M2Q", // Be The Skin BHA+ Pore Zero Cleansing Foam
-				"z3ToOEGCXE41SWCqREeT", // Sungboon Editor Green Tomato Deep Pore Foam
-				"O7VqdvmM0AIYlVtwpcq0", // Tocobo Coconut Clay Cleansing Foam
-				"K3KtPslI6ULkwu1Y0ueP", // COSRX Salicylic Acid Cleanser (mini)
-			],
-			beneficio: "Limpieza profunda y control de brillo",
-		},
-		Seca: {
-			ids: [
-				"6ZsTWjI26HBznC6p38EM", // Mixsoon Bean Cleansing Oil
-				"i39nSty6ezUjx8Z5E8Gs", // Pyunkang Yul Deep Cleansing Oil
-				"Xt0HXKQuTxWa9FBjXix6", // Mixsoon PDRN Collagen Gel Cleanser
-			],
-			beneficio: "Primer paso suave y muy hidratante",
-		},
-		Mixta: {
-			ids: [
-				"JAi7uO5HSSeDov7yZjTT", // Anua Heartleaf Pore Cleansing Foam Double Set
-				"jQGhofSZtNkjvJdHFZCE", // Anua Heartleaf Quercetinol Pore Deep Cleansing Foam
-				"bPwiboeYX3et5O5s0jt9", // Round Lab 1025 Dokdo Cleanser
-				"N5KXTLrGDZ9Jyd7TVXow", // Fully Green Tomato Clay Pack Cleanser
-			],
-			beneficio: "Paso de limpieza profunda",
-		},
-		Normal: {
-			ids: [
-				"Sp4umofUowF7CxyMkLut", // Mixsoon Centella Cleansing Foam
-				"bPwiboeYX3et5O5s0jt9", // Round Lab 1025 Dokdo Cleanser
-				"OCLddqZGb0V54XD96HWD", // COSRX Low pH Good Morning Cleanser (mini)
-			],
-			beneficio: "Limpieza equilibrada para uso diario",
-		},
-		Sensible: {
-			ids: [
-				"9SaFx8L7bg4rf41xjzA4", // Pyunkang Yul Low pH Cleansing Water
-				"esb1HBfpOiJjvqu5Mwwk", // Celimax Madecica pH Balancing Foam
-				"gW64dChslnCJH9gBM1pm", // Purito Mighty Bamboo Panthenol Cleanser
-			],
-			beneficio: "Limpieza suave, ideal para piel reactiva",
-		},
-	};
-
-	// Paso 2 — Tratamiento o activo, elegido según la preocupación principal.
-	const tratamientos: Record<Preocupacion, Opcion> = {
-		Hidratación: {
-			ids: [
-				"7DUzhmKfaM99FM564WTS", // Mixsoon PDRN Collagen Serum
-				"iIzoml2gZgdy6LwApLTC", // Medicube PDRN Pink Peptide Serum
-				"VJarqTRTMK3hTkmLnGKP", // Medicube Triple Collagen Serum 4.0
-			],
-			beneficio: "Hidratación profunda y efecto plump",
-		},
-		Manchas: {
-			ids: [
-				"qOEZvukkZOLx1dnQArkz", // Purito TXA 6 Niacinamide 10 Retinal Serum
-				"p1OGARH1wW83X5ZPHsxk", // Nineless B-Boost 10% Niacinamide Serum
-				"srL7Deb4Yq30gNGt6qCR", // Arencia Vitamin C Booster Shot
-			],
-			beneficio: "Ataca manchas oscuras y marcas",
-		},
-		Acné: {
-			ids: [
-				"jrc3U2jdRzgwxWsuuCnO", // Skin1004 Centella Tone Brightening Capsule Ampoule
-				"nFcTNX3rlKLNbDL0QPXx", // Medicube Azelaic Acid 16 BB Soothing Serum
-				"pbZrUpejonjcRenJiLqD", // Fully Green Tomato Serum
-			],
-			beneficio: "Calma brotes e irritación",
-		},
-		"Poros Dilatados": {
-			ids: [
-				"OOpbOHIr2BaqUjTzHQJW", // Veramore Shrink Pore Spicule 300 Ampoule
-				"gf7vVCJeTlpHAO5zZtKt", // VT Cosmetics Reedle Shot 100
-				"pbZrUpejonjcRenJiLqD", // Fully Green Tomato Serum
-			],
-			beneficio: "Minimiza poros visiblemente",
-		},
-		Luminosidad: {
-			ids: [
-				"QLVgs3laCH12NlYIEgBQ", // Medicube Collagen Glow Booster Serum
-				"srL7Deb4Yq30gNGt6qCR", // Arencia Vitamin C Booster Shot
-				"w4bGv40RNEdnK73m60U1", // Dr. Melaxin Peel Shot White Rice Ampoule
-			],
-			beneficio: "Ilumina y da luminosidad",
-		},
-		"Barrera Cutánea": {
-			ids: [
-				"xIVkOB4xUV5Of51xLlLO", // Purito Wonder Releaf Centella Serum
-				"29nhSrP4GhNh27fKcr5j", // Medicube Exosome Cica Ampoule
-			],
-			beneficio: "Repara y fortalece la barrera",
-		},
-	};
-
-	// Paso 3 — Hidratante o protector solar, elegido según el tipo de piel.
-	const hidratantes: Record<TipoPiel, Opcion> = {
-		Grasa: {
-			ids: [
-				"jDgb2lxBflQFwzc6f0AN", // Celimax Oil Control Mattifying Sun Stick
-				"hmk80QTxsD9qOVBKQxLZ", // Medicube Zero Pore Moisture Sun Serum
-				"YZ4Ih8Tii0UNesASD58Z", // Tocobo Bio Watery Sun Cream
-			],
-			beneficio: "Protección sin sensación grasa",
-		},
-		Seca: {
-			ids: [
-				"HjlpWEJqgfUfgph89E9l", // Centellian24 Expert Madeca Cream PDRN
-				"D5RyNL5y7X410JzVV6bH", // Mixsoon PDRN Collagen Cream
-				"Np4sztcj6OFDC7DwL50f", // Fully Rice Ceramide Moisture Sun Cream
-			],
-			beneficio: "Hidratación intensa y nutrición",
-		},
-		Mixta: {
-			ids: [
-				"f1RBmZPgnDnZdAhnVFfg", // Beauty of Joseon Relief Sun Rice + Probiotics
-				"Np4sztcj6OFDC7DwL50f", // Fully Rice Ceramide Moisture Sun Cream
-				"YZ4Ih8Tii0UNesASD58Z", // Tocobo Bio Watery Sun Cream
-			],
-			beneficio: "Protección sin sensación grasa",
-		},
-		Normal: {
-			ids: [
-				"YZ4Ih8Tii0UNesASD58Z", // Tocobo Bio Watery Sun Cream
-				"1", // Tocobo Cotton Soft Sun Stick
-				"Np4sztcj6OFDC7DwL50f", // Fully Rice Ceramide Moisture Sun Cream
-			],
-			beneficio: "Protección diaria ligera",
-		},
-		Sensible: {
-			ids: [
-				"pa1XcmQfzXSpO5sVJvMF", // Dr. Althea Green Tea Fresh Sunscreen
-				"Yy9WLCni7qr3qCbhDi9n", // Round Lab Pine Calming Cica Cream
-				"QImTOBorN2i8bxouQGuJ", // Pyunkang Yul Ultimate Calming Solution Cream
-			],
-			beneficio: "Protección suave para piel sensible",
-		},
-	};
-
-	// Si ninguno de los recomendados está disponible, se usa el producto
-	// con más stock de la categoría del paso, para que nunca quede vacío.
-	const categoriasRespaldo = {
-		limpiador: ["Limpiadores Faciales"],
-		tratamiento: ["Serums o Ampollas"],
-		hidratante: ["Protector solar", "Cremas Faciales"],
-	};
-
-	const productosPorId = $derived(
-		new Map(productos.map((producto) => [String(producto.id), producto])),
-	);
-
-	function categoriasDe(producto: ProductoCatalogo): string[] {
-		return producto.categorias?.length
-			? producto.categorias
-			: producto.Tipo
-				? [producto.Tipo]
-				: [];
-	}
-
-	function elegirProducto(
-		opcion: Opcion,
-		respaldo: string[],
-	): ProductoRutina | null {
-		const disponible = (producto?: ProductoCatalogo) =>
-			!!producto && Number(producto.stock) > 0;
-
-		let elegido = opcion.ids
-			.map((id) => productosPorId.get(id))
-			.find(disponible);
-
-		if (!elegido) {
-			elegido = productos
-				.filter(
-					(producto) =>
-						disponible(producto) &&
-						categoriasDe(producto).some((categoria) =>
-							respaldo.includes(categoria),
-						) &&
-						!categoriasDe(producto).includes("Kits"),
-				)
-				.sort((a, b) => Number(b.stock) - Number(a.stock))[0];
-		}
-
-		if (!elegido) return null;
-
-		return {
-			id: String(elegido.id),
-			Nombre: elegido.Nombre,
-			marca: elegido.marca ?? "",
-			imagen: elegido.imagen,
-			precio: Number(elegido.precio) || 0,
-			stock: Number(elegido.stock) || 0,
-			beneficio: opcion.beneficio,
-		};
-	}
+	// Qué productos recomienda cada paso vive en $lib/rutinas: el servidor
+	// usa la misma lógica para validar el 10 % al crear el pedido.
+	const tiposPiel = TIPOS_PIEL;
+	const preocupaciones = PREOCUPACIONES;
 
 	const notasPiel: Record<TipoPiel, string> = {
 		Seca: "En el clima venezolano, tu piel seca necesita capas que sellen la humedad sin sentirse pesadas — priorizamos aceites limpiadores suaves y cremas ricas en ceramidas.",
@@ -283,40 +51,23 @@
 	let preocupacionSeleccionada = $state<Preocupacion>("Hidratación");
 
 	const pasos = $derived(
-		[
-			{
-				etiqueta: "Limpiador",
-				producto: elegirProducto(
-					limpiadores[tipoPielSeleccionado],
-					categoriasRespaldo.limpiador,
-				),
-			},
-			{
-				etiqueta: "Tratamiento",
-				producto: elegirProducto(
-					tratamientos[preocupacionSeleccionada],
-					categoriasRespaldo.tratamiento,
-				),
-			},
-			{
-				etiqueta: "Hidratante / Protector",
-				producto: elegirProducto(
-					hidratantes[tipoPielSeleccionado],
-					categoriasRespaldo.hidratante,
-				),
-			},
-		]
-			.filter(
-				(paso): paso is { etiqueta: string; producto: ProductoRutina } =>
-					paso.producto !== null,
-			)
-			.map((paso, indice) => ({ ...paso, numero: indice + 1 })),
+		armarRutina(tipoPielSeleccionado, preocupacionSeleccionada, productos),
 	);
 
 	const subtotal = $derived(
 		pasos.reduce((total, paso) => total + paso.producto.precio, 0),
 	);
-	const totalConDescuento = $derived(Math.round(subtotal * 0.9 * 100) / 100);
+	// Mismo cálculo que el carrito, el checkout y el servidor.
+	const totalConDescuento = $derived(
+		Math.round(
+			(subtotal -
+				calcularDescuentoRutina(
+					pasos.map((paso) => ({ ...paso.producto, cantidad: 1 })),
+					pasos.map((paso) => paso.producto.id),
+				).descuentoUSD) *
+				100,
+		) / 100,
+	);
 	const totalVES = $derived(
 		tasaBCV ? convertirUSDaVES(totalConDescuento, tasaBCV) : null,
 	);
@@ -341,6 +92,16 @@
 				1,
 			);
 		}
+
+		// El carrito y el checkout descuentan el 10 % mientras estén todos
+		// los productos de esta rutina.
+		rutinaGuardada.set({
+			tipoPiel: tipoPielSeleccionado,
+			preocupacion: preocupacionSeleccionada,
+			ids: Object.fromEntries(
+				pasos.map((paso) => [paso.paso, paso.producto.id]),
+			),
+		});
 
 		agregado = true;
 		setTimeout(() => {

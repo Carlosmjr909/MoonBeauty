@@ -1,6 +1,7 @@
 <script lang="ts">
     import Icon from "@iconify/svelte";
     import { carrito, totalCarritoUSD, cantidadCarrito } from "$lib/cart.js";
+    import { descuentoRutina } from "$lib/rutinaCarrito";
     import { goto } from "$app/navigation";
 
     import {
@@ -23,10 +24,13 @@
         typeof tasaBCV === "number" && Number.isFinite(tasaBCV) && tasaBCV > 0,
     );
 
+    // 10 % si el carrito trae la rutina completa armada en la portada.
+    const totalUSD = $derived(
+        Math.max(0, $totalCarritoUSD - $descuentoRutina.descuentoUSD),
+    );
+
     const totalCarritoVES = $derived(
-        tasaValida
-            ? convertirUSDaVES($totalCarritoUSD, tasaBCV as number)
-            : null,
+        tasaValida ? convertirUSDaVES(totalUSD, tasaBCV as number) : null,
     );
 
     const carritoItems = $derived($carrito ?? []);
@@ -197,11 +201,26 @@
 
         <footer class="border-t border-slate-200 bg-white px-6 py-5">
             <div class="space-y-3">
+                {#if $descuentoRutina.descuentoUSD > 0}
+                    <div
+                        class="flex items-center justify-between gap-2 text-sm text-sky-700"
+                    >
+                        <span>
+                            Descuento rutina (10%){$descuentoRutina.rutinas > 1
+                                ? ` ×${$descuentoRutina.rutinas}`
+                                : ""}
+                        </span>
+                        <span class="shrink-0">
+                            -{formatearUSD($descuentoRutina.descuentoUSD)}
+                        </span>
+                    </div>
+                {/if}
+
                 <div class="flex items-center justify-between">
                     <span class="text-base text-slate-500"> Total en USD </span>
 
                     <strong class="text-xl text-slate-800">
-                        {formatearUSD($totalCarritoUSD)}
+                        {formatearUSD(totalUSD)}
                     </strong>
                 </div>
 

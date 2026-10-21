@@ -9,6 +9,7 @@
 		carrito,
 		totalCarritoUSD
 	} from '$lib/cart.js';
+	import { descuentoRutina, rutinaGuardada } from '$lib/rutinaCarrito';
 
 	import {
 		convertirUSDaVES,
@@ -451,14 +452,23 @@
 		cuponesAplicados.length < MAXIMO_CUPONES
 	);
 
+	// 10 % si el carrito trae completa la rutina armada en la portada. Se
+	// resta primero y los cupones se calculan sobre lo que queda, igual que
+	// en el servidor.
+	const descuentoRutinaUSD = $derived($descuentoRutina.descuentoUSD);
+
+	const baseCuponesUSD = $derived(
+		Math.max(0, $totalCarritoUSD - descuentoRutinaUSD)
+	);
+
 	const descuentoUSD = $derived(
-		calcularDescuentoTotalUSD(cuponesAplicados, $totalCarritoUSD)
+		calcularDescuentoTotalUSD(cuponesAplicados, baseCuponesUSD)
 	);
 
 	const hayCupones = $derived(cuponesAplicados.length > 0);
 
 	const totalConDescuentoUSD = $derived(
-		Math.max(0, $totalCarritoUSD - descuentoUSD)
+		Math.max(0, baseCuponesUSD - descuentoUSD)
 	);
 
 	// Mismo cálculo que hace el servidor al crear el pedido.
@@ -484,7 +494,7 @@
 			? convertirUSDaVES(
 					descuentoAplicaEnVES
 						? totalConDescuentoUSD
-						: $totalCarritoUSD,
+						: baseCuponesUSD,
 					tasaBCV
 				)
 			: null
@@ -690,11 +700,14 @@ const resultado = await crearPedido({
 	comprobantePago: comprobanteFinal,
 	items,
 	codigosCupones,
-	checkoutId: (checkoutId ??= crypto.randomUUID())
+	checkoutId: (checkoutId ??= crypto.randomUUID()),
+	// El servidor vuelve a validar la rutina y calcula el 10 % él mismo.
+	rutina: $descuentoRutina.rutinas > 0 ? ($rutinaGuardada ?? undefined) : undefined
 });
 
 numeroPedido = resultado.numeroPedido;
 checkoutId = null;
+rutinaGuardada.set(null);
 
 try {
 	// El servidor vuelve a leer el pedido completo de Firestore con el
@@ -1640,14 +1653,28 @@ carrito.vaciar();
 							</span>
 
 							<span
-								class:text-slate-400={hayCupones}
-								class:line-through={hayCupones}
+								class:text-slate-400={hayCupones || descuentoRutinaUSD > 0}
+								class:line-through={hayCupones || descuentoRutinaUSD > 0}
 							>
 								{formatearUSD(
 									$totalCarritoUSD
 								)}
 							</span>
 						</div>
+
+						{#if descuentoRutinaUSD > 0}
+							<div class="flex justify-between gap-2 text-sky-700">
+								<span class="min-w-0">
+									Descuento rutina (10%){$descuentoRutina.rutinas > 1
+										? ` ×${$descuentoRutina.rutinas}`
+										: ''}
+								</span>
+
+								<span class="shrink-0">
+									-{formatearUSD(descuentoRutinaUSD)}
+								</span>
+							</div>
+						{/if}
 
 						<!-- Cada cupón se lista aparte, para que el comprador
 						vea de dónde sale cada descuento. -->
@@ -1661,7 +1688,7 @@ carrito.vaciar();
 									-{formatearUSD(
 										calcularDescuentoUSD(
 											cupon,
-											$totalCarritoUSD
+											baseCuponesUSD
 										)
 									)}
 								</span>

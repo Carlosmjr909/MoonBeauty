@@ -110,7 +110,7 @@ function filaDescuento(datos: DatosPedido): string {
 
 	return `
 		<p><strong>Subtotal USD:</strong> ${escaparHtml(formatearNumero(datos.subtotalUSD))}</p>
-		<p><strong>Cupón aplicado:</strong> ${escaparHtml(datos.cupon)} (-${escaparHtml(formatearNumero(datos.descuentoUSD))} USD)</p>
+		<p><strong>Descuento aplicado:</strong> ${escaparHtml(datos.cupon)} (-${escaparHtml(formatearNumero(datos.descuentoUSD))} USD)</p>
 	`;
 }
 
