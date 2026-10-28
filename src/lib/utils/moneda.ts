@@ -13,6 +13,17 @@ export function convertirUSDaVES(
 	return Math.round(precioUSD * tasaBCV * 100) / 100;
 }
 
+/**
+ * Lee un precio escrito en el panel: acepta coma o punto como decimal
+ * ("30,5", "30.50", "$ 30,5") y hasta 2 decimales. Devuelve null si no es
+ * un precio válido (vacío, a medio escribir como "30," o con letras).
+ */
+export function leerPrecioUSD(texto: string | number): number | null {
+	const limpio = String(texto ?? '').replace(/[\s$]/g, '').replace(',', '.');
+	if (!/^\d+(\.\d{1,2})?$/.test(limpio)) return null;
+	return Math.round(Number(limpio) * 100) / 100;
+}
+
 export function formatearUSD(monto: number): string {
 	return new Intl.NumberFormat('es-VE', {
 		style: 'currency',

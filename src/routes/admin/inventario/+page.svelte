@@ -18,6 +18,7 @@
 		type Producto,
 		type Tono
 	} from "$lib/inventario";
+	import { leerPrecioUSD } from "$lib/utils/moneda";
 
 	let productos = $state<Producto[]>([]);
 	let categorias = $state<Categoria[]>([]);
@@ -37,7 +38,8 @@
 		especificacion: "",
 		ingredientes: "",
 		modoDeUso: "",
-		precio: 0,
+		// Texto: se acepta "30,5" o "30.50" (ver leerPrecioUSD).
+		precio: "",
 		stock: 0,
 		popular: false,
 		nuevoIngreso: false
@@ -150,6 +152,23 @@
 		nuevoIngreso?: boolean;
 	};
 	const cambiosPorGuardar = $state<Record<string, CambiosProducto>>({});
+	// Productos cuyo precio en la tabla está mal escrito (no se guardan).
+	const preciosInvalidos = $state<Record<string, boolean>>({});
+
+	/**
+	 * Precio escrito en la tabla. Mientras el texto no es un precio válido
+	 * (por ejemplo "30," a medio escribir) no se toca lo que se escribe ni
+	 * se guarda un 0: solo se marca el campo.
+	 */
+	function cambiarPrecioEnTabla(id: string, texto: string) {
+		const precio = leerPrecioUSD(texto);
+		if (precio === null) {
+			preciosInvalidos[id] = true;
+			return;
+		}
+		delete preciosInvalidos[id];
+		actualizarCampoPendiente(id, "precio", precio);
+	}
 
 	const nombresCategorias = $derived(
 		categorias
@@ -408,6 +427,12 @@
 			return;
 		}
 
+		const precio = leerPrecioUSD(formulario.precio);
+		if (precio === null) {
+			error = "Escribe un precio válido, por ejemplo 30 o 30,50.";
+			return;
+		}
+
 		guardando = true;
 		error = null;
 
@@ -432,7 +457,7 @@
 				// desde el botón "Fotos y tonos" de cada producto.
 				imagenes: [],
 				tonos: [],
-				precio: Number(formulario.precio) || 0,
+				precio,
 				stock: Number(formulario.stock) || 0,
 				popular: formulario.popular,
 				nuevoIngreso: formulario.nuevoIngreso
@@ -498,6 +523,10 @@
 
 	async function manejarGuardarProducto(id: string) {
 		const cambios = cambiosPorGuardar[id];
+		if (preciosInvalidos[id]) {
+			error = "El precio no es válido: escríbelo como 30 o 30,50.";
+			return;
+		}
 		if (!cambios || Object.keys(cambios).length === 0) return;
 
 		try {
@@ -666,9 +695,9 @@
 			</label>
 			<input
 				id="precio"
-				type="number"
-				min="0"
-				step="0.01"
+				type="text"
+				inputmode="decimal"
+				placeholder="Ej: 30,50"
 				bind:value={formulario.precio}
 				required
 				class="rounded-lg border border-slate-200 px-3 py-2"
@@ -1074,22 +1103,25 @@
 								<td class="py-3 pr-4">
 									<div class="flex items-center gap-1">
 										<span class="text-slate-500">$</span>
+										<!-- Texto con teclado decimal: un campo numérico
+										borraba lo escrito al llegar a "30," o "30."
+										y no aceptaba la coma. -->
 										<input
-											type="number"
-											min="0"
-											step="0.01"
-											value={cambiosPorGuardar[producto.id]?.precio ??
-												producto.precio}
+											type="text"
+											inputmode="decimal"
+											aria-label="Precio de {producto.Nombre}"
+											aria-invalid={preciosInvalidos[producto.id] ?? false}
+											value={producto.precio}
 											oninput={(evento) =>
-												actualizarCampoPendiente(
+												cambiarPrecioEnTabla(
 													producto.id,
-													"precio",
-													Number(
-														(evento.target as HTMLInputElement)
-															.value
-													) || 0
+													(evento.target as HTMLInputElement).value
 												)}
-											class="w-20 rounded-lg border border-slate-200 px-2 py-1 text-slate-700"
+											class="w-20 rounded-lg border px-2 py-1 text-slate-700 {preciosInvalidos[
+												producto.id
+											]
+												? 'border-red-400 bg-red-50'
+												: 'border-slate-200'}"
 										/>
 									</div>
 								</td>
