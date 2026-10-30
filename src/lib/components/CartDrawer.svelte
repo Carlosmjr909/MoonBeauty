@@ -49,15 +49,20 @@
     ></div>
 {/if}
 
+<!-- h-dvh: en el iPhone, 100vh (h-screen) es más alto que lo visible y el
+total y "Continuar compra" quedaban detrás de la barra de Safari, sin
+forma de bajar hasta ellos. dvh mide solo lo visible (h-screen queda para
+navegadores viejos), y si aun así no alcanza el espacio, el panel entero
+se puede deslizar. -->
 <aside
-    class="fixed right-0 top-0 z-50 flex h-screen w-full max-w-md flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out"
+    class="fixed right-0 top-0 z-50 flex h-screen w-full max-w-md flex-col overflow-y-auto overscroll-contain bg-white shadow-2xl transition-transform duration-300 ease-in-out supports-[height:100dvh]:h-dvh"
     class:translate-x-0={abierto}
     class:translate-x-full={!abierto}
     aria-hidden={!abierto}
     inert={!abierto}
 >
     <header
-        class="flex items-center justify-between border-b border-slate-200 px-6 py-5"
+        class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-5"
     >
         <div>
             <h2 class="font-Manrope text-2xl text-slate-700">Tu carrito</h2>
@@ -101,7 +106,7 @@
             </a>
         </div>
     {:else}
-        <div class="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+        <div class="min-h-40 flex-1 space-y-4 overflow-y-auto px-5 py-5">
             {#each carritoItems as producto, index (producto?.id ?? index)}
                 <article
                     class="flex gap-4 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm"
@@ -199,7 +204,9 @@
             {/each}
         </div>
 
-        <footer class="border-t border-slate-200 bg-white px-6 py-5">
+        <footer
+            class="shrink-0 border-t border-slate-200 bg-white px-6 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        >
             <div class="space-y-3">
                 {#if $descuentoRutina.descuentoUSD > 0}
                     <div

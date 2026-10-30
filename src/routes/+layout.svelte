@@ -798,7 +798,9 @@ vez de "hidden" para no romper los elementos sticky de las vistas. -->
 	tasaBCV={data?.tasaBCV?.promedio ?? null}
 />
 
-{#if mostrarPopupCuenta}
+<!-- Con el carrito abierto el aviso se oculta: quedaba encima de
+"Continuar compra" (misma capa z-50, más abajo en el código). -->
+{#if mostrarPopupCuenta && !carritoAbierto}
 	<div
 		class="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-2xl bg-sky-200/80 p-5 shadow-2xl ring-1 ring-slate-200 sm:inset-x-6 sm:bottom-6 lg:inset-x-auto lg:right-6"
 		role="dialog"
@@ -1025,6 +1027,7 @@ vez de "hidden" para no romper los elementos sticky de las vistas. -->
 	target="_blank"
 	rel="noopener noreferrer"
 	class="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-sky-200 text-sky-900 shadow-2xl ring-1 ring-white/70 transition-all duration-300 hover:scale-110 hover:bg-sky-300 hover:shadow-sky-300/50 sm:bottom-6 sm:right-6 sm:h-16 sm:w-16"
+	class:hidden={carritoAbierto}
 	aria-label="Escríbenos por WhatsApp"
 >
 	<Icon icon="mdi:whatsapp" class="h-8 w-8 sm:h-9 sm:w-9" />
